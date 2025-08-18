@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Garantir que a fonte seja carregada localmente */
+.signika-400 {
+  font-family: "Signika", serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  font-variation-settings:
+    "GRAD" 0;
+}
+.signika-700 {
+  font-family: "Signika", serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+  font-variation-settings:
+    "GRAD" 0;
+}
+
+@layer base {
+  html, body {
+    @apply h-full;
+  }
+
+  body {
+    @apply antialiased bg-gray-100;
+  }
+
+  #root {
+    @apply h-full;
+  }
+}
+
+@layer utilities {
+  .bg-grid-white {
+    mask-image: linear-gradient(to bottom, transparent, 10%, white, 90%, transparent);
+  }
+}
+
+/* Estilos específicos para impressão do crachá */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  .modal-cracha,
+  .modal-cracha * {
+    visibility: visible;
+  }
+  
+  .modal-cracha {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%) !important;
+  }
+
+  .modal-cracha > div {
+    transform: scale(1) !important;
+    margin: 0 !important;
+  }
+
+  .modal-cracha button {
+    display: none;
+  }
+}
+
+/* Classe auxiliar para garantir a fonte Signika */
+.font-signika {
+  font-family: 'Signika', sans-serif !important;
+}
