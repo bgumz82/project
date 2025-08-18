@@ -9,6 +9,11 @@ export interface EmpresaFiscal {
   endereco_completo: string
   rntrc: string | null
   status: 'ativo' | 'inativo' | 'suspenso'
+  proximo_numero_cte: number
+  proximo_numero_mdfe: number
+  serie_padrao_cte: string
+  serie_padrao_mdfe: string
+  path_arquivos: string | null
   created_at: string
   updated_at: string
 }
@@ -20,6 +25,11 @@ export interface EmpresaFiscalCreate {
   endereco_completo: string
   rntrc?: string | null
   status?: 'ativo' | 'inativo' | 'suspenso'
+  proximo_numero_cte?: number
+  proximo_numero_mdfe?: number
+  serie_padrao_cte?: string
+  serie_padrao_mdfe?: string
+  path_arquivos?: string | null
 }
 
 // Tipos para CT-e
@@ -31,6 +41,12 @@ export interface CTeDocumento {
   data_emissao: string
   status: 'pendente' | 'emitido' | 'cancelado'
   observacoes: string | null
+  xml_path: string | null
+  pdf_path: string | null
+  xml_gerado: boolean
+  pdf_gerado: boolean
+  xml_gerado_em: string | null
+  pdf_gerado_em: string | null
   created_at: string
   updated_at: string
   empresa?: {
@@ -57,6 +73,12 @@ export interface MDFeDocumento {
   data_emissao: string
   status: 'pendente' | 'emitido' | 'cancelado' | 'encerrado'
   observacoes: string | null
+  xml_path: string | null
+  pdf_path: string | null
+  xml_gerado: boolean
+  pdf_gerado: boolean
+  xml_gerado_em: string | null
+  pdf_gerado_em: string | null
   created_at: string
   updated_at: string
   empresa?: {
@@ -320,11 +342,20 @@ export async function createCTeDocumento(documento: CTeDocumentoCreate): Promise
       throw new Error('Empresa fiscal não encontrada')
     }
     
+    // Obter próximo número automaticamente se não fornecido
+    let numeroFinal = documento.numero_cte
+    if (!numeroFinal || numeroFinal === 'AUTO') {
+      const nextNumber = await query(`
+        SELECT get_next_cte_number($1) as numero
+      `, [documento.empresa_id])
+      numeroFinal = nextNumber[0].numero.toString()
+    }
+    
     // Verificar se número/série já existe para esta empresa
     const existingDoc = await queryOne(`
       SELECT id FROM cte_documentos 
       WHERE empresa_id = $1 AND numero_cte = $2 AND serie = $3
-    `, [documento.empresa_id, documento.numero_cte, documento.serie])
+    `, [documento.empresa_id, numeroFinal, documento.serie])
     
     if (existingDoc) {
       throw new Error('Número CT-e e série já existem para esta empresa')
@@ -344,7 +375,7 @@ export async function createCTeDocumento(documento: CTeDocumentoCreate): Promise
       RETURNING *
     `, [
       documento.empresa_id,
-      documento.numero_cte,
+      numeroFinal,
       documento.serie,
       documento.data_emissao,
       documento.status || 'pendente',
@@ -490,11 +521,20 @@ export async function createMDFeDocumento(documento: MDFeDocumentoCreate): Promi
       throw new Error('Empresa fiscal não encontrada')
     }
     
+    // Obter próximo número automaticamente se não fornecido
+    let numeroFinal = documento.numero_mdfe
+    if (!numeroFinal || numeroFinal === 'AUTO') {
+      const nextNumber = await query(`
+        SELECT get_next_mdfe_number($1) as numero
+      `, [documento.empresa_id])
+      numeroFinal = nextNumber[0].numero.toString()
+    }
+    
     // Verificar se número/série já existe para esta empresa
     const existingDoc = await queryOne(`
       SELECT id FROM mdfe_documentos 
       WHERE empresa_id = $1 AND numero_mdfe = $2 AND serie = $3
-    `, [documento.empresa_id, documento.numero_mdfe, documento.serie])
+    `, [documento.empresa_id, numeroFinal, documento.serie])
     
     if (existingDoc) {
       throw new Error('Número MDF-e e série já existem para esta empresa')
@@ -514,7 +554,7 @@ export async function createMDFeDocumento(documento: MDFeDocumentoCreate): Promi
       RETURNING *
     `, [
       documento.empresa_id,
-      documento.numero_mdfe,
+      numeroFinal,
       documento.serie,
       documento.data_emissao,
       documento.status || 'pendente',
@@ -626,4 +666,105 @@ export function formatCNPJ(cnpj: string): string {
 export function validateCNPJ(cnpj: string): boolean {
   const cleaned = cnpj.replace(/[^\d]/g, '')
   return cleaned.length === 14
+}
+
+// ===== FUNÇÕES PARA CONTROLE DE ARQUIVOS =====
+
+export async function updateDocumentFiles(
+  documentType: 'cte' | 'mdfe',
+  documentId: string,
+  files: {
+    xmlPath?: string
+    pdfPath?: string
+    xmlGerado?: boolean
+    pdfGerado?: boolean
+  }
+): Promise<void> {
+  try {
+    console.log('📁 Atualizando arquivos do documento:', documentType, documentId, files)
+    
+    const tableName = documentType === 'cte' ? 'cte_documentos' : 'mdfe_documentos'
+    
+    // Construir query dinamicamente
+    const updates: string[] = []
+    const values: any[] = []
+    let paramIndex = 1
+
+    if (files.xmlPath !== undefined) {
+      updates.push(`xml_path = $${paramIndex}`)
+      values.push(files.xmlPath)
+      paramIndex++
+    }
+
+    if (files.pdfPath !== undefined) {
+      updates.push(`pdf_path = $${paramIndex}`)
+      values.push(files.pdfPath)
+      paramIndex++
+    }
+
+    if (files.xmlGerado !== undefined) {
+      updates.push(`xml_gerado = $${paramIndex}`)
+      values.push(files.xmlGerado)
+      paramIndex++
+      
+      if (files.xmlGerado) {
+        updates.push(`xml_gerado_em = NOW()`)
+      }
+    }
+
+    if (files.pdfGerado !== undefined) {
+      updates.push(`pdf_gerado = $${paramIndex}`)
+      values.push(files.pdfGerado)
+      paramIndex++
+      
+      if (files.pdfGerado) {
+        updates.push(`pdf_gerado_em = NOW()`)
+      }
+    }
+
+    // Sempre atualizar updated_at
+    updates.push(`updated_at = NOW()`)
+
+    if (updates.length === 1) { // Apenas updated_at
+      throw new Error('Nenhum arquivo para atualizar')
+    }
+
+    // Adicionar ID como último parâmetro
+    values.push(documentId)
+
+    await query(`
+      UPDATE ${tableName}
+      SET ${updates.join(', ')}
+      WHERE id = $${paramIndex}
+    `, values)
+
+    console.log('✅ Arquivos do documento atualizados com sucesso')
+  } catch (error) {
+    console.error('❌ Erro ao atualizar arquivos do documento:', error)
+    throw error
+  }
+}
+
+export async function getNextDocumentNumber(empresaId: string, documentType: 'cte' | 'mdfe'): Promise<number> {
+  try {
+    const functionName = documentType === 'cte' ? 'get_next_cte_number' : 'get_next_mdfe_number'
+    
+    const result = await query(`
+      SELECT ${functionName}($1) as numero
+    `, [empresaId])
+    
+    return result[0].numero
+  } catch (error) {
+    console.error('❌ Erro ao obter próximo número:', error)
+    throw error
+  }
+}
+
+export async function checkDocumentFileExists(filePath: string): Promise<boolean> {
+  try {
+    const response = await fetch(filePath, { method: 'HEAD' })
+    return response.ok
+  } catch (error) {
+    return false
+  }
 }
