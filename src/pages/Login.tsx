@@ -29,32 +29,32 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-400 via-blue-900 to-gray-900 scale-125 origin-top-left">
+    <div className="h-screen w-screen overflow-hidden flex items-center justify-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-400 via-blue-900 to-gray-900">
       <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:60px_60px]" />
       <div className="absolute h-full w-full">
         <div className="absolute bottom-0 left-0 right-0 top-0 bg-[radial-gradient(circle_500px_at_50%_200px,rgba(120,119,198,0.3),transparent)]" />
       </div>
 
-      <div className="relative flex flex-1 flex-col items-center justify-center px-6">
-        <div className="flex flex-col items-center text-center">
-          <div className="flex items-center justify-center">
-            <div className="relative flex h-48 w-48 items-center justify-center">
-              <img src={systemtruckLogo} alt="SystemTruck Logo" className="h-full w-full object-contain" />
-            </div>
+      <div className="relative flex flex-col items-center justify-center max-w-sm w-full mx-auto px-4">
+        {/* Logo e Título */}
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="relative h-32 w-32 mb-4">
+            <img src={systemtruckLogo} alt="SystemTruck Logo" className="h-full w-full object-contain" />
           </div>
-          <h1 className="mt-4 bg-gradient-to-t from-[#6d6d6d] to-white bg-clip-text text-xl font-bold text-transparent md:text-2xl lg:text-3xl">
+          <h1 className="bg-gradient-to-t from-[#6d6d6d] to-white bg-clip-text text-2xl font-bold text-transparent">
             Sistema de Frota
           </h1>
-          <p className="mt-1 text-xs text-blue-200/80">
+          <p className="mt-2 text-sm text-blue-200/80">
             Faça login para acessar o sistema
           </p>
         </div>
 
-        <div className="mt-6 w-full max-w-xs">
-          <div className="rounded-xl backdrop-blur-sm bg-white/[0.02] border border-white/[0.05] p-6">
-            <form className="space-y-4" onSubmit={handleSubmit}>
+        {/* Formulário de Login */}
+        <div className="w-full">
+          <div className="rounded-2xl backdrop-blur-sm bg-white/[0.02] border border-white/[0.05] p-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label htmlFor="email" className="text-xs text-blue-200">
+                <label htmlFor="email" className="block text-sm text-blue-200 mb-2">
                   Email
                 </label>
                 <input
@@ -65,13 +65,13 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-blue-200/50 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-blue-200/50 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
                   placeholder="seu@email.com"
                 />
               </div>
 
               <div>
-                <label htmlFor="password" className="text-xs text-blue-200">
+                <label htmlFor="password" className="block text-sm text-blue-200 mb-2">
                   Senha
                 </label>
                 <input
@@ -82,7 +82,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-blue-200/50 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-blue-200/50 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
                   placeholder="••••••••"
                 />
               </div>
@@ -90,11 +90,11 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="relative w-full rounded-lg border border-white/10 bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:from-blue-400 hover:to-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50 disabled:opacity-50"
+                className="relative w-full rounded-lg border border-white/10 bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:from-blue-400 hover:to-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50 disabled:opacity-50"
               >
                 <div className="relative flex items-center justify-center space-x-2">
                   {loading && (
-                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
                   )}
                   <span>{loading ? 'Entrando...' : 'Entrar no Sistema'}</span>
                 </div>
@@ -102,7 +102,7 @@ export default function Login() {
             </form>
           </div>
 
-          <div className="mt-4 text-center text-xs text-blue-200/60">
+          <div className="mt-6 text-center text-sm text-blue-200/60">
             Versão 1.0 • Desenvolvimento SYSTEMTRUCK
           </div>
         </div>
