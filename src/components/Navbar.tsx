@@ -76,11 +76,11 @@ export default function Navbar() {
       <Disclosure as="nav" className="bg-indigo-600">
         {() => (
           <>
-            <div className="mx-auto max-w-full px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-full px-3 sm:px-4 lg:px-6">
               <div className="flex h-16 justify-between">
                 <div className="flex">
                   <div className="flex flex-shrink-0 items-center">
-                    <span className="text-white text-xl font-bold">Sistema de Frota</span>
+                    <span className="text-white text-lg font-bold">Sistema de Frota</span>
                   </div>
                 </div>
                 <div className="flex items-center">
@@ -88,13 +88,13 @@ export default function Navbar() {
                     type="button"
                     className="rounded-full bg-indigo-700 p-1 text-white hover:bg-indigo-800 focus:outline-none"
                   >
-                    <BellIcon className="h-6 w-6" aria-hidden="true" />
+                    <BellIcon className="h-5 w-5" aria-hidden="true" />
                   </button>
 
                   <Menu as="div" className="relative ml-3">
                     <Menu.Button className="flex rounded-full bg-indigo-700 text-sm focus:outline-none">
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500">
-                        <span className="text-sm font-medium leading-none text-white">
+                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-indigo-500">
+                        <span className="text-xs font-medium leading-none text-white">
                           {user?.email?.[0].toUpperCase()}
                         </span>
                       </span>
@@ -108,16 +108,16 @@ export default function Navbar() {
                       leaveFrom="transform opacity-100 scale-100"
                       leaveTo="transform opacity-0 scale-95"
                     >
-                      <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <Menu.Items className="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                         <Menu.Item>
                           {({ active }) => (
                             <button
                               onClick={() => setIsPasswordModalOpen(true)}
                               className={`${
                                 active ? 'bg-gray-100' : ''
-                              } flex w-full items-center px-4 py-2 text-sm text-gray-700 text-left`}
+                              } flex w-full items-center px-3 py-2 text-xs text-gray-700 text-left`}
                             >
-                              <KeyIcon className="mr-3 h-4 w-4" />
+                              <KeyIcon className="mr-2 h-3 w-3" />
                               Alterar Senha
                             </button>
                           )}
@@ -136,7 +136,7 @@ export default function Navbar() {
                               }}
                               className={`${
                                 active ? 'bg-gray-100' : ''
-                              } block w-full px-4 py-2 text-sm text-gray-700 text-left`}
+                              } block w-full px-3 py-2 text-xs text-gray-700 text-left`}
                             >
                               Limpar Cache
                             </button>
@@ -148,7 +148,7 @@ export default function Navbar() {
                               onClick={handleSignOut}
                               className={`${
                                 active ? 'bg-gray-100' : ''
-                              } block w-full px-4 py-2 text-sm text-gray-700 text-left`}
+                              } block w-full px-3 py-2 text-xs text-gray-700 text-left`}
                             >
                               Sair
                             </button>
@@ -167,16 +167,16 @@ export default function Navbar() {
       {/* Modal de Alterar Senha */}
       {isPasswordModalOpen && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
+          <div className="bg-white rounded-lg max-w-sm w-full p-4">
             <div className="flex items-center mb-4">
-              <KeyIcon className="h-6 w-6 text-indigo-600 mr-2" />
-              <h2 className="text-lg font-medium text-gray-900">Alterar Senha</h2>
+              <KeyIcon className="h-5 w-5 text-indigo-600 mr-2" />
+              <h2 className="text-base font-medium text-gray-900">Alterar Senha</h2>
             </div>
             
             <form onSubmit={handleChangePassword}>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="currentPassword" className="block text-xs font-medium text-gray-700">
                     Senha Atual
                   </label>
                   <input
@@ -184,12 +184,12 @@ export default function Navbar() {
                     name="currentPassword"
                     id="currentPassword"
                     required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs"
                     placeholder="Digite sua senha atual"
                   />
                 </div>
                 <div>
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="newPassword" className="block text-xs font-medium text-gray-700">
                     Nova Senha
                   </label>
                   <input
@@ -198,12 +198,12 @@ export default function Navbar() {
                     id="newPassword"
                     required
                     minLength={6}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs"
                     placeholder="Digite a nova senha (mín. 6 caracteres)"
                   />
                 </div>
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="confirmPassword" className="block text-xs font-medium text-gray-700">
                     Confirmar Nova Senha
                   </label>
                   <input
@@ -212,27 +212,27 @@ export default function Navbar() {
                     id="confirmPassword"
                     required
                     minLength={6}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs"
                     placeholder="Confirme a nova senha"
                   />
                 </div>
               </div>
-              <div className="mt-6 flex justify-end space-x-3">
+              <div className="mt-4 flex justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setIsPasswordModalOpen(false)}
-                  className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+                  className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isChangingPassword}
-                  className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+                  className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-3 py-1 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {isChangingPassword ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>

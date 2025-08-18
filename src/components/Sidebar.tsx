@@ -178,8 +178,8 @@ export default function Sidebar() {
   }
 
   return (
-    <div className="flex flex-col w-64 bg-gray-800 h-[calc(100vh-4rem)] overflow-y-auto">
-      <nav className="mt-5 flex-1 space-y-1 px-2 pb-4">
+    <div className="flex flex-col w-56 bg-gray-800 h-[calc(100vh-4rem)] overflow-y-auto">
+      <nav className="mt-3 flex-1 space-y-1 px-2 pb-3">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href
           const hasActiveSubmenu = isInSubmenu(item)
@@ -196,21 +196,21 @@ export default function Sidebar() {
                       isActive || hasActiveSubmenu
                         ? 'bg-gray-900 text-white'
                         : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                    } group flex items-center justify-between w-full px-2 py-2 text-sm font-medium rounded-md transition-colors duration-200`}
+                    } group flex items-center justify-between w-full px-2 py-1.5 text-xs font-medium rounded-md transition-colors duration-200`}
                   >
                     <div className="flex items-center">
                       <item.icon
                         className={`${
                           isActive || hasActiveSubmenu ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300'
-                        } mr-3 flex-shrink-0 h-6 w-6`}
+                        } mr-2 flex-shrink-0 h-4 w-4`}
                         aria-hidden="true"
                       />
                       {item.name}
                     </div>
                     {isExpanded ? (
-                      <ChevronDownIcon className="h-4 w-4 text-gray-400 transition-transform duration-200" />
+                      <ChevronDownIcon className="h-3 w-3 text-gray-400 transition-transform duration-200" />
                     ) : (
-                      <ChevronRightIcon className="h-4 w-4 text-gray-400 transition-transform duration-200" />
+                      <ChevronRightIcon className="h-3 w-3 text-gray-400 transition-transform duration-200" />
                     )}
                   </button>
                   
@@ -218,7 +218,7 @@ export default function Sidebar() {
                   <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
                     isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                   }`}>
-                    <div className="ml-6 mt-1 space-y-1 border-l border-gray-600 pl-4">
+                    <div className="ml-4 mt-1 space-y-1 border-l border-gray-600 pl-3">
                       {item.submenu.map((subitem) => {
                         const isSubActive = location.pathname === subitem.href
                         return (
@@ -229,12 +229,12 @@ export default function Sidebar() {
                               isSubActive
                                 ? 'bg-gray-900 text-white border-l-2 border-indigo-500'
                                 : 'text-gray-300 hover:bg-gray-700 hover:text-white border-l-2 border-transparent hover:border-gray-500'
-                            } group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200`}
+                            } group flex items-center px-2 py-1.5 text-xs font-medium rounded-md transition-all duration-200`}
                           >
                             <subitem.icon
                               className={`${
                                 isSubActive ? 'text-indigo-400' : 'text-gray-400 group-hover:text-gray-300'
-                              } mr-3 flex-shrink-0 h-4 w-4`}
+                              } mr-2 flex-shrink-0 h-3 w-3`}
                               aria-hidden="true"
                             />
                             <span className="truncate">{subitem.name}</span>
@@ -251,12 +251,12 @@ export default function Sidebar() {
                     isActive
                       ? 'bg-gray-900 text-white border-r-2 border-indigo-500'
                       : 'text-gray-300 hover:bg-gray-700 hover:text-white border-r-2 border-transparent hover:border-gray-500'
-                  } group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-all duration-200`}
+                  } group flex items-center px-2 py-1.5 text-xs font-medium rounded-md transition-all duration-200`}
                 >
                   <item.icon
                     className={`${
                       isActive ? 'text-indigo-400' : 'text-gray-400 group-hover:text-gray-300'
-                    } mr-3 flex-shrink-0 h-6 w-6`}
+                    } mr-2 flex-shrink-0 h-4 w-4`}
                     aria-hidden="true"
                   />
                   <span className="truncate">{item.name}</span>
