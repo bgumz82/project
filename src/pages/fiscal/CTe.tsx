@@ -8,6 +8,9 @@ import {
   PlusIcon,
   DocumentTextIcon,
   XMarkIcon,
+  EyeIcon,
+  DocumentArrowDownIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline'
 import { 
   getCTeDocumentos, 
@@ -125,6 +128,36 @@ export default function CTe() {
     }
   }
 
+  const handleViewPDF = (documento: CTeDocumento) => {
+    if (documento.pdf_path) {
+      // Abrir PDF em nova aba
+      window.open(documento.pdf_path, '_blank')
+    } else {
+      toast.error('PDF não disponível para este documento')
+    }
+  }
+
+  const handleGenerateFiles = async (documento: CTeDocumento) => {
+    try {
+      // Simular geração de arquivos (aqui você integraria com seu sistema de geração)
+      toast.success('Gerando arquivos XML e PDF...')
+      
+      // Atualizar status dos arquivos
+      await updateCTeDocumento(documento.id, {
+        ...documento,
+        // Simular que os arquivos foram gerados
+      })
+      
+      // Atualizar lista
+      queryClient.invalidateQueries({ queryKey: ['cte-documentos'] })
+      
+      toast.success('Arquivos gerados com sucesso!')
+    } catch (error: any) {
+      console.error('Error generating files:', error)
+      toast.error('Erro ao gerar arquivos')
+    }
+  }
+
   const filteredDocumentos = filterStatus === 'todos' 
     ? documentos 
     : documentos?.filter(d => d.status === filterStatus)
@@ -197,7 +230,7 @@ export default function CTe() {
                         Status
                       </th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        Observações
+                        Arquivos
                       </th>
                       <th className="relative py-3.5 pl-3 pr-4 sm:pr-6">
                         <span className="sr-only">Ações</span>
@@ -229,10 +262,41 @@ export default function CTe() {
                             {STATUS_LABELS[documento.status]}
                           </span>
                         </td>
-                        <td className="px-3 py-4 text-sm text-gray-500">
-                          {documento.observacoes || '-'}
+                        <td className="px-3 py-4 text-sm">
+                          <div className="flex items-center space-x-2">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              documento.xml_gerado 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              XML {documento.xml_gerado ? '✓' : '○'}
+                            </span>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              documento.pdf_gerado 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              PDF {documento.pdf_gerado ? '✓' : '○'}
+                            </span>
+                          </div>
                         </td>
                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                          {documento.pdf_gerado && documento.pdf_path && (
+                            <button
+                              onClick={() => handleViewPDF(documento)}
+                              className="text-blue-600 hover:text-blue-900 mr-4"
+                              title="Visualizar PDF"
+                            >
+                              <EyeIcon className="h-5 w-5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleGenerateFiles(documento)}
+                            className="text-green-600 hover:text-green-900 mr-4"
+                            title="Gerar arquivos"
+                          >
+                            <DocumentArrowDownIcon className="h-5 w-5" />
+                          </button>
                           <button
                             onClick={() => handleEdit(documento)}
                             className="text-indigo-600 hover:text-indigo-900 mr-4"
@@ -299,29 +363,30 @@ export default function CTe() {
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                   <div>
                     <label htmlFor="numero_cte" className="block text-sm font-medium text-gray-700">
-                      Número CT-e *
+                      Número CT-e
                     </label>
                     <input
                       type="text"
                       name="numero_cte"
                       id="numero_cte"
                       defaultValue={selectedDocumento?.numero_cte}
-                      required
-                      placeholder="000000001"
+                      placeholder="AUTO (automático)"
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Deixe vazio ou digite "AUTO" para numeração automática
+                    </p>
                   </div>
 
                   <div>
                     <label htmlFor="serie" className="block text-sm font-medium text-gray-700">
-                      Série *
+                      Série
                     </label>
                     <input
                       type="text"
                       name="serie"
                       id="serie"
-                      defaultValue={selectedDocumento?.serie}
-                      required
+                      defaultValue={selectedDocumento?.serie || '1'}
                       placeholder="1"
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     />

@@ -97,7 +97,12 @@ export default function EmpresasFiscais() {
       ie: formData.get('ie') as string || null,
       endereco_completo: formData.get('endereco_completo') as string,
       rntrc: formData.get('rntrc') as string || null,
-      status: formData.get('status') as 'ativo' | 'inativo' | 'suspenso'
+      status: formData.get('status') as 'ativo' | 'inativo' | 'suspenso',
+      proximo_numero_cte: parseInt(formData.get('proximo_numero_cte') as string) || 1,
+      proximo_numero_mdfe: parseInt(formData.get('proximo_numero_mdfe') as string) || 1,
+      serie_padrao_cte: formData.get('serie_padrao_cte') as string || '1',
+      serie_padrao_mdfe: formData.get('serie_padrao_mdfe') as string || '1',
+      path_arquivos: formData.get('path_arquivos') as string || null
     }
 
     if (selectedEmpresa) {
@@ -181,6 +186,9 @@ export default function EmpresasFiscais() {
                             <div className="font-medium text-gray-900">{empresa.razao_social}</div>
                             <div className="text-gray-500 text-xs truncate max-w-xs">
                               {empresa.endereco_completo}
+                            </div>
+                            <div className="text-gray-400 text-xs mt-1">
+                              CT-e: {empresa.proximo_numero_cte || 1} • MDF-e: {empresa.proximo_numero_mdfe || 1}
                             </div>
                           </div>
                         </td>
@@ -336,6 +344,87 @@ export default function EmpresasFiscais() {
                       <option value="inativo">Inativo</option>
                       <option value="suspenso">Suspenso</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* Configurações de Numeração */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Configurações de Numeração</h3>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="proximo_numero_cte" className="block text-sm font-medium text-gray-700">
+                        Próximo Número CT-e
+                      </label>
+                      <input
+                        type="number"
+                        name="proximo_numero_cte"
+                        id="proximo_numero_cte"
+                        defaultValue={selectedEmpresa?.proximo_numero_cte || 1}
+                        min="1"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="proximo_numero_mdfe" className="block text-sm font-medium text-gray-700">
+                        Próximo Número MDF-e
+                      </label>
+                      <input
+                        type="number"
+                        name="proximo_numero_mdfe"
+                        id="proximo_numero_mdfe"
+                        defaultValue={selectedEmpresa?.proximo_numero_mdfe || 1}
+                        min="1"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="serie_padrao_cte" className="block text-sm font-medium text-gray-700">
+                        Série Padrão CT-e
+                      </label>
+                      <input
+                        type="text"
+                        name="serie_padrao_cte"
+                        id="serie_padrao_cte"
+                        defaultValue={selectedEmpresa?.serie_padrao_cte || '1'}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="serie_padrao_mdfe" className="block text-sm font-medium text-gray-700">
+                        Série Padrão MDF-e
+                      </label>
+                      <input
+                        type="text"
+                        name="serie_padrao_mdfe"
+                        id="serie_padrao_mdfe"
+                        defaultValue={selectedEmpresa?.serie_padrao_mdfe || '1'}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Configurações de Arquivos */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Configurações de Arquivos</h3>
+                  <div>
+                    <label htmlFor="path_arquivos" className="block text-sm font-medium text-gray-700">
+                      Path Base para Arquivos
+                    </label>
+                    <input
+                      type="text"
+                      name="path_arquivos"
+                      id="path_arquivos"
+                      defaultValue={selectedEmpresa?.path_arquivos || ''}
+                      placeholder="/uploads/fiscal/empresa_id"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Caminho onde serão salvos os arquivos XML e PDF dos documentos fiscais
+                    </p>
                   </div>
                 </div>
               </div>
