@@ -272,7 +272,7 @@ export default function CTe() {
                             <div className="group">
                               <button
                                 onClick={() => handleCopyChaveAcesso(documento.chave_acesso!)}
-                                className="font-mono text-xs text-gray-600 hover:text-indigo-600 cursor-pointer"
+                                className="font-mono text-xs text-gray-600 hover:text-indigo-600 cursor-pointer break-all"
                                 title="Clique para copiar"
                               >
                                 {formatChaveAcesso(documento.chave_acesso)}

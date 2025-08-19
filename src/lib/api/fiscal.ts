@@ -796,10 +796,8 @@ export function validateCNPJ(cnpj: string): boolean {
 }
 
 export function formatChaveAcesso(chave: string): string {
-  if (!chave || chave.length !== 44) return chave
-  
-  // Formatar chave em grupos de 4 dígitos
-  return chave.replace(/(\d{4})/g, '$1 ').trim()
+  // Retornar chave sem formatação (sem espaços)
+  return chave || ''
 }
 
 export function getUFFromCode(codigo: string): string {
