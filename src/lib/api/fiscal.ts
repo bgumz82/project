@@ -431,8 +431,8 @@ export async function createCTeDocumento(documento: CTeDocumentoCreate): Promise
     // Usar série padrão da empresa se não fornecida
     const serieFinal = documento.serie || empresa.serie_padrao_cte || '001'
     
-    // Usar código UF da empresa se não fornecido
-    const codigoUFFinal = documento.codigo_uf || empresa.codigo_uf || '35'
+    // SEMPRE usar código UF da empresa (não permitir override)
+    const codigoUFFinal = empresa.codigo_uf || '35'
     
     // Verificar se número/série já existe para esta empresa
     const existingDoc = await queryOne(`
@@ -635,8 +635,8 @@ export async function createMDFeDocumento(documento: MDFeDocumentoCreate): Promi
     // Usar série padrão da empresa se não fornecida
     const serieFinal = documento.serie || empresa.serie_padrao_mdfe || '001'
     
-    // Usar código UF da empresa se não fornecido
-    const codigoUFFinal = documento.codigo_uf || empresa.codigo_uf || '35'
+    // SEMPRE usar código UF da empresa (não permitir override)
+    const codigoUFFinal = empresa.codigo_uf || '35'
     
     // Verificar se número/série já existe para esta empresa
     const existingDoc = await queryOne(`

@@ -434,28 +434,6 @@ export default function CTe() {
                     </p>
                   </div>
 
-                  <div>
-                    <label htmlFor="codigo_uf" className="block text-sm font-medium text-gray-700">
-                      UF Emissão
-                    </label>
-                    <select
-                      name="codigo_uf"
-                      id="codigo_uf"
-                      defaultValue={selectedDocumento?.codigo_uf || '35'}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    >
-                      <option value="35">SP (35)</option>
-                      <option value="33">RJ (33)</option>
-                      <option value="31">MG (31)</option>
-                      <option value="41">PR (41)</option>
-                      <option value="43">RS (43)</option>
-                      <option value="42">SC (42)</option>
-                      <option value="29">BA (29)</option>
-                      <option value="52">GO (52)</option>
-                      <option value="32">ES (32)</option>
-                      <option value="53">DF (53)</option>
-                    </select>
-                  </div>
 
                   <div>
                     <label htmlFor="forma_emissao" className="block text-sm font-medium text-gray-700">
