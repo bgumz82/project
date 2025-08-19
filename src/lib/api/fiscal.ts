@@ -158,9 +158,14 @@ export async function createEmpresaFiscal(empresa: EmpresaFiscalCreate): Promise
         endereco_completo,
         rntrc,
         status,
+        proximo_numero_cte,
+        proximo_numero_mdfe,
+        serie_padrao_cte,
+        serie_padrao_mdfe,
+        path_arquivos,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
       RETURNING *
     `, [
       empresa.razao_social,
@@ -168,7 +173,12 @@ export async function createEmpresaFiscal(empresa: EmpresaFiscalCreate): Promise
       empresa.ie,
       empresa.endereco_completo,
       empresa.rntrc,
-      empresa.status || 'ativo'
+      empresa.status || 'ativo',
+      empresa.proximo_numero_cte || 1,
+      empresa.proximo_numero_mdfe || 1,
+      empresa.serie_padrao_cte || '1',
+      empresa.serie_padrao_mdfe || '1',
+      empresa.path_arquivos
     ])
 
     if (!result) {
@@ -208,8 +218,8 @@ export async function updateEmpresaFiscal(id: string, empresa: Partial<EmpresaFi
     
     // Construir query dinamicamente
     const updates: string[] = []
-    const values: any[] = [id]
-    let paramIndex = 2
+    const values: any[] = []
+    let paramIndex = 1
 
     if (empresa.razao_social !== undefined) {
       updates.push(`razao_social = $${paramIndex}`)
@@ -247,6 +257,36 @@ export async function updateEmpresaFiscal(id: string, empresa: Partial<EmpresaFi
       paramIndex++
     }
 
+    if (empresa.proximo_numero_cte !== undefined) {
+      updates.push(`proximo_numero_cte = $${paramIndex}`)
+      values.push(empresa.proximo_numero_cte)
+      paramIndex++
+    }
+
+    if (empresa.proximo_numero_mdfe !== undefined) {
+      updates.push(`proximo_numero_mdfe = $${paramIndex}`)
+      values.push(empresa.proximo_numero_mdfe)
+      paramIndex++
+    }
+
+    if (empresa.serie_padrao_cte !== undefined) {
+      updates.push(`serie_padrao_cte = $${paramIndex}`)
+      values.push(empresa.serie_padrao_cte)
+      paramIndex++
+    }
+
+    if (empresa.serie_padrao_mdfe !== undefined) {
+      updates.push(`serie_padrao_mdfe = $${paramIndex}`)
+      values.push(empresa.serie_padrao_mdfe)
+      paramIndex++
+    }
+
+    if (empresa.path_arquivos !== undefined) {
+      updates.push(`path_arquivos = $${paramIndex}`)
+      values.push(empresa.path_arquivos)
+      paramIndex++
+    }
+
     // Sempre atualizar updated_at
     updates.push(`updated_at = NOW()`)
 
@@ -254,10 +294,13 @@ export async function updateEmpresaFiscal(id: string, empresa: Partial<EmpresaFi
       throw new Error('Nenhum campo para atualizar')
     }
 
+    // Adicionar ID como último parâmetro
+    values.push(id)
+
     const result = await queryOne(`
       UPDATE empresas_fiscais
       SET ${updates.join(', ')}
-      WHERE id = $1
+      WHERE id = $${paramIndex}
       RETURNING *
     `, values)
 
@@ -335,27 +378,30 @@ export async function createCTeDocumento(documento: CTeDocumentoCreate): Promise
     
     // Verificar se empresa existe
     const empresa = await queryOne(`
-      SELECT id FROM empresas_fiscais WHERE id = $1
+      SELECT id, serie_padrao_cte FROM empresas_fiscais WHERE id = $1
     `, [documento.empresa_id])
     
     if (!empresa) {
       throw new Error('Empresa fiscal não encontrada')
     }
     
-    // Obter próximo número automaticamente se não fornecido
+    // Obter próximo número automaticamente se não fornecido ou se for "AUTO"
     let numeroFinal = documento.numero_cte
-    if (!numeroFinal || numeroFinal === 'AUTO') {
+    if (!numeroFinal || numeroFinal === 'AUTO' || numeroFinal.trim() === '') {
       const nextNumber = await query(`
         SELECT get_next_cte_number($1) as numero
       `, [documento.empresa_id])
       numeroFinal = nextNumber[0].numero.toString()
     }
     
+    // Usar série padrão da empresa se não fornecida
+    const serieFinal = documento.serie || empresa.serie_padrao_cte || '1'
+    
     // Verificar se número/série já existe para esta empresa
     const existingDoc = await queryOne(`
       SELECT id FROM cte_documentos 
       WHERE empresa_id = $1 AND numero_cte = $2 AND serie = $3
-    `, [documento.empresa_id, numeroFinal, documento.serie])
+    `, [documento.empresa_id, numeroFinal, serieFinal])
     
     if (existingDoc) {
       throw new Error('Número CT-e e série já existem para esta empresa')
@@ -376,7 +422,7 @@ export async function createCTeDocumento(documento: CTeDocumentoCreate): Promise
     `, [
       documento.empresa_id,
       numeroFinal,
-      documento.serie,
+      serieFinal,
       documento.data_emissao,
       documento.status || 'pendente',
       documento.observacoes
@@ -400,8 +446,8 @@ export async function updateCTeDocumento(id: string, documento: Partial<CTeDocum
     
     // Construir query dinamicamente
     const updates: string[] = []
-    const values: any[] = [id]
-    let paramIndex = 2
+    const values: any[] = []
+    let paramIndex = 1
 
     if (documento.empresa_id !== undefined) {
       updates.push(`empresa_id = $${paramIndex}`)
@@ -446,10 +492,13 @@ export async function updateCTeDocumento(id: string, documento: Partial<CTeDocum
       throw new Error('Nenhum campo para atualizar')
     }
 
+    // Adicionar ID como último parâmetro
+    values.push(id)
+
     const result = await queryOne(`
       UPDATE cte_documentos
       SET ${updates.join(', ')}
-      WHERE id = $1
+      WHERE id = $${paramIndex}
       RETURNING *
     `, values)
 
@@ -514,27 +563,30 @@ export async function createMDFeDocumento(documento: MDFeDocumentoCreate): Promi
     
     // Verificar se empresa existe
     const empresa = await queryOne(`
-      SELECT id FROM empresas_fiscais WHERE id = $1
+      SELECT id, serie_padrao_mdfe FROM empresas_fiscais WHERE id = $1
     `, [documento.empresa_id])
     
     if (!empresa) {
       throw new Error('Empresa fiscal não encontrada')
     }
     
-    // Obter próximo número automaticamente se não fornecido
+    // Obter próximo número automaticamente se não fornecido ou se for "AUTO"
     let numeroFinal = documento.numero_mdfe
-    if (!numeroFinal || numeroFinal === 'AUTO') {
+    if (!numeroFinal || numeroFinal === 'AUTO' || numeroFinal.trim() === '') {
       const nextNumber = await query(`
         SELECT get_next_mdfe_number($1) as numero
       `, [documento.empresa_id])
       numeroFinal = nextNumber[0].numero.toString()
     }
     
+    // Usar série padrão da empresa se não fornecida
+    const serieFinal = documento.serie || empresa.serie_padrao_mdfe || '1'
+    
     // Verificar se número/série já existe para esta empresa
     const existingDoc = await queryOne(`
       SELECT id FROM mdfe_documentos 
       WHERE empresa_id = $1 AND numero_mdfe = $2 AND serie = $3
-    `, [documento.empresa_id, numeroFinal, documento.serie])
+    `, [documento.empresa_id, numeroFinal, serieFinal])
     
     if (existingDoc) {
       throw new Error('Número MDF-e e série já existem para esta empresa')
@@ -555,7 +607,7 @@ export async function createMDFeDocumento(documento: MDFeDocumentoCreate): Promi
     `, [
       documento.empresa_id,
       numeroFinal,
-      documento.serie,
+      serieFinal,
       documento.data_emissao,
       documento.status || 'pendente',
       documento.observacoes
@@ -579,8 +631,8 @@ export async function updateMDFeDocumento(id: string, documento: Partial<MDFeDoc
     
     // Construir query dinamicamente
     const updates: string[] = []
-    const values: any[] = [id]
-    let paramIndex = 2
+    const values: any[] = []
+    let paramIndex = 1
 
     if (documento.empresa_id !== undefined) {
       updates.push(`empresa_id = $${paramIndex}`)
@@ -625,10 +677,13 @@ export async function updateMDFeDocumento(id: string, documento: Partial<MDFeDoc
       throw new Error('Nenhum campo para atualizar')
     }
 
+    // Adicionar ID como último parâmetro
+    values.push(id)
+
     const result = await queryOne(`
       UPDATE mdfe_documentos
       SET ${updates.join(', ')}
-      WHERE id = $1
+      WHERE id = $${paramIndex}
       RETURNING *
     `, values)
 

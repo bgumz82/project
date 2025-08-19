@@ -18,6 +18,7 @@ import {
   updateCTeDocumento, 
   deleteCTeDocumento,
   getEmpresasFiscais,
+  updateDocumentFiles,
   type CTeDocumento,
   type CTeDocumentoCreate
 } from '@/lib/api/fiscal'
@@ -56,6 +57,7 @@ export default function CTe() {
     mutationFn: createCTeDocumento,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cte-documentos'] })
+      queryClient.invalidateQueries({ queryKey: ['empresas-fiscais'] }) // Atualizar numeração
       toast.success('Documento CT-e criado com sucesso!')
       setIsModalOpen(false)
       resetForm()
@@ -129,7 +131,7 @@ export default function CTe() {
   }
 
   const handleViewPDF = (documento: CTeDocumento) => {
-    if (documento.pdf_path) {
+    if (documento.pdf_path && documento.pdf_gerado) {
       // Abrir PDF em nova aba
       window.open(documento.pdf_path, '_blank')
     } else {
@@ -139,13 +141,12 @@ export default function CTe() {
 
   const handleGenerateFiles = async (documento: CTeDocumento) => {
     try {
-      // Simular geração de arquivos (aqui você integraria com seu sistema de geração)
       toast.success('Gerando arquivos XML e PDF...')
       
-      // Atualizar status dos arquivos
-      await updateCTeDocumento(documento.id, {
-        ...documento,
-        // Simular que os arquivos foram gerados
+      // Simular geração de arquivos (aqui você integraria com seu sistema de geração)
+      await updateDocumentFiles('cte', documento.id, {
+        xmlGerado: true,
+        pdfGerado: true
       })
       
       // Atualizar lista
@@ -241,7 +242,7 @@ export default function CTe() {
                     {filteredDocumentos?.map((documento) => (
                       <tr key={documento.id}>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900 font-mono">
-                          {documento.numero_cte}
+                          {documento.numero_cte.padStart(9, '0')}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           {documento.serie}
@@ -249,7 +250,7 @@ export default function CTe() {
                         <td className="px-3 py-4 text-sm text-gray-500">
                           <div>
                             <div className="font-medium">{documento.empresa?.razao_social}</div>
-                            <div className="text-xs text-gray-400">{documento.empresa?.cnpj}</div>
+                            <div className="text-xs text-gray-400 font-mono">{documento.empresa?.cnpj}</div>
                           </div>
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
@@ -354,7 +355,7 @@ export default function CTe() {
                     <option value="">Selecione uma empresa</option>
                     {empresas?.filter(e => e.status === 'ativo').map((empresa) => (
                       <option key={empresa.id} value={empresa.id}>
-                        {empresa.razao_social} - {empresa.cnpj}
+                        {empresa.razao_social} - {formatCNPJ(empresa.cnpj)}
                       </option>
                     ))}
                   </select>
@@ -386,10 +387,13 @@ export default function CTe() {
                       type="text"
                       name="serie"
                       id="serie"
-                      defaultValue={selectedDocumento?.serie || '1'}
-                      placeholder="1"
+                      defaultValue={selectedDocumento?.serie}
+                      placeholder="Série padrão da empresa"
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Deixe vazio para usar série padrão da empresa
+                    </p>
                   </div>
 
                   <div>

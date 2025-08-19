@@ -171,6 +171,9 @@ export default function EmpresasFiscais() {
                         RNTRC
                       </th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                        Numeração
+                      </th>
+                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                         Status
                       </th>
                       <th className="relative py-3.5 pl-3 pr-4 sm:pr-6">
@@ -187,9 +190,11 @@ export default function EmpresasFiscais() {
                             <div className="text-gray-500 text-xs truncate max-w-xs">
                               {empresa.endereco_completo}
                             </div>
-                            <div className="text-gray-400 text-xs mt-1">
-                              CT-e: {empresa.proximo_numero_cte || 1} • MDF-e: {empresa.proximo_numero_mdfe || 1}
-                            </div>
+                            {empresa.path_arquivos && (
+                              <div className="text-gray-400 text-xs mt-1 font-mono">
+                                📁 {empresa.path_arquivos}
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900 font-mono">
@@ -200,6 +205,16 @@ export default function EmpresasFiscais() {
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           {empresa.rntrc || '-'}
+                        </td>
+                        <td className="px-3 py-4 text-sm text-gray-500">
+                          <div className="space-y-1">
+                            <div className="text-xs">
+                              <span className="font-medium">CT-e:</span> {empresa.proximo_numero_cte || 1} (Série {empresa.serie_padrao_cte || '1'})
+                            </div>
+                            <div className="text-xs">
+                              <span className="font-medium">MDF-e:</span> {empresa.proximo_numero_mdfe || 1} (Série {empresa.serie_padrao_mdfe || '1'})
+                            </div>
+                          </div>
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm">
                           <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
@@ -252,98 +267,104 @@ export default function EmpresasFiscais() {
 
             <form onSubmit={handleSubmit}>
               <div className="space-y-6">
+                {/* Informações da Empresa */}
                 <div>
-                  <label htmlFor="razao_social" className="block text-sm font-medium text-gray-700">
-                    Razão Social *
-                  </label>
-                  <input
-                    type="text"
-                    name="razao_social"
-                    id="razao_social"
-                    defaultValue={selectedEmpresa?.razao_social}
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  />
-                </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Informações da Empresa</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="razao_social" className="block text-sm font-medium text-gray-700">
+                        Razão Social *
+                      </label>
+                      <input
+                        type="text"
+                        name="razao_social"
+                        id="razao_social"
+                        defaultValue={selectedEmpresa?.razao_social}
+                        required
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      />
+                    </div>
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="cnpj" className="block text-sm font-medium text-gray-700">
-                      CNPJ *
-                    </label>
-                    <input
-                      type="text"
-                      name="cnpj"
-                      id="cnpj"
-                      defaultValue={selectedEmpresa?.cnpj}
-                      required
-                      placeholder="00.000.000/0000-00"
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                  </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="cnpj" className="block text-sm font-medium text-gray-700">
+                          CNPJ *
+                        </label>
+                        <input
+                          type="text"
+                          name="cnpj"
+                          id="cnpj"
+                          defaultValue={selectedEmpresa?.cnpj}
+                          required
+                          placeholder="00.000.000/0000-00"
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        />
+                      </div>
 
-                  <div>
-                    <label htmlFor="ie" className="block text-sm font-medium text-gray-700">
-                      Inscrição Estadual
-                    </label>
-                    <input
-                      type="text"
-                      name="ie"
-                      id="ie"
-                      defaultValue={selectedEmpresa?.ie || ''}
-                      placeholder="000.000.000.000"
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
+                      <div>
+                        <label htmlFor="ie" className="block text-sm font-medium text-gray-700">
+                          Inscrição Estadual
+                        </label>
+                        <input
+                          type="text"
+                          name="ie"
+                          id="ie"
+                          defaultValue={selectedEmpresa?.ie || ''}
+                          placeholder="000.000.000.000"
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        />
+                      </div>
+                    </div>
 
-                <div>
-                  <label htmlFor="endereco_completo" className="block text-sm font-medium text-gray-700">
-                    Endereço Completo *
-                  </label>
-                  <textarea
-                    name="endereco_completo"
-                    id="endereco_completo"
-                    rows={3}
-                    defaultValue={selectedEmpresa?.endereco_completo}
-                    required
-                    placeholder="Rua, número, bairro, cidade, estado, CEP"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  />
-                </div>
+                    <div>
+                      <label htmlFor="endereco_completo" className="block text-sm font-medium text-gray-700">
+                        Endereço Completo *
+                      </label>
+                      <textarea
+                        name="endereco_completo"
+                        id="endereco_completo"
+                        rows={3}
+                        defaultValue={selectedEmpresa?.endereco_completo}
+                        required
+                        placeholder="Rua, número, bairro, cidade, estado, CEP"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      />
+                    </div>
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="rntrc" className="block text-sm font-medium text-gray-700">
-                      RNTRC
-                    </label>
-                    <input
-                      type="text"
-                      name="rntrc"
-                      id="rntrc"
-                      defaultValue={selectedEmpresa?.rntrc || ''}
-                      placeholder="12345678"
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Registro Nacional de Transportadores Rodoviários de Cargas
-                    </p>
-                  </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="rntrc" className="block text-sm font-medium text-gray-700">
+                          RNTRC
+                        </label>
+                        <input
+                          type="text"
+                          name="rntrc"
+                          id="rntrc"
+                          defaultValue={selectedEmpresa?.rntrc || ''}
+                          placeholder="12345678"
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                          Registro Nacional de Transportadores Rodoviários de Cargas
+                        </p>
+                      </div>
 
-                  <div>
-                    <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                      Status
-                    </label>
-                    <select
-                      name="status"
-                      id="status"
-                      defaultValue={selectedEmpresa?.status || 'ativo'}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    >
-                      <option value="ativo">Ativo</option>
-                      <option value="inativo">Inativo</option>
-                      <option value="suspenso">Suspenso</option>
-                    </select>
+                      <div>
+                        <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                          Status
+                        </label>
+                        <select
+                          name="status"
+                          id="status"
+                          defaultValue={selectedEmpresa?.status || 'ativo'}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        >
+                          <option value="ativo">Ativo</option>
+                          <option value="inativo">Inativo</option>
+                          <option value="suspenso">Suspenso</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -363,6 +384,9 @@ export default function EmpresasFiscais() {
                         min="1"
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Próximo número que será usado para CT-e
+                      </p>
                     </div>
 
                     <div>
@@ -377,6 +401,9 @@ export default function EmpresasFiscais() {
                         min="1"
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Próximo número que será usado para MDF-e
+                      </p>
                     </div>
 
                     <div>
@@ -423,7 +450,8 @@ export default function EmpresasFiscais() {
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     />
                     <p className="mt-1 text-xs text-gray-500">
-                      Caminho onde serão salvos os arquivos XML e PDF dos documentos fiscais
+                      Caminho onde serão salvos os arquivos XML e PDF dos documentos fiscais.
+                      Se vazio, será usado: /uploads/fiscal/[id_empresa]
                     </p>
                   </div>
                 </div>
