@@ -14,6 +14,7 @@ import {
   updateEmpresaFiscal, 
   deleteEmpresaFiscal,
   formatCNPJ,
+  CODIGOS_UF,
   type EmpresaFiscal,
   type EmpresaFiscalCreate
 } from '@/lib/api/fiscal'
@@ -96,12 +97,13 @@ export default function EmpresasFiscais() {
       cnpj: formData.get('cnpj') as string,
       ie: formData.get('ie') as string || null,
       endereco_completo: formData.get('endereco_completo') as string,
+      codigo_uf: formData.get('codigo_uf') as string || '35',
       rntrc: formData.get('rntrc') as string || null,
       status: formData.get('status') as 'ativo' | 'inativo' | 'suspenso',
       proximo_numero_cte: parseInt(formData.get('proximo_numero_cte') as string) || 1,
       proximo_numero_mdfe: parseInt(formData.get('proximo_numero_mdfe') as string) || 1,
-      serie_padrao_cte: formData.get('serie_padrao_cte') as string || '1',
-      serie_padrao_mdfe: formData.get('serie_padrao_mdfe') as string || '1',
+      serie_padrao_cte: formData.get('serie_padrao_cte') as string || '001',
+      serie_padrao_mdfe: formData.get('serie_padrao_mdfe') as string || '001',
       path_arquivos: formData.get('path_arquivos') as string || null
     }
 
@@ -165,7 +167,7 @@ export default function EmpresasFiscais() {
                         CNPJ
                       </th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        IE
+                        UF/IE
                       </th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                         RNTRC
@@ -200,8 +202,11 @@ export default function EmpresasFiscais() {
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900 font-mono">
                           {formatCNPJ(empresa.cnpj)}
                         </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {empresa.ie || '-'}
+                        <td className="px-3 py-4 text-sm text-gray-500">
+                          <div>
+                            <div className="font-medium">UF: {empresa.codigo_uf}</div>
+                            <div className="text-xs">{empresa.ie || 'IE não informada'}</div>
+                          </div>
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           {empresa.rntrc || '-'}
@@ -209,10 +214,10 @@ export default function EmpresasFiscais() {
                         <td className="px-3 py-4 text-sm text-gray-500">
                           <div className="space-y-1">
                             <div className="text-xs">
-                              <span className="font-medium">CT-e:</span> {empresa.proximo_numero_cte || 1} (Série {empresa.serie_padrao_cte || '1'})
+                              <span className="font-medium">CT-e:</span> {empresa.proximo_numero_cte || 1} (Série {empresa.serie_padrao_cte || '001'})
                             </div>
                             <div className="text-xs">
-                              <span className="font-medium">MDF-e:</span> {empresa.proximo_numero_mdfe || 1} (Série {empresa.serie_padrao_mdfe || '1'})
+                              <span className="font-medium">MDF-e:</span> {empresa.proximo_numero_mdfe || 1} (Série {empresa.serie_padrao_mdfe || '001'})
                             </div>
                           </div>
                         </td>
@@ -252,7 +257,7 @@ export default function EmpresasFiscais() {
       {/* Modal de Cadastro/Edição */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-medium">
                 {selectedEmpresa ? 'Editar Empresa Fiscal' : 'Nova Empresa Fiscal'}
@@ -285,7 +290,7 @@ export default function EmpresasFiscais() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <div>
                         <label htmlFor="cnpj" className="block text-sm font-medium text-gray-700">
                           CNPJ *
@@ -299,6 +304,25 @@ export default function EmpresasFiscais() {
                           placeholder="00.000.000/0000-00"
                           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
+                      </div>
+
+                      <div>
+                        <label htmlFor="codigo_uf" className="block text-sm font-medium text-gray-700">
+                          UF *
+                        </label>
+                        <select
+                          name="codigo_uf"
+                          id="codigo_uf"
+                          defaultValue={selectedEmpresa?.codigo_uf || '35'}
+                          required
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        >
+                          {Object.entries(CODIGOS_UF).map(([uf, codigo]) => (
+                            <option key={codigo} value={codigo}>
+                              {uf} ({codigo})
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
                       <div>
@@ -414,9 +438,13 @@ export default function EmpresasFiscais() {
                         type="text"
                         name="serie_padrao_cte"
                         id="serie_padrao_cte"
-                        defaultValue={selectedEmpresa?.serie_padrao_cte || '1'}
+                        defaultValue={selectedEmpresa?.serie_padrao_cte || '001'}
+                        maxLength={3}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Série padrão para documentos CT-e (3 dígitos)
+                      </p>
                     </div>
 
                     <div>
@@ -427,9 +455,13 @@ export default function EmpresasFiscais() {
                         type="text"
                         name="serie_padrao_mdfe"
                         id="serie_padrao_mdfe"
-                        defaultValue={selectedEmpresa?.serie_padrao_mdfe || '1'}
+                        defaultValue={selectedEmpresa?.serie_padrao_mdfe || '001'}
+                        maxLength={3}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Série padrão para documentos MDF-e (3 dígitos)
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -453,6 +485,15 @@ export default function EmpresasFiscais() {
                       Caminho onde serão salvos os arquivos XML e PDF dos documentos fiscais.
                       Se vazio, será usado: /uploads/fiscal/[id_empresa]
                     </p>
+                    <div className="mt-2 text-xs text-gray-600 bg-gray-50 p-3 rounded-md">
+                      <p className="font-medium mb-1">Estrutura de arquivos gerada:</p>
+                      <p className="font-mono">• {'{chave_acesso}'}-procCTe.xml</p>
+                      <p className="font-mono">• {'{chave_acesso}'}-cte.xml</p>
+                      <p className="font-mono">• {'{chave_acesso}'}-dacte.pdf</p>
+                      <p className="font-mono">• {'{chave_acesso}'}-procMDFe.xml</p>
+                      <p className="font-mono">• {'{chave_acesso}'}-mdfe.xml</p>
+                      <p className="font-mono">• {'{chave_acesso}'}-damdfe.pdf</p>
+                    </div>
                   </div>
                 </div>
               </div>

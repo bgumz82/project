@@ -10,7 +10,7 @@ import {
   XMarkIcon,
   EyeIcon,
   DocumentArrowDownIcon,
-  CheckCircleIcon,
+  ClipboardDocumentIcon,
 } from '@heroicons/react/24/outline'
 import { 
   getCTeDocumentos, 
@@ -20,6 +20,8 @@ import {
   getEmpresasFiscais,
   updateDocumentFiles,
   formatCNPJ,
+  formatChaveAcesso,
+  getUFFromCode,
   type CTeDocumento,
   type CTeDocumentoCreate
 } from '@/lib/api/fiscal'
@@ -109,6 +111,8 @@ export default function CTe() {
       numero_cte: formData.get('numero_cte') as string,
       serie: formData.get('serie') as string,
       data_emissao: formData.get('data_emissao') as string,
+      codigo_uf: formData.get('codigo_uf') as string,
+      forma_emissao: parseInt(formData.get('forma_emissao') as string) || 1,
       status: formData.get('status') as 'pendente' | 'emitido' | 'cancelado',
       observacoes: formData.get('observacoes') as string || null
     }
@@ -138,6 +142,11 @@ export default function CTe() {
     } else {
       toast.error('PDF não disponível para este documento')
     }
+  }
+
+  const handleCopyChaveAcesso = (chave: string) => {
+    navigator.clipboard.writeText(chave)
+    toast.success('Chave de acesso copiada!')
   }
 
   const handleGenerateFiles = async (documento: CTeDocumento) => {
@@ -217,13 +226,13 @@ export default function CTe() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        Número CT-e
-                      </th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        Série
+                        Número/Série
                       </th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                         Empresa
+                      </th>
+                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                        Chave de Acesso
                       </th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                         Data Emissão
@@ -242,17 +251,39 @@ export default function CTe() {
                   <tbody className="divide-y divide-gray-200 bg-white">
                     {filteredDocumentos?.map((documento) => (
                       <tr key={documento.id}>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900 font-mono">
-                          {documento.numero_cte.padStart(9, '0')}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {documento.serie}
+                        <td className="px-3 py-4 text-sm">
+                          <div>
+                            <div className="font-mono font-medium text-gray-900">
+                              {documento.numero_cte.padStart(9, '0')}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Série: {documento.serie} • UF: {getUFFromCode(documento.codigo_uf)} • Forma: {documento.forma_emissao === 1 ? 'Normal' : 'Contingência'}
+                            </div>
+                          </div>
                         </td>
                         <td className="px-3 py-4 text-sm text-gray-500">
                           <div>
                             <div className="font-medium">{documento.empresa?.razao_social}</div>
-                            <div className="text-xs text-gray-400 font-mono">{documento.empresa?.cnpj}</div>
+                            <div className="text-xs text-gray-400 font-mono">{formatCNPJ(documento.empresa?.cnpj || '')}</div>
                           </div>
+                        </td>
+                        <td className="px-3 py-4 text-sm">
+                          {documento.chave_acesso ? (
+                            <div className="group">
+                              <button
+                                onClick={() => handleCopyChaveAcesso(documento.chave_acesso!)}
+                                className="font-mono text-xs text-gray-600 hover:text-indigo-600 cursor-pointer"
+                                title="Clique para copiar"
+                              >
+                                {formatChaveAcesso(documento.chave_acesso)}
+                              </button>
+                              <div className="text-xs text-gray-400 mt-1">
+                                DV: {documento.dv}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-xs">Chave não gerada</span>
+                          )}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           {format(parseISO(documento.data_emissao), 'dd/MM/yyyy')}
@@ -265,15 +296,15 @@ export default function CTe() {
                           </span>
                         </td>
                         <td className="px-3 py-4 text-sm">
-                          <div className="flex items-center space-x-2">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          <div className="flex items-center space-x-1">
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
                               documento.xml_gerado 
                                 ? 'bg-green-100 text-green-800' 
                                 : 'bg-gray-100 text-gray-800'
                             }`}>
                               XML {documento.xml_gerado ? '✓' : '○'}
                             </span>
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
                               documento.pdf_gerado 
                                 ? 'bg-blue-100 text-blue-800' 
                                 : 'bg-gray-100 text-gray-800'
@@ -281,6 +312,11 @@ export default function CTe() {
                               PDF {documento.pdf_gerado ? '✓' : '○'}
                             </span>
                           </div>
+                          {documento.xml_gerado && documento.xml_gerado_em && (
+                            <div className="text-xs text-gray-400 mt-1">
+                              {format(parseISO(documento.xml_gerado_em), 'dd/MM HH:mm')}
+                            </div>
+                          )}
                         </td>
                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                           {documento.pdf_gerado && documento.pdf_path && (
@@ -327,7 +363,7 @@ export default function CTe() {
       {/* Modal de Cadastro/Edição */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-medium">
                 {selectedDocumento ? 'Editar Documento CT-e' : 'Novo Documento CT-e'}
@@ -362,7 +398,7 @@ export default function CTe() {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
                   <div>
                     <label htmlFor="numero_cte" className="block text-sm font-medium text-gray-700">
                       Número CT-e
@@ -372,11 +408,11 @@ export default function CTe() {
                       name="numero_cte"
                       id="numero_cte"
                       defaultValue={selectedDocumento?.numero_cte}
-                      placeholder="AUTO (automático)"
+                      placeholder="AUTO"
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     />
                     <p className="mt-1 text-xs text-gray-500">
-                      Deixe vazio ou digite "AUTO" para numeração automática
+                      Deixe vazio ou "AUTO" para numeração automática
                     </p>
                   </div>
 
@@ -389,7 +425,8 @@ export default function CTe() {
                       name="serie"
                       id="serie"
                       defaultValue={selectedDocumento?.serie}
-                      placeholder="Série padrão da empresa"
+                      placeholder="Série padrão"
+                      maxLength={3}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     />
                     <p className="mt-1 text-xs text-gray-500">
@@ -398,18 +435,56 @@ export default function CTe() {
                   </div>
 
                   <div>
-                    <label htmlFor="data_emissao" className="block text-sm font-medium text-gray-700">
-                      Data de Emissão *
+                    <label htmlFor="codigo_uf" className="block text-sm font-medium text-gray-700">
+                      UF Emissão
                     </label>
-                    <input
-                      type="date"
-                      name="data_emissao"
-                      id="data_emissao"
-                      defaultValue={selectedDocumento?.data_emissao.split('T')[0] || format(new Date(), 'yyyy-MM-dd')}
-                      required
+                    <select
+                      name="codigo_uf"
+                      id="codigo_uf"
+                      defaultValue={selectedDocumento?.codigo_uf || '35'}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
+                    >
+                      <option value="35">SP (35)</option>
+                      <option value="33">RJ (33)</option>
+                      <option value="31">MG (31)</option>
+                      <option value="41">PR (41)</option>
+                      <option value="43">RS (43)</option>
+                      <option value="42">SC (42)</option>
+                      <option value="29">BA (29)</option>
+                      <option value="52">GO (52)</option>
+                      <option value="32">ES (32)</option>
+                      <option value="53">DF (53)</option>
+                    </select>
                   </div>
+
+                  <div>
+                    <label htmlFor="forma_emissao" className="block text-sm font-medium text-gray-700">
+                      Forma Emissão
+                    </label>
+                    <select
+                      name="forma_emissao"
+                      id="forma_emissao"
+                      defaultValue={selectedDocumento?.forma_emissao || 1}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    >
+                      <option value={1}>1 - Normal</option>
+                      <option value={8}>8 - Contingência</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="data_emissao" className="block text-sm font-medium text-gray-700">
+                    Data de Emissão *
+                  </label>
+                  <input
+                    type="date"
+                    name="data_emissao"
+                    id="data_emissao"
+                    defaultValue={selectedDocumento?.data_emissao.split('T')[0] || format(new Date(), 'yyyy-MM-dd')}
+                    required
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  />
                 </div>
 
                 <div>
@@ -441,6 +516,33 @@ export default function CTe() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   />
                 </div>
+
+                {/* Informações da Chave de Acesso */}
+                {selectedDocumento?.chave_acesso && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Informações da Chave de Acesso</h4>
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      <div>
+                        <span className="font-medium">Chave Completa:</span>
+                        <div className="font-mono mt-1 break-all">{selectedDocumento.chave_acesso}</div>
+                      </div>
+                      <div>
+                        <span className="font-medium">Arquivos Gerados:</span>
+                        <div className="mt-1 space-y-1">
+                          {selectedDocumento.xml_proc_path && (
+                            <div className="font-mono text-gray-600">{selectedDocumento.xml_proc_path.split('/').pop()}</div>
+                          )}
+                          {selectedDocumento.xml_path && (
+                            <div className="font-mono text-gray-600">{selectedDocumento.xml_path.split('/').pop()}</div>
+                          )}
+                          {selectedDocumento.pdf_path && (
+                            <div className="font-mono text-gray-600">{selectedDocumento.pdf_path.split('/').pop()}</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 flex justify-end space-x-3">

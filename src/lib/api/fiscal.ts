@@ -7,6 +7,7 @@ export interface EmpresaFiscal {
   cnpj: string
   ie: string | null
   endereco_completo: string
+  codigo_uf: string
   rntrc: string | null
   status: 'ativo' | 'inativo' | 'suspenso'
   proximo_numero_cte: number
@@ -23,6 +24,7 @@ export interface EmpresaFiscalCreate {
   cnpj: string
   ie?: string | null
   endereco_completo: string
+  codigo_uf?: string
   rntrc?: string | null
   status?: 'ativo' | 'inativo' | 'suspenso'
   proximo_numero_cte?: number
@@ -39,8 +41,14 @@ export interface CTeDocumento {
   numero_cte: string
   serie: string
   data_emissao: string
+  chave_acesso: string | null
+  codigo_uf: string
+  forma_emissao: number
+  codigo_numerico: string | null
+  dv: string | null
   status: 'pendente' | 'emitido' | 'cancelado'
   observacoes: string | null
+  xml_proc_path: string | null
   xml_path: string | null
   pdf_path: string | null
   xml_gerado: boolean
@@ -57,9 +65,11 @@ export interface CTeDocumento {
 
 export interface CTeDocumentoCreate {
   empresa_id: string
-  numero_cte: string
-  serie: string
+  numero_cte?: string
+  serie?: string
   data_emissao: string
+  codigo_uf?: string
+  forma_emissao?: number
   status?: 'pendente' | 'emitido' | 'cancelado'
   observacoes?: string | null
 }
@@ -71,8 +81,14 @@ export interface MDFeDocumento {
   numero_mdfe: string
   serie: string
   data_emissao: string
+  chave_acesso: string | null
+  codigo_uf: string
+  forma_emissao: number
+  codigo_numerico: string | null
+  dv: string | null
   status: 'pendente' | 'emitido' | 'cancelado' | 'encerrado'
   observacoes: string | null
+  xml_proc_path: string | null
   xml_path: string | null
   pdf_path: string | null
   xml_gerado: boolean
@@ -89,11 +105,21 @@ export interface MDFeDocumento {
 
 export interface MDFeDocumentoCreate {
   empresa_id: string
-  numero_mdfe: string
-  serie: string
+  numero_mdfe?: string
+  serie?: string
   data_emissao: string
+  codigo_uf?: string
+  forma_emissao?: number
   status?: 'pendente' | 'emitido' | 'cancelado' | 'encerrado'
   observacoes?: string | null
+}
+
+// Códigos UF do Brasil
+export const CODIGOS_UF = {
+  'AC': '12', 'AL': '17', 'AP': '16', 'AM': '23', 'BA': '29', 'CE': '23', 'DF': '53',
+  'ES': '32', 'GO': '52', 'MA': '21', 'MT': '51', 'MS': '50', 'MG': '31', 'PA': '15',
+  'PB': '25', 'PR': '41', 'PE': '26', 'PI': '22', 'RJ': '33', 'RN': '24', 'RS': '43',
+  'RO': '11', 'RR': '14', 'SC': '42', 'SP': '35', 'SE': '28', 'TO': '17'
 }
 
 // ===== EMPRESAS FISCAIS =====
@@ -156,6 +182,7 @@ export async function createEmpresaFiscal(empresa: EmpresaFiscalCreate): Promise
         cnpj,
         ie,
         endereco_completo,
+        codigo_uf,
         rntrc,
         status,
         proximo_numero_cte,
@@ -165,19 +192,20 @@ export async function createEmpresaFiscal(empresa: EmpresaFiscalCreate): Promise
         path_arquivos,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
       RETURNING *
     `, [
       empresa.razao_social,
       cnpjLimpo,
       empresa.ie,
       empresa.endereco_completo,
+      empresa.codigo_uf || '35', // SP por padrão
       empresa.rntrc,
       empresa.status || 'ativo',
       empresa.proximo_numero_cte || 1,
       empresa.proximo_numero_mdfe || 1,
-      empresa.serie_padrao_cte || '1',
-      empresa.serie_padrao_mdfe || '1',
+      empresa.serie_padrao_cte || '001',
+      empresa.serie_padrao_mdfe || '001',
       empresa.path_arquivos
     ])
 
@@ -242,6 +270,12 @@ export async function updateEmpresaFiscal(id: string, empresa: Partial<EmpresaFi
     if (empresa.endereco_completo !== undefined) {
       updates.push(`endereco_completo = $${paramIndex}`)
       values.push(empresa.endereco_completo)
+      paramIndex++
+    }
+
+    if (empresa.codigo_uf !== undefined) {
+      updates.push(`codigo_uf = $${paramIndex}`)
+      values.push(empresa.codigo_uf)
       paramIndex++
     }
 
@@ -376,16 +410,16 @@ export async function createCTeDocumento(documento: CTeDocumentoCreate): Promise
   try {
     console.log('📝 Criando novo documento CT-e:', documento)
     
-    // Verificar se empresa existe
+    // Verificar se empresa existe e buscar dados
     const empresa = await queryOne(`
-      SELECT id, serie_padrao_cte FROM empresas_fiscais WHERE id = $1
+      SELECT id, serie_padrao_cte, codigo_uf FROM empresas_fiscais WHERE id = $1
     `, [documento.empresa_id])
     
     if (!empresa) {
       throw new Error('Empresa fiscal não encontrada')
     }
     
-    // Obter próximo número automaticamente se não fornecido ou se for "AUTO"
+    // Obter próximo número automaticamente se não fornecido
     let numeroFinal = documento.numero_cte
     if (!numeroFinal || numeroFinal === 'AUTO' || numeroFinal.trim() === '') {
       const nextNumber = await query(`
@@ -395,7 +429,10 @@ export async function createCTeDocumento(documento: CTeDocumentoCreate): Promise
     }
     
     // Usar série padrão da empresa se não fornecida
-    const serieFinal = documento.serie || empresa.serie_padrao_cte || '1'
+    const serieFinal = documento.serie || empresa.serie_padrao_cte || '001'
+    
+    // Usar código UF da empresa se não fornecido
+    const codigoUFFinal = documento.codigo_uf || empresa.codigo_uf || '35'
     
     // Verificar se número/série já existe para esta empresa
     const existingDoc = await queryOne(`
@@ -413,17 +450,21 @@ export async function createCTeDocumento(documento: CTeDocumentoCreate): Promise
         numero_cte,
         serie,
         data_emissao,
+        codigo_uf,
+        forma_emissao,
         status,
         observacoes,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
       RETURNING *
     `, [
       documento.empresa_id,
       numeroFinal,
       serieFinal,
       documento.data_emissao,
+      codigoUFFinal,
+      documento.forma_emissao || 1,
       documento.status || 'pendente',
       documento.observacoes
     ])
@@ -470,6 +511,18 @@ export async function updateCTeDocumento(id: string, documento: Partial<CTeDocum
     if (documento.data_emissao !== undefined) {
       updates.push(`data_emissao = $${paramIndex}`)
       values.push(documento.data_emissao)
+      paramIndex++
+    }
+
+    if (documento.codigo_uf !== undefined) {
+      updates.push(`codigo_uf = $${paramIndex}`)
+      values.push(documento.codigo_uf)
+      paramIndex++
+    }
+
+    if (documento.forma_emissao !== undefined) {
+      updates.push(`forma_emissao = $${paramIndex}`)
+      values.push(documento.forma_emissao)
       paramIndex++
     }
 
@@ -561,16 +614,16 @@ export async function createMDFeDocumento(documento: MDFeDocumentoCreate): Promi
   try {
     console.log('📝 Criando novo documento MDF-e:', documento)
     
-    // Verificar se empresa existe
+    // Verificar se empresa existe e buscar dados
     const empresa = await queryOne(`
-      SELECT id, serie_padrao_mdfe FROM empresas_fiscais WHERE id = $1
+      SELECT id, serie_padrao_mdfe, codigo_uf FROM empresas_fiscais WHERE id = $1
     `, [documento.empresa_id])
     
     if (!empresa) {
       throw new Error('Empresa fiscal não encontrada')
     }
     
-    // Obter próximo número automaticamente se não fornecido ou se for "AUTO"
+    // Obter próximo número automaticamente se não fornecido
     let numeroFinal = documento.numero_mdfe
     if (!numeroFinal || numeroFinal === 'AUTO' || numeroFinal.trim() === '') {
       const nextNumber = await query(`
@@ -580,7 +633,10 @@ export async function createMDFeDocumento(documento: MDFeDocumentoCreate): Promi
     }
     
     // Usar série padrão da empresa se não fornecida
-    const serieFinal = documento.serie || empresa.serie_padrao_mdfe || '1'
+    const serieFinal = documento.serie || empresa.serie_padrao_mdfe || '001'
+    
+    // Usar código UF da empresa se não fornecido
+    const codigoUFFinal = documento.codigo_uf || empresa.codigo_uf || '35'
     
     // Verificar se número/série já existe para esta empresa
     const existingDoc = await queryOne(`
@@ -598,17 +654,21 @@ export async function createMDFeDocumento(documento: MDFeDocumentoCreate): Promi
         numero_mdfe,
         serie,
         data_emissao,
+        codigo_uf,
+        forma_emissao,
         status,
         observacoes,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
       RETURNING *
     `, [
       documento.empresa_id,
       numeroFinal,
       serieFinal,
       documento.data_emissao,
+      codigoUFFinal,
+      documento.forma_emissao || 1,
       documento.status || 'pendente',
       documento.observacoes
     ])
@@ -655,6 +715,18 @@ export async function updateMDFeDocumento(id: string, documento: Partial<MDFeDoc
     if (documento.data_emissao !== undefined) {
       updates.push(`data_emissao = $${paramIndex}`)
       values.push(documento.data_emissao)
+      paramIndex++
+    }
+
+    if (documento.codigo_uf !== undefined) {
+      updates.push(`codigo_uf = $${paramIndex}`)
+      values.push(documento.codigo_uf)
+      paramIndex++
+    }
+
+    if (documento.forma_emissao !== undefined) {
+      updates.push(`forma_emissao = $${paramIndex}`)
+      values.push(documento.forma_emissao)
       paramIndex++
     }
 
@@ -723,12 +795,31 @@ export function validateCNPJ(cnpj: string): boolean {
   return cleaned.length === 14
 }
 
+export function formatChaveAcesso(chave: string): string {
+  if (!chave || chave.length !== 44) return chave
+  
+  // Formatar chave em grupos de 4 dígitos
+  return chave.replace(/(\d{4})/g, '$1 ').trim()
+}
+
+export function getUFFromCode(codigo: string): string {
+  const ufMap: { [key: string]: string } = {
+    '12': 'AC', '17': 'AL', '16': 'AP', '23': 'AM', '29': 'BA', '23': 'CE', '53': 'DF',
+    '32': 'ES', '52': 'GO', '21': 'MA', '51': 'MT', '50': 'MS', '31': 'MG', '15': 'PA',
+    '25': 'PB', '41': 'PR', '26': 'PE', '22': 'PI', '33': 'RJ', '24': 'RN', '43': 'RS',
+    '11': 'RO', '14': 'RR', '42': 'SC', '35': 'SP', '28': 'SE', '17': 'TO'
+  }
+  
+  return ufMap[codigo] || codigo
+}
+
 // ===== FUNÇÕES PARA CONTROLE DE ARQUIVOS =====
 
 export async function updateDocumentFiles(
   documentType: 'cte' | 'mdfe',
   documentId: string,
   files: {
+    xmlProcPath?: string
     xmlPath?: string
     pdfPath?: string
     xmlGerado?: boolean
@@ -744,6 +835,12 @@ export async function updateDocumentFiles(
     const updates: string[] = []
     const values: any[] = []
     let paramIndex = 1
+
+    if (files.xmlProcPath !== undefined) {
+      updates.push(`xml_proc_path = $${paramIndex}`)
+      values.push(files.xmlProcPath)
+      paramIndex++
+    }
 
     if (files.xmlPath !== undefined) {
       updates.push(`xml_path = $${paramIndex}`)
@@ -821,5 +918,26 @@ export async function checkDocumentFileExists(filePath: string): Promise<boolean
     return response.ok
   } catch (error) {
     return false
+  }
+}
+
+export async function generateAccessKey(
+  codigoUF: string,
+  dataEmissao: string,
+  cnpj: string,
+  modelo: string,
+  serie: string,
+  numero: string,
+  formaEmissao: number
+): Promise<string> {
+  try {
+    const result = await query(`
+      SELECT gerar_chave_acesso($1, $2::date, $3, $4, $5, $6, $7) as chave_acesso
+    `, [codigoUF, dataEmissao, cnpj, modelo, serie, numero, formaEmissao])
+    
+    return result[0].chave_acesso
+  } catch (error) {
+    console.error('❌ Erro ao gerar chave de acesso:', error)
+    throw error
   }
 }
