@@ -19,6 +19,7 @@ import {
   deleteCTeDocumento,
   getEmpresasFiscais,
   updateDocumentFiles,
+  formatCNPJ,
   type CTeDocumento,
   type CTeDocumentoCreate
 } from '@/lib/api/fiscal'
