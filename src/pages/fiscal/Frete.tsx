@@ -1,5 +1,5 @@
 
-import { useState } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format, parseISO } from 'date-fns'
 import toast from 'react-hot-toast'
@@ -11,6 +11,7 @@ import {
   XMarkIcon,
   CurrencyDollarIcon,
   MapPinIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
 import {
   getFreteDocumentos,
@@ -19,9 +20,12 @@ import {
   deleteFreteDocumento,
   getEmpresasFiscais,
   getClientesAtivos,
+  getCidadesPorNome,
+  getCidadePorCodigo,
   formatCNPJ,
   type FreteDocumento,
-  type FreteDocumentoCreate
+  type FreteDocumentoCreate,
+  type Cidade
 } from '@/lib/api/fiscal'
 
 const STATUS_LABELS = {
@@ -58,7 +62,19 @@ export default function Frete() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedDocumento, setSelectedDocumento] = useState<FreteDocumento | null>(null)
   const [filterStatus, setFilterStatus] = useState<'todos' | 'pendente' | 'emitido' | 'cancelado'>('todos')
+  const [filterAtivo, setFilterAtivo] = useState<'todos' | 'ativo' | 'inativo'>('todos')
+  
+  // Estados para busca de cidades
+  const [cidadesOrigem, setCidadesOrigem] = useState<Cidade[]>([])
+  const [cidadesDestino, setCidadesDestino] = useState<Cidade[]>([])
+  const [searchOrigemTerm, setSearchOrigemTerm] = useState('')
+  const [searchDestinoTerm, setSearchDestinoTerm] = useState('')
+  const [showOrigemDropdown, setShowOrigemDropdown] = useState(false)
+  const [showDestinoDropdown, setShowDestinoDropdown] = useState(false)
+  
   const queryClient = useQueryClient()
+  const origemInputRef = useRef<HTMLInputElement>(null)
+  const destinoInputRef = useRef<HTMLInputElement>(null)
 
   const { data: documentos, isLoading } = useQuery({
     queryKey: ['frete-documentos'],
@@ -120,6 +136,61 @@ export default function Frete() {
 
   const resetForm = () => {
     setSelectedDocumento(null)
+    setCidadesOrigem([])
+    setCidadesDestino([])
+    setSearchOrigemTerm('')
+    setSearchDestinoTerm('')
+    setShowOrigemDropdown(false)
+    setShowDestinoDropdown(false)
+  }
+
+  // Funções de busca de cidades
+  const searchCidadesOrigem = useCallback(async (termo: string) => {
+    if (termo.length >= 2) {
+      try {
+        const cidades = await getCidadesPorNome(termo)
+        setCidadesOrigem(cidades)
+        setShowOrigemDropdown(true)
+      } catch (error) {
+        console.error('Erro ao buscar cidades de origem:', error)
+        setCidadesOrigem([])
+      }
+    } else {
+      setCidadesOrigem([])
+      setShowOrigemDropdown(false)
+    }
+  }, [])
+
+  const searchCidadesDestino = useCallback(async (termo: string) => {
+    if (termo.length >= 2) {
+      try {
+        const cidades = await getCidadesPorNome(termo)
+        setCidadesDestino(cidades)
+        setShowDestinoDropdown(true)
+      } catch (error) {
+        console.error('Erro ao buscar cidades de destino:', error)
+        setCidadesDestino([])
+      }
+    } else {
+      setCidadesDestino([])
+      setShowDestinoDropdown(false)
+    }
+  }, [])
+
+  const handleOrigemCitySelect = (cidade: Cidade) => {
+    setSearchOrigemTerm(`${cidade.name} (${cidade.cod_city})`)
+    setShowOrigemDropdown(false)
+    if (origemInputRef.current) {
+      origemInputRef.current.value = cidade.cod_city
+    }
+  }
+
+  const handleDestinoCitySelect = (cidade: Cidade) => {
+    setSearchDestinoTerm(`${cidade.name} (${cidade.cod_city})`)
+    setShowDestinoDropdown(false)
+    if (destinoInputRef.current) {
+      destinoInputRef.current.value = cidade.cod_city
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -145,6 +216,7 @@ export default function Frete() {
       tipo_produto: formData.get('tipo_produto') as 'LEITE' | 'CREME' | 'SORO',
       emissao_automatica: formData.get('emissao_automatica') === 'true',
       status: formData.get('status') as 'pendente' | 'emitido' | 'cancelado',
+      ativo: formData.get('ativo') !== 'false',
       observacoes: formData.get('observacoes') as string || null
     }
 
@@ -166,9 +238,13 @@ export default function Frete() {
     }
   }
 
-  const filteredDocumentos = filterStatus === 'todos' 
-    ? documentos 
-    : documentos?.filter(d => d.status === filterStatus)
+  const filteredDocumentos = documentos?.filter(d => {
+    const statusMatch = filterStatus === 'todos' || d.status === filterStatus
+    const ativoMatch = filterAtivo === 'todos' || 
+                       (filterAtivo === 'ativo' && d.ativo) || 
+                       (filterAtivo === 'inativo' && !d.ativo)
+    return statusMatch && ativoMatch
+  })
 
   if (isLoading) {
     return (
@@ -200,18 +276,33 @@ export default function Frete() {
 
         {/* Filtros */}
         <div className="mt-6 bg-white shadow rounded-lg p-4">
-          <div className="flex items-center space-x-4">
-            <label className="text-sm font-medium text-gray-700">Filtrar por status:</label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
-              className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            >
-              <option value="todos">Todos</option>
-              <option value="pendente">Pendentes</option>
-              <option value="emitido">Emitidos</option>
-              <option value="cancelado">Cancelados</option>
-            </select>
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-gray-700">Status:</label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as any)}
+                className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="todos">Todos</option>
+                <option value="pendente">Pendentes</option>
+                <option value="emitido">Emitidos</option>
+                <option value="cancelado">Cancelados</option>
+              </select>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-gray-700">Situação:</label>
+              <select
+                value={filterAtivo}
+                onChange={(e) => setFilterAtivo(e.target.value as any)}
+                className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="todos">Todos</option>
+                <option value="ativo">Ativos</option>
+                <option value="inativo">Inativos</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -265,7 +356,7 @@ export default function Frete() {
                               <span className="font-medium">{documento.cliente_origem?.razao_social}</span>
                             </div>
                             <div className="text-xs text-gray-500">
-                              {documento.cliente_origem?.cidade}/{documento.cliente_origem?.estado}
+                              {documento.cidade_origem_nome || 'Cidade não encontrada'}
                               <span className="ml-1">({documento.cidade_origem_ibge})</span>
                             </div>
                             <div className="text-gray-400">↓</div>
@@ -274,7 +365,7 @@ export default function Frete() {
                               <span className="font-medium">{documento.cliente_destino?.razao_social}</span>
                             </div>
                             <div className="text-xs text-gray-500">
-                              {documento.cliente_destino?.cidade}/{documento.cliente_destino?.estado}
+                              {documento.cidade_destino_nome || 'Cidade não encontrada'}
                               <span className="ml-1">({documento.cidade_destino_ibge})</span>
                             </div>
                           </div>
@@ -342,6 +433,15 @@ export default function Frete() {
                                 Auto
                               </span>
                             )}
+                          </div>
+                          <div className="mt-1">
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                              documento.ativo 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {documento.ativo ? 'Ativo' : 'Inativo'}
+                            </span>
                           </div>
                         </td>
                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
@@ -471,33 +571,89 @@ export default function Frete() {
                     </div>
 
                     <div>
-                      <label htmlFor="cidade_origem_ibge" className="block text-sm font-medium text-gray-700">
-                        Código IBGE Cidade Origem *
+                      <label className="block text-sm font-medium text-gray-700">
+                        Cidade de Origem *
                       </label>
-                      <input
-                        type="text"
-                        name="cidade_origem_ibge"
-                        id="cidade_origem_ibge"
-                        defaultValue={selectedDocumento?.cidade_origem_ibge}
-                        placeholder="Ex: 3550308"
-                        required
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={searchOrigemTerm}
+                          onChange={(e) => {
+                            setSearchOrigemTerm(e.target.value)
+                            searchCidadesOrigem(e.target.value)
+                          }}
+                          placeholder="Digite o nome da cidade de origem..."
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pl-10"
+                        />
+                        <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                        
+                        {showOrigemDropdown && cidadesOrigem.length > 0 && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {cidadesOrigem.map((cidade) => (
+                              <button
+                                key={cidade.cod_city}
+                                type="button"
+                                onClick={() => handleOrigemCitySelect(cidade)}
+                                className="w-full px-4 py-2 text-left hover:bg-gray-100 flex justify-between items-center"
+                              >
+                                <span>{cidade.name}</span>
+                                <span className="text-xs text-gray-500 font-mono">{cidade.cod_city}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <input
+                          ref={origemInputRef}
+                          type="hidden"
+                          name="cidade_origem_ibge"
+                          defaultValue={selectedDocumento?.cidade_origem_ibge}
+                          required
+                        />
+                      </div>
                     </div>
 
                     <div>
-                      <label htmlFor="cidade_destino_ibge" className="block text-sm font-medium text-gray-700">
-                        Código IBGE Cidade Destino *
+                      <label className="block text-sm font-medium text-gray-700">
+                        Cidade de Destino *
                       </label>
-                      <input
-                        type="text"
-                        name="cidade_destino_ibge"
-                        id="cidade_destino_ibge"
-                        defaultValue={selectedDocumento?.cidade_destino_ibge}
-                        placeholder="Ex: 3550308"
-                        required
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={searchDestinoTerm}
+                          onChange={(e) => {
+                            setSearchDestinoTerm(e.target.value)
+                            searchCidadesDestino(e.target.value)
+                          }}
+                          placeholder="Digite o nome da cidade de destino..."
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pl-10"
+                        />
+                        <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                        
+                        {showDestinoDropdown && cidadesDestino.length > 0 && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {cidadesDestino.map((cidade) => (
+                              <button
+                                key={cidade.cod_city}
+                                type="button"
+                                onClick={() => handleDestinoCitySelect(cidade)}
+                                className="w-full px-4 py-2 text-left hover:bg-gray-100 flex justify-between items-center"
+                              >
+                                <span>{cidade.name}</span>
+                                <span className="text-xs text-gray-500 font-mono">{cidade.cod_city}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <input
+                          ref={destinoInputRef}
+                          type="hidden"
+                          name="cidade_destino_ibge"
+                          defaultValue={selectedDocumento?.cidade_destino_ibge}
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -698,6 +854,20 @@ export default function Frete() {
                       >
                         <option value="true">Sim</option>
                         <option value="false">Não</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Situação
+                      </label>
+                      <select
+                        name="ativo"
+                        defaultValue={selectedDocumento?.ativo !== false ? 'true' : 'false'}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      >
+                        <option value="true">Ativo</option>
+                        <option value="false">Inativo</option>
                       </select>
                     </div>
                   </div>

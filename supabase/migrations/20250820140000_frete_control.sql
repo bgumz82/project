@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS frete_documentos (
   tipo_produto tipo_produto_frete NOT NULL,
   emissao_automatica boolean DEFAULT true,
   status frete_status DEFAULT 'pendente',
+  ativo boolean DEFAULT true,
   observacoes text,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()

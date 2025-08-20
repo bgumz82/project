@@ -904,6 +904,7 @@ export interface FreteDocumento {
   emissao_automatica: boolean;
   status: "pendente" | "emitido" | "cancelado";
   observacoes: string | null;
+  ativo: boolean;
   created_at: string;
   updated_at: string;
   empresa?: {
@@ -942,6 +943,7 @@ export interface FreteDocumentoCreate {
   emissao_automatica?: boolean;
   status?: "pendente" | "emitido" | "cancelado";
   observacoes?: string | null;
+  ativo?: boolean;
 }
 
 // ===== FUNÇÕES AUXILIARES =====
@@ -1309,9 +1311,10 @@ export async function createFreteDocumento(
         emissao_automatica,
         status,
         observacoes,
+        ativo,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW(), NOW())
       RETURNING *
     `,
       [
@@ -1334,6 +1337,7 @@ export async function createFreteDocumento(
         documento.emissao_automatica !== false,
         documento.status || "pendente",
         documento.observacoes,
+        documento.ativo !== false,
       ],
     );
 
@@ -1475,6 +1479,12 @@ export async function updateFreteDocumento(
       paramIndex++;
     }
 
+    if (documento.ativo !== undefined) {
+      updates.push(`ativo = $${paramIndex}`);
+      values.push(documento.ativo);
+      paramIndex++;
+    }
+
     // Sempre atualizar updated_at
     updates.push(`updated_at = NOW()`);
 
@@ -1529,7 +1539,7 @@ export async function getClientesAtivos() {
       WHERE tipo = 'cliente' AND ativo = true
       ORDER BY razao_social
     `);
-    
+
     return result;
   } catch (error) {
     console.error("❌ Erro ao buscar clientes ativos:", error);
