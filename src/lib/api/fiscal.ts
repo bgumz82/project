@@ -907,6 +907,8 @@ export interface FreteDocumento {
   ativo: boolean;
   created_at: string;
   updated_at: string;
+  cidade_origem_nome?: string;
+  cidade_destino_nome?: string;
   empresa?: {
     razao_social: string;
     cnpj: string;
@@ -1168,8 +1170,8 @@ export async function getFreteDocumentos(): Promise<FreteDocumento[]> {
         cd.razao_social as cliente_destino_razao_social,
         cd.cidade as cliente_destino_cidade,
         cd.estado as cliente_destino_estado,
-        cio.name as cidade_origem_nome,
-        cid.name as cidade_destino_nome
+        COALESCE(cio.name, 'Cidade não encontrada') as cidade_origem_nome,
+        COALESCE(cid.name, 'Cidade não encontrada') as cidade_destino_nome
       FROM frete_documentos f
       JOIN empresas_fiscais e ON f.empresa_id = e.id
       JOIN cadastros co ON f.cliente_origem_id = co.id
@@ -1197,6 +1199,8 @@ export async function getFreteDocumentos(): Promise<FreteDocumento[]> {
         cidade: doc.cliente_destino_cidade,
         estado: doc.cliente_destino_estado,
       },
+      cidade_origem_nome: doc.cidade_origem_nome,
+      cidade_destino_nome: doc.cidade_destino_nome,
     }));
   } catch (error) {
     console.error("❌ Erro ao buscar documentos de frete:", error);
@@ -1217,11 +1221,15 @@ export async function getFreteDocumento(id: string): Promise<FreteDocumento | nu
         co.estado as cliente_origem_estado,
         cd.razao_social as cliente_destino_razao_social,
         cd.cidade as cliente_destino_cidade,
-        cd.estado as cliente_destino_estado
+        cd.estado as cliente_destino_estado,
+        COALESCE(cio.name, 'Cidade não encontrada') as cidade_origem_nome,
+        COALESCE(cid.name, 'Cidade não encontrada') as cidade_destino_nome
       FROM frete_documentos f
       JOIN empresas_fiscais e ON f.empresa_id = e.id
       JOIN cadastros co ON f.cliente_origem_id = co.id
       JOIN cadastros cd ON f.cliente_destino_id = cd.id
+      LEFT JOIN cities cio ON f.cidade_origem_ibge = cio.cod_city
+      LEFT JOIN cities cid ON f.cidade_destino_ibge = cid.cod_city
       WHERE f.id = $1
     `,
       [id],
@@ -1245,6 +1253,8 @@ export async function getFreteDocumento(id: string): Promise<FreteDocumento | nu
         cidade: result.cliente_destino_cidade,
         estado: result.cliente_destino_estado,
       },
+      cidade_origem_nome: result.cidade_origem_nome,
+      cidade_destino_nome: result.cidade_destino_nome,
     };
   } catch (error) {
     console.error("❌ Erro ao buscar documento de frete:", error);
