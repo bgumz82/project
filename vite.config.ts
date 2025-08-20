@@ -12,6 +12,7 @@ export default defineConfig({
     }
   },
   server: {
+    allowedHosts: ['3f235b19-6883-4b3c-982d-a890f1dfbc20-00-3ewfbg3gbe34w.janeway.replit.dev'],
     proxy: {
       '/api': {
         target: 'https://sistema.systemtruck.com.br:3000',
