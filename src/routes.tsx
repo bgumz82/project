@@ -344,7 +344,7 @@ export function AppRoutes() {
         <Route
           path="/fiscal/frete"
           element={
-            <ProtectedRoute moduleKey="frete">
+            <ProtectedRoute moduleKey="fiscal">
               <Frete />
             </ProtectedRoute>
           }
