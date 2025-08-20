@@ -1,182 +1,216 @@
-import { query, queryOne } from '@/lib/db'
+import { query, queryOne } from "@/lib/db";
 
 // Tipos para Empresas Fiscais
 export interface EmpresaFiscal {
-  id: string
-  razao_social: string
-  cnpj: string
-  ie: string | null
-  endereco_completo: string
-  codigo_uf: string
-  rntrc: string | null
-  status: 'ativo' | 'inativo' | 'suspenso'
-  proximo_numero_cte: number
-  proximo_numero_mdfe: number
-  serie_padrao_cte: string
-  serie_padrao_mdfe: string
-  path_arquivos: string | null
-  created_at: string
-  updated_at: string
+  id: string;
+  razao_social: string;
+  cnpj: string;
+  ie: string | null;
+  endereco_completo: string;
+  codigo_uf: string;
+  rntrc: string | null;
+  status: "ativo" | "inativo" | "suspenso";
+  proximo_numero_cte: number;
+  proximo_numero_mdfe: number;
+  serie_padrao_cte: string;
+  serie_padrao_mdfe: string;
+  path_arquivos: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface EmpresaFiscalCreate {
-  razao_social: string
-  cnpj: string
-  ie?: string | null
-  endereco_completo: string
-  codigo_uf?: string
-  rntrc?: string | null
-  status?: 'ativo' | 'inativo' | 'suspenso'
-  proximo_numero_cte?: number
-  proximo_numero_mdfe?: number
-  serie_padrao_cte?: string
-  serie_padrao_mdfe?: string
-  path_arquivos?: string | null
+  razao_social: string;
+  cnpj: string;
+  ie?: string | null;
+  endereco_completo: string;
+  codigo_uf?: string;
+  rntrc?: string | null;
+  status?: "ativo" | "inativo" | "suspenso";
+  proximo_numero_cte?: number;
+  proximo_numero_mdfe?: number;
+  serie_padrao_cte?: string;
+  serie_padrao_mdfe?: string;
+  path_arquivos?: string | null;
 }
 
 // Tipos para CT-e
 export interface CTeDocumento {
-  id: string
-  empresa_id: string
-  numero_cte: string
-  serie: string
-  data_emissao: string
-  chave_acesso: string | null
-  codigo_uf: string
-  forma_emissao: number
-  codigo_numerico: string | null
-  dv: string | null
-  status: 'pendente' | 'emitido' | 'cancelado'
-  observacoes: string | null
-  xml_proc_path: string | null
-  xml_path: string | null
-  pdf_path: string | null
-  xml_gerado: boolean
-  pdf_gerado: boolean
-  xml_gerado_em: string | null
-  pdf_gerado_em: string | null
-  created_at: string
-  updated_at: string
+  id: string;
+  empresa_id: string;
+  numero_cte: string;
+  serie: string;
+  data_emissao: string;
+  chave_acesso: string | null;
+  codigo_uf: string;
+  forma_emissao: number;
+  codigo_numerico: string | null;
+  dv: string | null;
+  status: "pendente" | "emitido" | "cancelado";
+  observacoes: string | null;
+  xml_proc_path: string | null;
+  xml_path: string | null;
+  pdf_path: string | null;
+  xml_gerado: boolean;
+  pdf_gerado: boolean;
+  xml_gerado_em: string | null;
+  pdf_gerado_em: string | null;
+  created_at: string;
+  updated_at: string;
   empresa?: {
-    razao_social: string
-    cnpj: string
-  }
+    razao_social: string;
+    cnpj: string;
+  };
 }
 
 export interface CTeDocumentoCreate {
-  empresa_id: string
-  numero_cte?: string
-  serie?: string
-  data_emissao: string
-  codigo_uf?: string
-  forma_emissao?: number
-  status?: 'pendente' | 'emitido' | 'cancelado'
-  observacoes?: string | null
+  empresa_id: string;
+  numero_cte?: string;
+  serie?: string;
+  data_emissao: string;
+  codigo_uf?: string;
+  forma_emissao?: number;
+  status?: "pendente" | "emitido" | "cancelado";
+  observacoes?: string | null;
 }
 
 // Tipos para MDF-e
 export interface MDFeDocumento {
-  id: string
-  empresa_id: string
-  numero_mdfe: string
-  serie: string
-  data_emissao: string
-  chave_acesso: string | null
-  codigo_uf: string
-  forma_emissao: number
-  codigo_numerico: string | null
-  dv: string | null
-  status: 'pendente' | 'emitido' | 'cancelado' | 'encerrado'
-  observacoes: string | null
-  xml_proc_path: string | null
-  xml_path: string | null
-  pdf_path: string | null
-  xml_gerado: boolean
-  pdf_gerado: boolean
-  xml_gerado_em: string | null
-  pdf_gerado_em: string | null
-  created_at: string
-  updated_at: string
+  id: string;
+  empresa_id: string;
+  numero_mdfe: string;
+  serie: string;
+  data_emissao: string;
+  chave_acesso: string | null;
+  codigo_uf: string;
+  forma_emissao: number;
+  codigo_numerico: string | null;
+  dv: string | null;
+  status: "pendente" | "emitido" | "cancelado" | "encerrado";
+  observacoes: string | null;
+  xml_proc_path: string | null;
+  xml_path: string | null;
+  pdf_path: string | null;
+  xml_gerado: boolean;
+  pdf_gerado: boolean;
+  xml_gerado_em: string | null;
+  pdf_gerado_em: string | null;
+  created_at: string;
+  updated_at: string;
   empresa?: {
-    razao_social: string
-    cnpj: string
-  }
+    razao_social: string;
+    cnpj: string;
+  };
 }
 
 export interface MDFeDocumentoCreate {
-  empresa_id: string
-  numero_mdfe?: string
-  serie?: string
-  data_emissao: string
-  codigo_uf?: string
-  forma_emissao?: number
-  status?: 'pendente' | 'emitido' | 'cancelado' | 'encerrado'
-  observacoes?: string | null
+  empresa_id: string;
+  numero_mdfe?: string;
+  serie?: string;
+  data_emissao: string;
+  codigo_uf?: string;
+  forma_emissao?: number;
+  status?: "pendente" | "emitido" | "cancelado" | "encerrado";
+  observacoes?: string | null;
 }
 
 // Códigos UF do Brasil
 export const CODIGOS_UF = {
-  'AC': '12', 'AL': '17', 'AP': '16', 'AM': '23', 'BA': '29', 'CE': '23', 'DF': '53',
-  'ES': '32', 'GO': '52', 'MA': '21', 'MT': '51', 'MS': '50', 'MG': '31', 'PA': '15',
-  'PB': '25', 'PR': '41', 'PE': '26', 'PI': '22', 'RJ': '33', 'RN': '24', 'RS': '43',
-  'RO': '11', 'RR': '14', 'SC': '42', 'SP': '35', 'SE': '28', 'TO': '17'
-}
+  AC: "12",
+  AL: "27",
+  AP: "16",
+  AM: "13",
+  BA: "29",
+  CE: "23",
+  DF: "53",
+  ES: "32",
+  GO: "52",
+  MA: "21",
+  MT: "51",
+  MS: "50",
+  MG: "31",
+  PA: "15",
+  PB: "25",
+  PR: "41",
+  PE: "26",
+  PI: "22",
+  RJ: "33",
+  RN: "24",
+  RS: "43",
+  RO: "11",
+  RR: "14",
+  SC: "42",
+  SP: "35",
+  SE: "28",
+  TO: "17",
+};
 
 // ===== EMPRESAS FISCAIS =====
 
 export async function getEmpresasFiscais(): Promise<EmpresaFiscal[]> {
   try {
-    console.log('🔍 Buscando empresas fiscais')
-    
+    console.log("🔍 Buscando empresas fiscais");
+
     const result = await query(`
       SELECT *
       FROM empresas_fiscais
       ORDER BY razao_social
-    `)
-    
-    console.log('✅ Empresas fiscais encontradas:', result.length)
-    return result
+    `);
+
+    console.log("✅ Empresas fiscais encontradas:", result.length);
+    return result;
   } catch (error) {
-    console.error('❌ Erro ao buscar empresas fiscais:', error)
-    throw error
+    console.error("❌ Erro ao buscar empresas fiscais:", error);
+    throw error;
   }
 }
 
-export async function getEmpresaFiscal(id: string): Promise<EmpresaFiscal | null> {
+export async function getEmpresaFiscal(
+  id: string,
+): Promise<EmpresaFiscal | null> {
   try {
-    const result = await queryOne(`
+    const result = await queryOne(
+      `
       SELECT *
       FROM empresas_fiscais
       WHERE id = $1
-    `, [id])
-    
-    return result
+    `,
+      [id],
+    );
+
+    return result;
   } catch (error) {
-    console.error('❌ Erro ao buscar empresa fiscal:', error)
-    throw error
+    console.error("❌ Erro ao buscar empresa fiscal:", error);
+    throw error;
   }
 }
 
-export async function createEmpresaFiscal(empresa: EmpresaFiscalCreate): Promise<EmpresaFiscal> {
+export async function createEmpresaFiscal(
+  empresa: EmpresaFiscalCreate,
+): Promise<EmpresaFiscal> {
   try {
-    console.log('📝 Criando nova empresa fiscal:', empresa)
-    
+    console.log("📝 Criando nova empresa fiscal:", empresa);
+
     // Limpar e validar CNPJ
-    const cnpjLimpo = empresa.cnpj.replace(/\D/g, '')
+    const cnpjLimpo = empresa.cnpj.replace(/\D/g, "");
     if (cnpjLimpo.length !== 14) {
-      throw new Error('CNPJ deve conter exatamente 14 dígitos')
+      throw new Error("CNPJ deve conter exatamente 14 dígitos");
     }
-    
+
     // Verificar se CNPJ já existe
-    const existingEmpresa = await queryOne(`
+    const existingEmpresa = await queryOne(
+      `
       SELECT id FROM empresas_fiscais WHERE cnpj = $1
-    `, [cnpjLimpo])
-    
+    `,
+      [cnpjLimpo],
+    );
+
     if (existingEmpresa) {
-      throw new Error('CNPJ já cadastrado no sistema')
+      throw new Error("CNPJ já cadastrado no sistema");
     }
-    
-    const result = await queryOne(`
+
+    const result = await queryOne(
+      `
       INSERT INTO empresas_fiscais (
         razao_social,
         cnpj,
@@ -194,184 +228,207 @@ export async function createEmpresaFiscal(empresa: EmpresaFiscalCreate): Promise
         updated_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
       RETURNING *
-    `, [
-      empresa.razao_social,
-      cnpjLimpo,
-      empresa.ie,
-      empresa.endereco_completo,
-      empresa.codigo_uf || '35', // SP por padrão
-      empresa.rntrc,
-      empresa.status || 'ativo',
-      empresa.proximo_numero_cte || 1,
-      empresa.proximo_numero_mdfe || 1,
-      empresa.serie_padrao_cte || '001',
-      empresa.serie_padrao_mdfe || '001',
-      empresa.path_arquivos
-    ])
+    `,
+      [
+        empresa.razao_social,
+        cnpjLimpo,
+        empresa.ie,
+        empresa.endereco_completo,
+        empresa.codigo_uf || "35", // SP por padrão
+        empresa.rntrc,
+        empresa.status || "ativo",
+        empresa.proximo_numero_cte || 1,
+        empresa.proximo_numero_mdfe || 1,
+        empresa.serie_padrao_cte || "001",
+        empresa.serie_padrao_mdfe || "001",
+        empresa.path_arquivos,
+      ],
+    );
 
     if (!result) {
-      throw new Error('Erro ao criar empresa fiscal')
+      throw new Error("Erro ao criar empresa fiscal");
     }
 
-    console.log('✅ Empresa fiscal criada com sucesso:', result.id)
-    return result
+    console.log("✅ Empresa fiscal criada com sucesso:", result.id);
+    return result;
   } catch (error) {
-    console.error('❌ Erro ao criar empresa fiscal:', error)
-    throw error
+    console.error("❌ Erro ao criar empresa fiscal:", error);
+    throw error;
   }
 }
 
-export async function updateEmpresaFiscal(id: string, empresa: Partial<EmpresaFiscalCreate>): Promise<EmpresaFiscal> {
+export async function updateEmpresaFiscal(
+  id: string,
+  empresa: Partial<EmpresaFiscalCreate>,
+): Promise<EmpresaFiscal> {
   try {
-    console.log('📝 Atualizando empresa fiscal:', id, empresa)
-    
-    let cnpjLimpo: string | undefined
-    
+    console.log("📝 Atualizando empresa fiscal:", id, empresa);
+
+    let cnpjLimpo: string | undefined;
+
     // Limpar e validar CNPJ se fornecido
     if (empresa.cnpj) {
-      cnpjLimpo = empresa.cnpj.replace(/\D/g, '')
+      cnpjLimpo = empresa.cnpj.replace(/\D/g, "");
       if (cnpjLimpo.length !== 14) {
-        throw new Error('CNPJ deve conter exatamente 14 dígitos')
+        throw new Error("CNPJ deve conter exatamente 14 dígitos");
       }
-      
+
       // Verificar se CNPJ já existe em outra empresa
-      const existingEmpresa = await queryOne(`
+      const existingEmpresa = await queryOne(
+        `
         SELECT id FROM empresas_fiscais WHERE cnpj = $1 AND id != $2
-      `, [cnpjLimpo, id])
-      
+      `,
+        [cnpjLimpo, id],
+      );
+
       if (existingEmpresa) {
-        throw new Error('CNPJ já cadastrado em outra empresa')
+        throw new Error("CNPJ já cadastrado em outra empresa");
       }
     }
-    
+
     // Construir query dinamicamente
-    const updates: string[] = []
-    const values: any[] = []
-    let paramIndex = 1
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
 
     if (empresa.razao_social !== undefined) {
-      updates.push(`razao_social = $${paramIndex}`)
-      values.push(empresa.razao_social)
-      paramIndex++
+      updates.push(`razao_social = $${paramIndex}`);
+      values.push(empresa.razao_social);
+      paramIndex++;
     }
 
     if (cnpjLimpo !== undefined) {
-      updates.push(`cnpj = $${paramIndex}`)
-      values.push(cnpjLimpo)
-      paramIndex++
+      updates.push(`cnpj = $${paramIndex}`);
+      values.push(cnpjLimpo);
+      paramIndex++;
     }
 
     if (empresa.ie !== undefined) {
-      updates.push(`ie = $${paramIndex}`)
-      values.push(empresa.ie)
-      paramIndex++
+      updates.push(`ie = $${paramIndex}`);
+      values.push(empresa.ie);
+      paramIndex++;
     }
 
     if (empresa.endereco_completo !== undefined) {
-      updates.push(`endereco_completo = $${paramIndex}`)
-      values.push(empresa.endereco_completo)
-      paramIndex++
+      updates.push(`endereco_completo = $${paramIndex}`);
+      values.push(empresa.endereco_completo);
+      paramIndex++;
     }
 
     if (empresa.codigo_uf !== undefined) {
-      updates.push(`codigo_uf = $${paramIndex}`)
-      values.push(empresa.codigo_uf)
-      paramIndex++
+      updates.push(`codigo_uf = $${paramIndex}`);
+      values.push(empresa.codigo_uf);
+      paramIndex++;
     }
 
     if (empresa.rntrc !== undefined) {
-      updates.push(`rntrc = $${paramIndex}`)
-      values.push(empresa.rntrc)
-      paramIndex++
+      updates.push(`rntrc = $${paramIndex}`);
+      values.push(empresa.rntrc);
+      paramIndex++;
     }
 
     if (empresa.status !== undefined) {
-      updates.push(`status = $${paramIndex}`)
-      values.push(empresa.status)
-      paramIndex++
+      updates.push(`status = $${paramIndex}`);
+      values.push(empresa.status);
+      paramIndex++;
     }
 
     if (empresa.proximo_numero_cte !== undefined) {
-      updates.push(`proximo_numero_cte = $${paramIndex}`)
-      values.push(empresa.proximo_numero_cte)
-      paramIndex++
+      updates.push(`proximo_numero_cte = $${paramIndex}`);
+      values.push(empresa.proximo_numero_cte);
+      paramIndex++;
     }
 
     if (empresa.proximo_numero_mdfe !== undefined) {
-      updates.push(`proximo_numero_mdfe = $${paramIndex}`)
-      values.push(empresa.proximo_numero_mdfe)
-      paramIndex++
+      updates.push(`proximo_numero_mdfe = $${paramIndex}`);
+      values.push(empresa.proximo_numero_mdfe);
+      paramIndex++;
     }
 
     if (empresa.serie_padrao_cte !== undefined) {
-      updates.push(`serie_padrao_cte = $${paramIndex}`)
-      values.push(empresa.serie_padrao_cte)
-      paramIndex++
+      updates.push(`serie_padrao_cte = $${paramIndex}`);
+      values.push(empresa.serie_padrao_cte);
+      paramIndex++;
     }
 
     if (empresa.serie_padrao_mdfe !== undefined) {
-      updates.push(`serie_padrao_mdfe = $${paramIndex}`)
-      values.push(empresa.serie_padrao_mdfe)
-      paramIndex++
+      updates.push(`serie_padrao_mdfe = $${paramIndex}`);
+      values.push(empresa.serie_padrao_mdfe);
+      paramIndex++;
     }
 
     if (empresa.path_arquivos !== undefined) {
-      updates.push(`path_arquivos = $${paramIndex}`)
-      values.push(empresa.path_arquivos)
-      paramIndex++
+      updates.push(`path_arquivos = $${paramIndex}`);
+      values.push(empresa.path_arquivos);
+      paramIndex++;
     }
 
     // Sempre atualizar updated_at
-    updates.push(`updated_at = NOW()`)
+    updates.push(`updated_at = NOW()`);
 
-    if (updates.length === 1) { // Apenas updated_at
-      throw new Error('Nenhum campo para atualizar')
+    if (updates.length === 1) {
+      // Apenas updated_at
+      throw new Error("Nenhum campo para atualizar");
     }
 
     // Adicionar ID como último parâmetro
-    values.push(id)
+    values.push(id);
 
-    const result = await queryOne(`
+    const result = await queryOne(
+      `
       UPDATE empresas_fiscais
-      SET ${updates.join(', ')}
+      SET ${updates.join(", ")}
       WHERE id = $${paramIndex}
       RETURNING *
-    `, values)
+    `,
+      values,
+    );
 
     if (!result) {
-      throw new Error('Empresa fiscal não encontrada')
+      throw new Error("Empresa fiscal não encontrada");
     }
 
-    console.log('✅ Empresa fiscal atualizada com sucesso:', result.id)
-    return result
+    console.log("✅ Empresa fiscal atualizada com sucesso:", result.id);
+    return result;
   } catch (error) {
-    console.error('❌ Erro ao atualizar empresa fiscal:', error)
-    throw error
+    console.error("❌ Erro ao atualizar empresa fiscal:", error);
+    throw error;
   }
 }
 
 export async function deleteEmpresaFiscal(id: string): Promise<void> {
   try {
-    console.log('🗑️ Excluindo empresa fiscal:', id)
-    
+    console.log("🗑️ Excluindo empresa fiscal:", id);
+
     // Verificar se há documentos vinculados
-    const cteCount = await queryOne(`
+    const cteCount = await queryOne(
+      `
       SELECT COUNT(*) as count FROM cte_documentos WHERE empresa_id = $1
-    `, [id])
-    
-    const mdfeCount = await queryOne(`
+    `,
+      [id],
+    );
+
+    const mdfeCount = await queryOne(
+      `
       SELECT COUNT(*) as count FROM mdfe_documentos WHERE empresa_id = $1
-    `, [id])
-    
-    if ((cteCount && parseInt(cteCount.count) > 0) || (mdfeCount && parseInt(mdfeCount.count) > 0)) {
-      throw new Error('Não é possível excluir empresa com documentos fiscais vinculados')
+    `,
+      [id],
+    );
+
+    if (
+      (cteCount && parseInt(cteCount.count) > 0) ||
+      (mdfeCount && parseInt(mdfeCount.count) > 0)
+    ) {
+      throw new Error(
+        "Não é possível excluir empresa com documentos fiscais vinculados",
+      );
     }
-    
-    await query('DELETE FROM empresas_fiscais WHERE id = $1', [id])
-    console.log('✅ Empresa fiscal excluída com sucesso')
+
+    await query("DELETE FROM empresas_fiscais WHERE id = $1", [id]);
+    console.log("✅ Empresa fiscal excluída com sucesso");
   } catch (error) {
-    console.error('❌ Erro ao excluir empresa fiscal:', error)
-    throw error
+    console.error("❌ Erro ao excluir empresa fiscal:", error);
+    throw error;
   }
 }
 
@@ -379,8 +436,8 @@ export async function deleteEmpresaFiscal(id: string): Promise<void> {
 
 export async function getCTeDocumentos(): Promise<CTeDocumento[]> {
   try {
-    console.log('🔍 Buscando documentos CT-e')
-    
+    console.log("🔍 Buscando documentos CT-e");
+
     const result = await query(`
       SELECT 
         c.*,
@@ -389,62 +446,74 @@ export async function getCTeDocumentos(): Promise<CTeDocumento[]> {
       FROM cte_documentos c
       JOIN empresas_fiscais e ON c.empresa_id = e.id
       ORDER BY c.data_emissao DESC, c.numero_cte DESC
-    `)
-    
-    console.log('✅ Documentos CT-e encontrados:', result.length)
-    
-    return result.map(doc => ({
+    `);
+
+    console.log("✅ Documentos CT-e encontrados:", result.length);
+
+    return result.map((doc) => ({
       ...doc,
       empresa: {
         razao_social: doc.empresa_razao_social,
-        cnpj: doc.empresa_cnpj
-      }
-    }))
+        cnpj: doc.empresa_cnpj,
+      },
+    }));
   } catch (error) {
-    console.error('❌ Erro ao buscar documentos CT-e:', error)
-    throw error
+    console.error("❌ Erro ao buscar documentos CT-e:", error);
+    throw error;
   }
 }
 
-export async function createCTeDocumento(documento: CTeDocumentoCreate): Promise<CTeDocumento> {
+export async function createCTeDocumento(
+  documento: CTeDocumentoCreate,
+): Promise<CTeDocumento> {
   try {
-    console.log('📝 Criando novo documento CT-e:', documento)
-    
+    console.log("📝 Criando novo documento CT-e:", documento);
+
     // Verificar se empresa existe e buscar dados
-    const empresa = await queryOne(`
+    const empresa = await queryOne(
+      `
       SELECT id, serie_padrao_cte, codigo_uf FROM empresas_fiscais WHERE id = $1
-    `, [documento.empresa_id])
-    
+    `,
+      [documento.empresa_id],
+    );
+
     if (!empresa) {
-      throw new Error('Empresa fiscal não encontrada')
+      throw new Error("Empresa fiscal não encontrada");
     }
-    
+
     // Obter próximo número automaticamente se não fornecido
-    let numeroFinal = documento.numero_cte
-    if (!numeroFinal || numeroFinal === 'AUTO' || numeroFinal.trim() === '') {
-      const nextNumber = await query(`
+    let numeroFinal = documento.numero_cte;
+    if (!numeroFinal || numeroFinal === "AUTO" || numeroFinal.trim() === "") {
+      const nextNumber = await query(
+        `
         SELECT get_next_cte_number($1) as numero
-      `, [documento.empresa_id])
-      numeroFinal = nextNumber[0].numero.toString()
+      `,
+        [documento.empresa_id],
+      );
+      numeroFinal = nextNumber[0].numero.toString();
     }
-    
+
     // Usar série padrão da empresa se não fornecida
-    const serieFinal = documento.serie || empresa.serie_padrao_cte || '001'
-    
+    const serieFinal = documento.serie || empresa.serie_padrao_cte || "001";
+
     // SEMPRE usar código UF da empresa (não permitir override)
-    const codigoUFFinal = empresa.codigo_uf || '35'
-    
+    const codigoUFFinal = empresa.codigo_uf || "35";
+
     // Verificar se número/série já existe para esta empresa
-    const existingDoc = await queryOne(`
+    const existingDoc = await queryOne(
+      `
       SELECT id FROM cte_documentos 
       WHERE empresa_id = $1 AND numero_cte = $2 AND serie = $3
-    `, [documento.empresa_id, numeroFinal, serieFinal])
-    
+    `,
+      [documento.empresa_id, numeroFinal, serieFinal],
+    );
+
     if (existingDoc) {
-      throw new Error('Número CT-e e série já existem para esta empresa')
+      throw new Error("Número CT-e e série já existem para esta empresa");
     }
-    
-    const result = await queryOne(`
+
+    const result = await queryOne(
+      `
       INSERT INTO cte_documentos (
         empresa_id,
         numero_cte,
@@ -458,124 +527,133 @@ export async function createCTeDocumento(documento: CTeDocumentoCreate): Promise
         updated_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
       RETURNING *
-    `, [
-      documento.empresa_id,
-      numeroFinal,
-      serieFinal,
-      documento.data_emissao,
-      codigoUFFinal,
-      documento.forma_emissao || 1,
-      documento.status || 'pendente',
-      documento.observacoes
-    ])
+    `,
+      [
+        documento.empresa_id,
+        numeroFinal,
+        serieFinal,
+        documento.data_emissao,
+        codigoUFFinal,
+        documento.forma_emissao || 1,
+        documento.status || "pendente",
+        documento.observacoes,
+      ],
+    );
 
     if (!result) {
-      throw new Error('Erro ao criar documento CT-e')
+      throw new Error("Erro ao criar documento CT-e");
     }
 
-    console.log('✅ Documento CT-e criado com sucesso:', result.id)
-    return result
+    console.log("✅ Documento CT-e criado com sucesso:", result.id);
+    return result;
   } catch (error) {
-    console.error('❌ Erro ao criar documento CT-e:', error)
-    throw error
+    console.error("❌ Erro ao criar documento CT-e:", error);
+    throw error;
   }
 }
 
-export async function updateCTeDocumento(id: string, documento: Partial<CTeDocumentoCreate>): Promise<CTeDocumento> {
+export async function updateCTeDocumento(
+  id: string,
+  documento: Partial<CTeDocumentoCreate>,
+): Promise<CTeDocumento> {
   try {
-    console.log('📝 Atualizando documento CT-e:', id, documento)
-    
+    console.log("📝 Atualizando documento CT-e:", id, documento);
+
     // Construir query dinamicamente
-    const updates: string[] = []
-    const values: any[] = []
-    let paramIndex = 1
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
 
     if (documento.empresa_id !== undefined) {
-      updates.push(`empresa_id = $${paramIndex}`)
-      values.push(documento.empresa_id)
-      paramIndex++
+      updates.push(`empresa_id = $${paramIndex}`);
+      values.push(documento.empresa_id);
+      paramIndex++;
     }
 
     if (documento.numero_cte !== undefined) {
-      updates.push(`numero_cte = $${paramIndex}`)
-      values.push(documento.numero_cte)
-      paramIndex++
+      updates.push(`numero_cte = $${paramIndex}`);
+      values.push(documento.numero_cte);
+      paramIndex++;
     }
 
     if (documento.serie !== undefined) {
-      updates.push(`serie = $${paramIndex}`)
-      values.push(documento.serie)
-      paramIndex++
+      updates.push(`serie = $${paramIndex}`);
+      values.push(documento.serie);
+      paramIndex++;
     }
 
     if (documento.data_emissao !== undefined) {
-      updates.push(`data_emissao = $${paramIndex}`)
-      values.push(documento.data_emissao)
-      paramIndex++
+      updates.push(`data_emissao = $${paramIndex}`);
+      values.push(documento.data_emissao);
+      paramIndex++;
     }
 
     if (documento.codigo_uf !== undefined) {
-      updates.push(`codigo_uf = $${paramIndex}`)
-      values.push(documento.codigo_uf)
-      paramIndex++
+      updates.push(`codigo_uf = $${paramIndex}`);
+      values.push(documento.codigo_uf);
+      paramIndex++;
     }
 
     if (documento.forma_emissao !== undefined) {
-      updates.push(`forma_emissao = $${paramIndex}`)
-      values.push(documento.forma_emissao)
-      paramIndex++
+      updates.push(`forma_emissao = $${paramIndex}`);
+      values.push(documento.forma_emissao);
+      paramIndex++;
     }
 
     if (documento.status !== undefined) {
-      updates.push(`status = $${paramIndex}`)
-      values.push(documento.status)
-      paramIndex++
+      updates.push(`status = $${paramIndex}`);
+      values.push(documento.status);
+      paramIndex++;
     }
 
     if (documento.observacoes !== undefined) {
-      updates.push(`observacoes = $${paramIndex}`)
-      values.push(documento.observacoes)
-      paramIndex++
+      updates.push(`observacoes = $${paramIndex}`);
+      values.push(documento.observacoes);
+      paramIndex++;
     }
 
     // Sempre atualizar updated_at
-    updates.push(`updated_at = NOW()`)
+    updates.push(`updated_at = NOW()`);
 
-    if (updates.length === 1) { // Apenas updated_at
-      throw new Error('Nenhum campo para atualizar')
+    if (updates.length === 1) {
+      // Apenas updated_at
+      throw new Error("Nenhum campo para atualizar");
     }
 
     // Adicionar ID como último parâmetro
-    values.push(id)
+    values.push(id);
 
-    const result = await queryOne(`
+    const result = await queryOne(
+      `
       UPDATE cte_documentos
-      SET ${updates.join(', ')}
+      SET ${updates.join(", ")}
       WHERE id = $${paramIndex}
       RETURNING *
-    `, values)
+    `,
+      values,
+    );
 
     if (!result) {
-      throw new Error('Documento CT-e não encontrado')
+      throw new Error("Documento CT-e não encontrado");
     }
 
-    console.log('✅ Documento CT-e atualizado com sucesso:', result.id)
-    return result
+    console.log("✅ Documento CT-e atualizado com sucesso:", result.id);
+    return result;
   } catch (error) {
-    console.error('❌ Erro ao atualizar documento CT-e:', error)
-    throw error
+    console.error("❌ Erro ao atualizar documento CT-e:", error);
+    throw error;
   }
 }
 
 export async function deleteCTeDocumento(id: string): Promise<void> {
   try {
-    console.log('🗑️ Excluindo documento CT-e:', id)
-    
-    await query('DELETE FROM cte_documentos WHERE id = $1', [id])
-    console.log('✅ Documento CT-e excluído com sucesso')
+    console.log("🗑️ Excluindo documento CT-e:", id);
+
+    await query("DELETE FROM cte_documentos WHERE id = $1", [id]);
+    console.log("✅ Documento CT-e excluído com sucesso");
   } catch (error) {
-    console.error('❌ Erro ao excluir documento CT-e:', error)
-    throw error
+    console.error("❌ Erro ao excluir documento CT-e:", error);
+    throw error;
   }
 }
 
@@ -583,8 +661,8 @@ export async function deleteCTeDocumento(id: string): Promise<void> {
 
 export async function getMDFeDocumentos(): Promise<MDFeDocumento[]> {
   try {
-    console.log('🔍 Buscando documentos MDF-e')
-    
+    console.log("🔍 Buscando documentos MDF-e");
+
     const result = await query(`
       SELECT 
         m.*,
@@ -593,62 +671,74 @@ export async function getMDFeDocumentos(): Promise<MDFeDocumento[]> {
       FROM mdfe_documentos m
       JOIN empresas_fiscais e ON m.empresa_id = e.id
       ORDER BY m.data_emissao DESC, m.numero_mdfe DESC
-    `)
-    
-    console.log('✅ Documentos MDF-e encontrados:', result.length)
-    
-    return result.map(doc => ({
+    `);
+
+    console.log("✅ Documentos MDF-e encontrados:", result.length);
+
+    return result.map((doc) => ({
       ...doc,
       empresa: {
         razao_social: doc.empresa_razao_social,
-        cnpj: doc.empresa_cnpj
-      }
-    }))
+        cnpj: doc.empresa_cnpj,
+      },
+    }));
   } catch (error) {
-    console.error('❌ Erro ao buscar documentos MDF-e:', error)
-    throw error
+    console.error("❌ Erro ao buscar documentos MDF-e:", error);
+    throw error;
   }
 }
 
-export async function createMDFeDocumento(documento: MDFeDocumentoCreate): Promise<MDFeDocumento> {
+export async function createMDFeDocumento(
+  documento: MDFeDocumentoCreate,
+): Promise<MDFeDocumento> {
   try {
-    console.log('📝 Criando novo documento MDF-e:', documento)
-    
+    console.log("📝 Criando novo documento MDF-e:", documento);
+
     // Verificar se empresa existe e buscar dados
-    const empresa = await queryOne(`
+    const empresa = await queryOne(
+      `
       SELECT id, serie_padrao_mdfe, codigo_uf FROM empresas_fiscais WHERE id = $1
-    `, [documento.empresa_id])
-    
+    `,
+      [documento.empresa_id],
+    );
+
     if (!empresa) {
-      throw new Error('Empresa fiscal não encontrada')
+      throw new Error("Empresa fiscal não encontrada");
     }
-    
+
     // Obter próximo número automaticamente se não fornecido
-    let numeroFinal = documento.numero_mdfe
-    if (!numeroFinal || numeroFinal === 'AUTO' || numeroFinal.trim() === '') {
-      const nextNumber = await query(`
+    let numeroFinal = documento.numero_mdfe;
+    if (!numeroFinal || numeroFinal === "AUTO" || numeroFinal.trim() === "") {
+      const nextNumber = await query(
+        `
         SELECT get_next_mdfe_number($1) as numero
-      `, [documento.empresa_id])
-      numeroFinal = nextNumber[0].numero.toString()
+      `,
+        [documento.empresa_id],
+      );
+      numeroFinal = nextNumber[0].numero.toString();
     }
-    
+
     // Usar série padrão da empresa se não fornecida
-    const serieFinal = documento.serie || empresa.serie_padrao_mdfe || '001'
-    
+    const serieFinal = documento.serie || empresa.serie_padrao_mdfe || "001";
+
     // SEMPRE usar código UF da empresa (não permitir override)
-    const codigoUFFinal = empresa.codigo_uf || '35'
-    
+    const codigoUFFinal = empresa.codigo_uf || "35";
+
     // Verificar se número/série já existe para esta empresa
-    const existingDoc = await queryOne(`
+    const existingDoc = await queryOne(
+      `
       SELECT id FROM mdfe_documentos 
       WHERE empresa_id = $1 AND numero_mdfe = $2 AND serie = $3
-    `, [documento.empresa_id, numeroFinal, serieFinal])
-    
+    `,
+      [documento.empresa_id, numeroFinal, serieFinal],
+    );
+
     if (existingDoc) {
-      throw new Error('Número MDF-e e série já existem para esta empresa')
+      throw new Error("Número MDF-e e série já existem para esta empresa");
     }
-    
-    const result = await queryOne(`
+
+    const result = await queryOne(
+      `
       INSERT INTO mdfe_documentos (
         empresa_id,
         numero_mdfe,
@@ -662,260 +752,314 @@ export async function createMDFeDocumento(documento: MDFeDocumentoCreate): Promi
         updated_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
       RETURNING *
-    `, [
-      documento.empresa_id,
-      numeroFinal,
-      serieFinal,
-      documento.data_emissao,
-      codigoUFFinal,
-      documento.forma_emissao || 1,
-      documento.status || 'pendente',
-      documento.observacoes
-    ])
+    `,
+      [
+        documento.empresa_id,
+        numeroFinal,
+        serieFinal,
+        documento.data_emissao,
+        codigoUFFinal,
+        documento.forma_emissao || 1,
+        documento.status || "pendente",
+        documento.observacoes,
+      ],
+    );
 
     if (!result) {
-      throw new Error('Erro ao criar documento MDF-e')
+      throw new Error("Erro ao criar documento MDF-e");
     }
 
-    console.log('✅ Documento MDF-e criado com sucesso:', result.id)
-    return result
+    console.log("✅ Documento MDF-e criado com sucesso:", result.id);
+    return result;
   } catch (error) {
-    console.error('❌ Erro ao criar documento MDF-e:', error)
-    throw error
+    console.error("❌ Erro ao criar documento MDF-e:", error);
+    throw error;
   }
 }
 
-export async function updateMDFeDocumento(id: string, documento: Partial<MDFeDocumentoCreate>): Promise<MDFeDocumento> {
+export async function updateMDFeDocumento(
+  id: string,
+  documento: Partial<MDFeDocumentoCreate>,
+): Promise<MDFeDocumento> {
   try {
-    console.log('📝 Atualizando documento MDF-e:', id, documento)
-    
+    console.log("📝 Atualizando documento MDF-e:", id, documento);
+
     // Construir query dinamicamente
-    const updates: string[] = []
-    const values: any[] = []
-    let paramIndex = 1
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
 
     if (documento.empresa_id !== undefined) {
-      updates.push(`empresa_id = $${paramIndex}`)
-      values.push(documento.empresa_id)
-      paramIndex++
+      updates.push(`empresa_id = $${paramIndex}`);
+      values.push(documento.empresa_id);
+      paramIndex++;
     }
 
     if (documento.numero_mdfe !== undefined) {
-      updates.push(`numero_mdfe = $${paramIndex}`)
-      values.push(documento.numero_mdfe)
-      paramIndex++
+      updates.push(`numero_mdfe = $${paramIndex}`);
+      values.push(documento.numero_mdfe);
+      paramIndex++;
     }
 
     if (documento.serie !== undefined) {
-      updates.push(`serie = $${paramIndex}`)
-      values.push(documento.serie)
-      paramIndex++
+      updates.push(`serie = $${paramIndex}`);
+      values.push(documento.serie);
+      paramIndex++;
     }
 
     if (documento.data_emissao !== undefined) {
-      updates.push(`data_emissao = $${paramIndex}`)
-      values.push(documento.data_emissao)
-      paramIndex++
+      updates.push(`data_emissao = $${paramIndex}`);
+      values.push(documento.data_emissao);
+      paramIndex++;
     }
 
     if (documento.codigo_uf !== undefined) {
-      updates.push(`codigo_uf = $${paramIndex}`)
-      values.push(documento.codigo_uf)
-      paramIndex++
+      updates.push(`codigo_uf = $${paramIndex}`);
+      values.push(documento.codigo_uf);
+      paramIndex++;
     }
 
     if (documento.forma_emissao !== undefined) {
-      updates.push(`forma_emissao = $${paramIndex}`)
-      values.push(documento.forma_emissao)
-      paramIndex++
+      updates.push(`forma_emissao = $${paramIndex}`);
+      values.push(documento.forma_emissao);
+      paramIndex++;
     }
 
     if (documento.status !== undefined) {
-      updates.push(`status = $${paramIndex}`)
-      values.push(documento.status)
-      paramIndex++
+      updates.push(`status = $${paramIndex}`);
+      values.push(documento.status);
+      paramIndex++;
     }
 
     if (documento.observacoes !== undefined) {
-      updates.push(`observacoes = $${paramIndex}`)
-      values.push(documento.observacoes)
-      paramIndex++
+      updates.push(`observacoes = $${paramIndex}`);
+      values.push(documento.observacoes);
+      paramIndex++;
     }
 
     // Sempre atualizar updated_at
-    updates.push(`updated_at = NOW()`)
+    updates.push(`updated_at = NOW()`);
 
-    if (updates.length === 1) { // Apenas updated_at
-      throw new Error('Nenhum campo para atualizar')
+    if (updates.length === 1) {
+      // Apenas updated_at
+      throw new Error("Nenhum campo para atualizar");
     }
 
     // Adicionar ID como último parâmetro
-    values.push(id)
+    values.push(id);
 
-    const result = await queryOne(`
+    const result = await queryOne(
+      `
       UPDATE mdfe_documentos
-      SET ${updates.join(', ')}
+      SET ${updates.join(", ")}
       WHERE id = $${paramIndex}
       RETURNING *
-    `, values)
+    `,
+      values,
+    );
 
     if (!result) {
-      throw new Error('Documento MDF-e não encontrado')
+      throw new Error("Documento MDF-e não encontrado");
     }
 
-    console.log('✅ Documento MDF-e atualizado com sucesso:', result.id)
-    return result
+    console.log("✅ Documento MDF-e atualizado com sucesso:", result.id);
+    return result;
   } catch (error) {
-    console.error('❌ Erro ao atualizar documento MDF-e:', error)
-    throw error
+    console.error("❌ Erro ao atualizar documento MDF-e:", error);
+    throw error;
   }
 }
 
 export async function deleteMDFeDocumento(id: string): Promise<void> {
   try {
-    console.log('🗑️ Excluindo documento MDF-e:', id)
-    
-    await query('DELETE FROM mdfe_documentos WHERE id = $1', [id])
-    console.log('✅ Documento MDF-e excluído com sucesso')
+    console.log("🗑️ Excluindo documento MDF-e:", id);
+
+    await query("DELETE FROM mdfe_documentos WHERE id = $1", [id]);
+    console.log("✅ Documento MDF-e excluído com sucesso");
   } catch (error) {
-    console.error('❌ Erro ao excluir documento MDF-e:', error)
-    throw error
+    console.error("❌ Erro ao excluir documento MDF-e:", error);
+    throw error;
   }
 }
 
 // ===== FUNÇÕES AUXILIARES =====
 
 export function formatCNPJ(cnpj: string): string {
-  const cleaned = cnpj.replace(/[^\d]/g, '')
-  return cleaned.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+  const cleaned = cnpj.replace(/[^\d]/g, "");
+  return cleaned.replace(
+    /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+    "$1.$2.$3/$4-$5",
+  );
 }
 
 export function validateCNPJ(cnpj: string): boolean {
-  const cleaned = cnpj.replace(/[^\d]/g, '')
-  return cleaned.length === 14
+  const cleaned = cnpj.replace(/[^\d]/g, "");
+  return cleaned.length === 14;
 }
 
 export function formatChaveAcesso(chave: string): string {
   // Retornar chave sem formatação (sem espaços)
-  return chave || ''
+  return chave || "";
 }
 
 export function getUFFromCode(codigo: string): string {
   const ufMap: { [key: string]: string } = {
-    '12': 'AC', '17': 'AL', '16': 'AP', '23': 'AM', '29': 'BA', '23': 'CE', '53': 'DF',
-    '32': 'ES', '52': 'GO', '21': 'MA', '51': 'MT', '50': 'MS', '31': 'MG', '15': 'PA',
-    '25': 'PB', '41': 'PR', '26': 'PE', '22': 'PI', '33': 'RJ', '24': 'RN', '43': 'RS',
-    '11': 'RO', '14': 'RR', '42': 'SC', '35': 'SP', '28': 'SE', '17': 'TO'
-  }
-  
-  return ufMap[codigo] || codigo
+    "12": "AC",
+    "27": "AL",
+    "16": "AP",
+    "23": "AM",
+    "29": "BA",
+    "13": "CE",
+    "53": "DF",
+    "32": "ES",
+    "52": "GO",
+    "21": "MA",
+    "51": "MT",
+    "50": "MS",
+    "31": "MG",
+    "15": "PA",
+    "25": "PB",
+    "41": "PR",
+    "26": "PE",
+    "22": "PI",
+    "33": "RJ",
+    "24": "RN",
+    "43": "RS",
+    "11": "RO",
+    "14": "RR",
+    "42": "SC",
+    "35": "SP",
+    "28": "SE",
+    "17": "TO",
+  };
+
+  return ufMap[codigo] || codigo;
 }
 
 // ===== FUNÇÕES PARA CONTROLE DE ARQUIVOS =====
 
 export async function updateDocumentFiles(
-  documentType: 'cte' | 'mdfe',
+  documentType: "cte" | "mdfe",
   documentId: string,
   files: {
-    xmlProcPath?: string
-    xmlPath?: string
-    pdfPath?: string
-    xmlGerado?: boolean
-    pdfGerado?: boolean
-  }
+    xmlProcPath?: string;
+    xmlPath?: string;
+    pdfPath?: string;
+    xmlGerado?: boolean;
+    pdfGerado?: boolean;
+  },
 ): Promise<void> {
   try {
-    console.log('📁 Atualizando arquivos do documento:', documentType, documentId, files)
-    
-    const tableName = documentType === 'cte' ? 'cte_documentos' : 'mdfe_documentos'
-    
+    console.log(
+      "📁 Atualizando arquivos do documento:",
+      documentType,
+      documentId,
+      files,
+    );
+
+    const tableName =
+      documentType === "cte" ? "cte_documentos" : "mdfe_documentos";
+
     // Construir query dinamicamente
-    const updates: string[] = []
-    const values: any[] = []
-    let paramIndex = 1
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
 
     if (files.xmlProcPath !== undefined) {
-      updates.push(`xml_proc_path = $${paramIndex}`)
-      values.push(files.xmlProcPath)
-      paramIndex++
+      updates.push(`xml_proc_path = $${paramIndex}`);
+      values.push(files.xmlProcPath);
+      paramIndex++;
     }
 
     if (files.xmlPath !== undefined) {
-      updates.push(`xml_path = $${paramIndex}`)
-      values.push(files.xmlPath)
-      paramIndex++
+      updates.push(`xml_path = $${paramIndex}`);
+      values.push(files.xmlPath);
+      paramIndex++;
     }
 
     if (files.pdfPath !== undefined) {
-      updates.push(`pdf_path = $${paramIndex}`)
-      values.push(files.pdfPath)
-      paramIndex++
+      updates.push(`pdf_path = $${paramIndex}`);
+      values.push(files.pdfPath);
+      paramIndex++;
     }
 
     if (files.xmlGerado !== undefined) {
-      updates.push(`xml_gerado = $${paramIndex}`)
-      values.push(files.xmlGerado)
-      paramIndex++
-      
+      updates.push(`xml_gerado = $${paramIndex}`);
+      values.push(files.xmlGerado);
+      paramIndex++;
+
       if (files.xmlGerado) {
-        updates.push(`xml_gerado_em = NOW()`)
+        updates.push(`xml_gerado_em = NOW()`);
       }
     }
 
     if (files.pdfGerado !== undefined) {
-      updates.push(`pdf_gerado = $${paramIndex}`)
-      values.push(files.pdfGerado)
-      paramIndex++
-      
+      updates.push(`pdf_gerado = $${paramIndex}`);
+      values.push(files.pdfGerado);
+      paramIndex++;
+
       if (files.pdfGerado) {
-        updates.push(`pdf_gerado_em = NOW()`)
+        updates.push(`pdf_gerado_em = NOW()`);
       }
     }
 
     // Sempre atualizar updated_at
-    updates.push(`updated_at = NOW()`)
+    updates.push(`updated_at = NOW()`);
 
-    if (updates.length === 1) { // Apenas updated_at
-      throw new Error('Nenhum arquivo para atualizar')
+    if (updates.length === 1) {
+      // Apenas updated_at
+      throw new Error("Nenhum arquivo para atualizar");
     }
 
     // Adicionar ID como último parâmetro
-    values.push(documentId)
+    values.push(documentId);
 
-    await query(`
+    await query(
+      `
       UPDATE ${tableName}
-      SET ${updates.join(', ')}
+      SET ${updates.join(", ")}
       WHERE id = $${paramIndex}
-    `, values)
+    `,
+      values,
+    );
 
-    console.log('✅ Arquivos do documento atualizados com sucesso')
+    console.log("✅ Arquivos do documento atualizados com sucesso");
   } catch (error) {
-    console.error('❌ Erro ao atualizar arquivos do documento:', error)
-    throw error
+    console.error("❌ Erro ao atualizar arquivos do documento:", error);
+    throw error;
   }
 }
 
-export async function getNextDocumentNumber(empresaId: string, documentType: 'cte' | 'mdfe'): Promise<number> {
+export async function getNextDocumentNumber(
+  empresaId: string,
+  documentType: "cte" | "mdfe",
+): Promise<number> {
   try {
-    const functionName = documentType === 'cte' ? 'get_next_cte_number' : 'get_next_mdfe_number'
-    
-    const result = await query(`
+    const functionName =
+      documentType === "cte" ? "get_next_cte_number" : "get_next_mdfe_number";
+
+    const result = await query(
+      `
       SELECT ${functionName}($1) as numero
-    `, [empresaId])
-    
-    return result[0].numero
+    `,
+      [empresaId],
+    );
+
+    return result[0].numero;
   } catch (error) {
-    console.error('❌ Erro ao obter próximo número:', error)
-    throw error
+    console.error("❌ Erro ao obter próximo número:", error);
+    throw error;
   }
 }
 
-export async function checkDocumentFileExists(filePath: string): Promise<boolean> {
+export async function checkDocumentFileExists(
+  filePath: string,
+): Promise<boolean> {
   try {
-    const response = await fetch(filePath, { method: 'HEAD' })
-    return response.ok
+    const response = await fetch(filePath, { method: "HEAD" });
+    return response.ok;
   } catch (error) {
-    return false
+    return false;
   }
 }
 
@@ -926,16 +1070,19 @@ export async function generateAccessKey(
   modelo: string,
   serie: string,
   numero: string,
-  formaEmissao: number
+  formaEmissao: number,
 ): Promise<string> {
   try {
-    const result = await query(`
+    const result = await query(
+      `
       SELECT gerar_chave_acesso($1, $2::date, $3, $4, $5, $6, $7) as chave_acesso
-    `, [codigoUF, dataEmissao, cnpj, modelo, serie, numero, formaEmissao])
-    
-    return result[0].chave_acesso
+    `,
+      [codigoUF, dataEmissao, cnpj, modelo, serie, numero, formaEmissao],
+    );
+
+    return result[0].chave_acesso;
   } catch (error) {
-    console.error('❌ Erro ao gerar chave de acesso:', error)
-    throw error
+    console.error("❌ Erro ao gerar chave de acesso:", error);
+    throw error;
   }
 }
