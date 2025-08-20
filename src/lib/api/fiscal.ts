@@ -1530,6 +1530,37 @@ export async function deleteFreteDocumento(id: string): Promise<void> {
   }
 }
 
+// Tipos para cidades
+export interface Cidade {
+  cod_city: string;
+  name: string;
+}
+
+// Função para buscar cidades pelo nome
+export async function getCidadesPorNome(nome: string): Promise<Cidade[]> {
+  try {
+    if (!nome || nome.trim().length < 2) {
+      return [];
+    }
+
+    console.log("🔍 Buscando cidades por nome:", nome);
+
+    const result = await query(`
+      SELECT cod_city, name
+      FROM cities 
+      WHERE LOWER(name) ILIKE LOWER($1)
+      ORDER BY name
+      LIMIT 20
+    `, [`%${nome.trim()}%`]);
+
+    console.log("✅ Cidades encontradas:", result.length);
+    return result;
+  } catch (error) {
+    console.error("❌ Erro ao buscar cidades:", error);
+    throw error;
+  }
+}
+
 // Função para buscar clientes ativos
 export async function getClientesAtivos() {
   try {
