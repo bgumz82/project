@@ -1167,11 +1167,15 @@ export async function getFreteDocumentos(): Promise<FreteDocumento[]> {
         co.estado as cliente_origem_estado,
         cd.razao_social as cliente_destino_razao_social,
         cd.cidade as cliente_destino_cidade,
-        cd.estado as cliente_destino_estado
+        cd.estado as cliente_destino_estado,
+        cio.name as cidade_origem_nome,
+        cid.name as cidade_destino_nome
       FROM frete_documentos f
       JOIN empresas_fiscais e ON f.empresa_id = e.id
       JOIN cadastros co ON f.cliente_origem_id = co.id
       JOIN cadastros cd ON f.cliente_destino_id = cd.id
+      LEFT JOIN cities cio ON f.cidade_origem_ibge = cio.cod_city
+      LEFT JOIN cities cid ON f.cidade_destino_ibge = cid.cod_city
       ORDER BY f.created_at DESC
     `);
 
@@ -1557,6 +1561,29 @@ export async function getCidadesPorNome(nome: string): Promise<Cidade[]> {
     return result;
   } catch (error) {
     console.error("❌ Erro ao buscar cidades:", error);
+    throw error;
+  }
+}
+
+// Função para buscar cidade por código IBGE
+export async function getCidadePorCodigo(codigo: string): Promise<Cidade | null> {
+  try {
+    if (!codigo || codigo.trim().length === 0) {
+      return null;
+    }
+
+    console.log("🔍 Buscando cidade por código:", codigo);
+
+    const result = await queryOne(`
+      SELECT cod_city, name
+      FROM cities 
+      WHERE cod_city = $1
+    `, [codigo.trim()]);
+
+    console.log("✅ Cidade encontrada:", result);
+    return result;
+  } catch (error) {
+    console.error("❌ Erro ao buscar cidade por código:", error);
     throw error;
   }
 }
