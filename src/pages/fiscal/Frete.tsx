@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format, parseISO } from 'date-fns'
@@ -63,7 +62,7 @@ export default function Frete() {
   const [selectedDocumento, setSelectedDocumento] = useState<FreteDocumento | null>(null)
   const [filterStatus, setFilterStatus] = useState<'todos' | 'pendente' | 'emitido' | 'cancelado'>('todos')
   const [filterAtivo, setFilterAtivo] = useState<'todos' | 'ativo' | 'inativo'>('todos')
-  
+
   // Estados para busca de cidades
   const [cidadesOrigem, setCidadesOrigem] = useState<Cidade[]>([])
   const [cidadesDestino, setCidadesDestino] = useState<Cidade[]>([])
@@ -71,7 +70,7 @@ export default function Frete() {
   const [searchDestinoTerm, setSearchDestinoTerm] = useState('')
   const [showOrigemDropdown, setShowOrigemDropdown] = useState(false)
   const [showDestinoDropdown, setShowDestinoDropdown] = useState(false)
-  
+
   const queryClient = useQueryClient()
   const origemInputRef = useRef<HTMLInputElement>(null)
   const destinoInputRef = useRef<HTMLInputElement>(null)
@@ -196,7 +195,7 @@ export default function Frete() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
-    
+
     const documentoData: FreteDocumentoCreate = {
       empresa_id: formData.get('empresa_id') as string,
       cliente_origem_id: formData.get('cliente_origem_id') as string,
@@ -240,8 +239,8 @@ export default function Frete() {
 
   const filteredDocumentos = documentos?.filter(d => {
     const statusMatch = filterStatus === 'todos' || d.status === filterStatus
-    const ativoMatch = filterAtivo === 'todos' || 
-                       (filterAtivo === 'ativo' && d.ativo) || 
+    const ativoMatch = filterAtivo === 'todos' ||
+                       (filterAtivo === 'ativo' && d.ativo) ||
                        (filterAtivo === 'inativo' && !d.ativo)
     return statusMatch && ativoMatch
   })
@@ -270,7 +269,7 @@ export default function Frete() {
             className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
           >
             <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-            Novo Frete
+            Novo Cadastro Valor Frete
           </button>
         </div>
 
@@ -278,7 +277,7 @@ export default function Frete() {
         <div className="mt-6 bg-white shadow rounded-lg p-4">
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700">Status:</label>
+              <label className="text-sm font-medium text-gray-700">Situação:</label>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as any)}
@@ -290,7 +289,7 @@ export default function Frete() {
                 <option value="cancelado">Cancelados</option>
               </select>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <label className="text-sm font-medium text-gray-700">Situação:</label>
               <select
@@ -436,8 +435,8 @@ export default function Frete() {
                           </div>
                           <div className="mt-1">
                             <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                              documento.ativo 
-                                ? 'bg-green-100 text-green-800' 
+                              documento.ativo
+                                ? 'bg-green-100 text-green-800'
                                 : 'bg-red-100 text-red-800'
                             }`}>
                               {documento.ativo ? 'Ativo' : 'Inativo'}
@@ -476,7 +475,7 @@ export default function Frete() {
           <div className="bg-white rounded-lg max-w-6xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-medium">
-                {selectedDocumento ? 'Editar Documento de Frete' : 'Novo Documento de Frete'}
+                {selectedDocumento ? 'Editar Documento de Frete' : 'Novo Cadastro Valor Frete'}
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -586,7 +585,7 @@ export default function Frete() {
                           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pl-10"
                         />
                         <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                        
+
                         {showOrigemDropdown && cidadesOrigem.length > 0 && (
                           <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
                             {cidadesOrigem.map((cidade) => (
@@ -602,7 +601,7 @@ export default function Frete() {
                             ))}
                           </div>
                         )}
-                        
+
                         <input
                           ref={origemInputRef}
                           type="hidden"
@@ -629,7 +628,7 @@ export default function Frete() {
                           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pl-10"
                         />
                         <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                        
+
                         {showDestinoDropdown && cidadesDestino.length > 0 && (
                           <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
                             {cidadesDestino.map((cidade) => (
@@ -645,7 +644,7 @@ export default function Frete() {
                             ))}
                           </div>
                         )}
-                        
+
                         <input
                           ref={destinoInputRef}
                           type="hidden"
