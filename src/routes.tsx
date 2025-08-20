@@ -298,6 +298,15 @@ export function AppRoutes() {
 
         {/* Rotas do Fiscal */}
         <Route
+          path="/fiscal"
+          element={
+            <ProtectedRoute moduleKey="fiscal">
+              <DashboardFiscal />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
           path="/fiscal/dashboard"
           element={
             <ProtectedRoute moduleKey="fiscal">
