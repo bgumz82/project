@@ -1268,48 +1268,48 @@ export async function createFreteDocumento(
   try {
     console.log("📝 Criando novo documento de frete:", documento);
 
-    // Limpar e validar códigos IBGE das cidades
-    const cidadeOrigemIbge = String(documento.cidade_origem_ibge || "").trim();
-    const cidadeDestinoIbge = String(documento.cidade_destino_ibge || "").trim();
-
+    // Validações básicas sem conversões desnecessárias
     console.log("🔍 Validando campos obrigatórios:");
     console.log("- empresa_id:", documento.empresa_id);
     console.log("- cliente_origem_id:", documento.cliente_origem_id);
     console.log("- cliente_destino_id:", documento.cliente_destino_id);
-    console.log("- cidade_origem_ibge:", cidadeOrigemIbge);
-    console.log("- cidade_destino_ibge:", cidadeDestinoIbge);
+    console.log("- cidade_origem_ibge:", documento.cidade_origem_ibge);
+    console.log("- cidade_destino_ibge:", documento.cidade_destino_ibge);
     console.log("- valor_frete:", documento.valor_frete);
     console.log("- km:", documento.km);
+    console.log("- tomador_frete:", documento.tomador_frete);
+    console.log("- tipo_reboque:", documento.tipo_reboque);
+    console.log("- tipo_produto:", documento.tipo_produto);
 
     // Validações obrigatórias
-    if (!documento.empresa_id || documento.empresa_id.trim() === "") {
+    if (!documento.empresa_id) {
       throw new Error("Empresa é obrigatória");
     }
-    if (!documento.cliente_origem_id || documento.cliente_origem_id.trim() === "") {
+    if (!documento.cliente_origem_id) {
       throw new Error("Cliente de origem é obrigatório");
     }
-    if (!documento.cliente_destino_id || documento.cliente_destino_id.trim() === "") {
+    if (!documento.cliente_destino_id) {
       throw new Error("Cliente de destino é obrigatório");
     }
-    if (cidadeOrigemIbge === "") {
+    if (!documento.cidade_origem_ibge) {
       throw new Error("Cidade de origem é obrigatória");
     }
-    if (cidadeDestinoIbge === "") {
+    if (!documento.cidade_destino_ibge) {
       throw new Error("Cidade de destino é obrigatória");
     }
-    if (!documento.valor_frete || parseFloat(String(documento.valor_frete)) <= 0) {
+    if (!documento.valor_frete || documento.valor_frete <= 0) {
       throw new Error("Valor do frete deve ser maior que zero");
     }
-    if (!documento.km || parseInt(String(documento.km)) <= 0) {
+    if (!documento.km || documento.km <= 0) {
       throw new Error("KM deve ser maior que zero");
     }
-    if (!documento.tomador_frete || !["remetente", "destinatario"].includes(documento.tomador_frete)) {
+    if (!documento.tomador_frete) {
       throw new Error("Tomador do frete é obrigatório");
     }
-    if (!documento.tipo_reboque || !["vanderleia", "vanderleia_4_eixos", "bi_trem", "julieta"].includes(documento.tipo_reboque)) {
+    if (!documento.tipo_reboque) {
       throw new Error("Tipo de reboque é obrigatório");
     }
-    if (!documento.tipo_produto || !["LEITE", "CREME", "SORO"].includes(documento.tipo_produto)) {
+    if (!documento.tipo_produto) {
       throw new Error("Tipo de produto é obrigatório");
     }
 
@@ -1359,39 +1359,26 @@ export async function createFreteDocumento(
 
     // Verificar se as cidades existem na tabela cities
     console.log("🏙️ Verificando cidade de origem...");
-    const cidadeOrigem = await getCidadePorCodigo(cidadeOrigemIbge);
+    const cidadeOrigem = await getCidadePorCodigo(documento.cidade_origem_ibge);
     if (!cidadeOrigem) {
-      throw new Error(`Cidade de origem com código IBGE ${cidadeOrigemIbge} não encontrada`);
+      throw new Error(`Cidade de origem com código IBGE ${documento.cidade_origem_ibge} não encontrada`);
     }
     console.log("✅ Cidade de origem válida:", cidadeOrigem.name);
 
     console.log("🏙️ Verificando cidade de destino...");
-    const cidadeDestino = await getCidadePorCodigo(cidadeDestinoIbge);
+    const cidadeDestino = await getCidadePorCodigo(documento.cidade_destino_ibge);
     if (!cidadeDestino) {
-      throw new Error(`Cidade de destino com código IBGE ${cidadeDestinoIbge} não encontrada`);
+      throw new Error(`Cidade de destino com código IBGE ${documento.cidade_destino_ibge} não encontrada`);
     }
     console.log("✅ Cidade de destino válida:", cidadeDestino.name);
 
-    // Preparar valores finais com validação e conversão
-    const valorFrete = parseFloat(String(documento.valor_frete));
-    const valorPedagio = parseFloat(String(documento.valor_pedagio || 0));
-    const valorSeguro = parseFloat(String(documento.valor_seguro || 0));
-    const valorComissao = parseFloat(String(documento.valor_comissao || 0));
-    const km = parseInt(String(documento.km));
-
-    if (isNaN(valorFrete) || valorFrete <= 0) {
-      throw new Error("Valor do frete inválido");
-    }
-    if (isNaN(km) || km <= 0) {
-      throw new Error("KM inválido");
-    }
-
-    console.log("💰 Valores processados:");
-    console.log("- Valor do frete:", valorFrete);
-    console.log("- Valor do pedágio:", valorPedagio);
-    console.log("- Valor do seguro:", valorSeguro);
-    console.log("- Valor da comissão:", valorComissao);
-    console.log("- KM:", km);
+    // Preparar valores finais (já foram validados)
+    console.log("💰 Valores a serem inseridos:");
+    console.log("- Valor do frete:", documento.valor_frete);
+    console.log("- Valor do pedágio:", documento.valor_pedagio || 0);
+    console.log("- Valor do seguro:", documento.valor_seguro || 0);
+    console.log("- Valor da comissão:", documento.valor_comissao || 0);
+    console.log("- KM:", documento.km);
 
     // Inserir o documento de frete
     console.log("📄 Inserindo documento de frete no banco de dados...");
@@ -1427,13 +1414,13 @@ export async function createFreteDocumento(
         documento.empresa_id,
         documento.cliente_origem_id,
         documento.cliente_destino_id,
-        cidadeOrigemIbge,
-        cidadeDestinoIbge,
-        valorFrete,
-        valorPedagio,
-        valorSeguro,
-        valorComissao,
-        km,
+        documento.cidade_origem_ibge,
+        documento.cidade_destino_ibge,
+        documento.valor_frete,
+        documento.valor_pedagio || 0,
+        documento.valor_seguro || 0,
+        documento.valor_comissao || 0,
+        documento.km,
         documento.seguro_carga_id || null,
         documento.cobranca_pedagio !== false,
         documento.cobranca_seguro !== false,
