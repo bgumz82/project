@@ -159,6 +159,7 @@ export default function Sidebar() {
           { name: 'Empresas', href: '/fiscal/empresas', icon: BuildingOffice2Icon },
           { name: 'CT-e', href: '/fiscal/cte', icon: DocumentTextIcon },
           { name: 'MDF-e', href: '/fiscal/mdfe', icon: TruckIcon },
+          { name: 'Frete', href: '/fiscal/frete', icon: CurrencyDollarIcon },
         ]
       })
     }

@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { useAuth } from './AuthContext'
 import { query } from '@/lib/db'
 
-export type ModuleKey = 'dashboard' | 'veiculos' | 'antt' | 'associacoes_frota' | 'abastecimentos' | 'cadastros' | 'manutencoes' | 'checklists' | 'funcionarios' | 'usuarios' | 'permissoes' | 'configuracoes_banco' | 'financeiro' | 'fiscal' | 'empresas_fiscais' | 'cte' | 'mdfe' | 'relatorios'
+export type ModuleKey = 'dashboard' | 'veiculos' | 'antt' | 'associacoes_frota' | 'abastecimentos' | 'cadastros' | 'manutencoes' | 'checklists' | 'funcionarios' | 'usuarios' | 'permissoes' | 'configuracoes_banco' | 'financeiro' | 'fiscal' | 'empresas_fiscais' | 'cte' | 'mdfe' | 'frete' | 'relatorios'
 
 export interface ModulePermission {
   module: string
