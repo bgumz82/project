@@ -29,6 +29,7 @@ import DashboardFiscal from './pages/fiscal/Dashboard'
 import EmpresasFiscais from './pages/fiscal/EmpresasFiscais'
 import CTe from './pages/fiscal/CTe'
 import MDFe from './pages/fiscal/MDFe'
+import Frete from './pages/fiscal/Frete'
 
 // Mobile Routes
 import MobileLogin from './pages/mobile/Login'
@@ -36,11 +37,11 @@ import MobileHome from './pages/mobile/Home'
 import MobileChecklist from './pages/mobile/Checklist'
 import MobileSupply from './pages/mobile/Supply'
 
-function ProtectedRoute({ 
-  children, 
-  moduleKey, 
-  action = 'access' 
-}: { 
+function ProtectedRoute({
+  children,
+  moduleKey,
+  action = 'access'
+}: {
   children: React.ReactNode
   moduleKey?: string
   action?: 'access' | 'create' | 'edit' | 'delete'
@@ -133,15 +134,15 @@ export function AppRoutes() {
     <Routes>
       {/* Desktop Routes */}
       <Route element={<Layout />}>
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
             <ProtectedRoute moduleKey="dashboard">
               <Dashboard />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
         <Route
           path="/veiculos"
           element={
@@ -150,7 +151,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/veiculos/antt"
           element={
@@ -159,7 +160,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/veiculos/associacoes"
           element={
@@ -168,7 +169,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/abastecimentos"
           element={
@@ -177,7 +178,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/cadastros"
           element={
@@ -186,7 +187,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/manutencoes"
           element={
@@ -195,7 +196,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/checklists"
           element={
@@ -213,7 +214,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/usuarios"
           element={
@@ -258,7 +259,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/financeiro/centros-custo"
           element={
@@ -267,7 +268,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/financeiro/contas-pagar"
           element={
@@ -276,7 +277,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/financeiro/contas-receber"
           element={
@@ -285,7 +286,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/financeiro/relatorios"
           element={
@@ -294,7 +295,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         {/* Rotas do Fiscal */}
         <Route
           path="/fiscal/dashboard"
@@ -304,7 +305,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/fiscal/empresas"
           element={
@@ -313,7 +314,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/fiscal/cte"
           element={
@@ -322,12 +323,20 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/fiscal/mdfe"
           element={
             <ProtectedRoute moduleKey="mdfe">
               <MDFe />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/fiscal/frete"
+          element={
+            <ProtectedRoute moduleKey="frete">
+              <Frete />
             </ProtectedRoute>
           }
         />
@@ -342,7 +351,7 @@ export function AppRoutes() {
           </MobileProtectedRoute>
         }
       />
-      
+
       <Route
         path="/m/checklist"
         element={
@@ -351,7 +360,7 @@ export function AppRoutes() {
           </MobileProtectedRoute>
         }
       />
-      
+
       <Route
         path="/m/abastecimento"
         element={

@@ -21,6 +21,7 @@ import {
   ChevronRightIcon,
 } from '@heroicons/react/24/outline'
 import { usePermissions } from '@/contexts/PermissionsContext'
+import { cn } from '@/lib/utils' // Assumindo que 'cn' está disponível para combinar classes CSS
 
 interface NavigationItem {
   name: string
@@ -34,7 +35,7 @@ export default function Sidebar() {
   const location = useLocation()
   const { hasPermission } = usePermissions()
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set())
-  
+
   console.log('🔧 Sidebar renderizando. hasPermission disponível:', typeof hasPermission)
 
   const toggleMenu = (menuName: string) => {
@@ -52,7 +53,7 @@ export default function Sidebar() {
     const items: NavigationItem[] = []
 
     console.log('🔍 Verificando permissões para construir navegação')
-    
+
     // Se a função hasPermission não está disponível, retornar array vazio
     if (typeof hasPermission !== 'function') {
       console.log('❌ hasPermission não é uma função')
@@ -69,17 +70,17 @@ export default function Sidebar() {
       const submenuItems = [
         { name: 'Gerenciar Veículos', href: '/veiculos', icon: TruckIcon }
       ]
-      
+
       // Só adicionar Registros ANTT se o usuário tiver permissão específica
       if (hasPermission('antt')) {
         submenuItems.push({ name: 'Registros ANTT', href: '/veiculos/antt', icon: DocumentTextIcon })
       }
-      
+
       // Só adicionar Associações de Frota se o usuário tiver permissão específica
       if (hasPermission('associacoes_frota')) {
         submenuItems.push({ name: 'Associações de Frota', href: '/veiculos/associacoes', icon: UserGroupIcon })
       }
-      
+
       items.push({ 
         name: 'Veículos', 
         href: '/veiculos', 
@@ -184,7 +185,7 @@ export default function Sidebar() {
           const isActive = location.pathname === item.href
           const hasActiveSubmenu = isInSubmenu(item)
           const isExpanded = expandedMenus.has(item.name) || hasActiveSubmenu
-          
+
           return (
             <div key={item.name}>
               {item.submenu ? (
@@ -213,7 +214,7 @@ export default function Sidebar() {
                       <ChevronRightIcon className="h-3 w-3 text-gray-400 transition-transform duration-200" />
                     )}
                   </button>
-                  
+
                   {/* Submenu Colapsável */}
                   <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
                     isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'

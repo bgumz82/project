@@ -882,6 +882,68 @@ export async function deleteMDFeDocumento(id: string): Promise<void> {
   }
 }
 
+// Tipos para Controle de Frete
+export interface FreteDocumento {
+  id: string;
+  empresa_id: string;
+  cliente_origem_id: string;
+  cliente_destino_id: string;
+  cidade_origem_ibge: string;
+  cidade_destino_ibge: string;
+  valor_frete: number;
+  valor_pedagio: number;
+  valor_seguro: number;
+  valor_comissao: number;
+  km: number;
+  seguro_carga_id: string | null;
+  cobranca_pedagio: boolean;
+  cobranca_seguro: boolean;
+  tomador_frete: "remetente" | "destinatario";
+  tipo_reboque: "vanderleia" | "vanderleia_4_eixos" | "bi_trem" | "julieta";
+  tipo_produto: "LEITE" | "CREME" | "SORO";
+  emissao_automatica: boolean;
+  status: "pendente" | "emitido" | "cancelado";
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+  empresa?: {
+    razao_social: string;
+    cnpj: string;
+  };
+  cliente_origem?: {
+    razao_social: string;
+    cidade: string;
+    estado: string;
+  };
+  cliente_destino?: {
+    razao_social: string;
+    cidade: string;
+    estado: string;
+  };
+}
+
+export interface FreteDocumentoCreate {
+  empresa_id: string;
+  cliente_origem_id: string;
+  cliente_destino_id: string;
+  cidade_origem_ibge: string;
+  cidade_destino_ibge: string;
+  valor_frete: number;
+  valor_pedagio?: number;
+  valor_seguro?: number;
+  valor_comissao?: number;
+  km: number;
+  seguro_carga_id?: string | null;
+  cobranca_pedagio?: boolean;
+  cobranca_seguro?: boolean;
+  tomador_frete: "remetente" | "destinatario";
+  tipo_reboque: "vanderleia" | "vanderleia_4_eixos" | "bi_trem" | "julieta";
+  tipo_produto: "LEITE" | "CREME" | "SORO";
+  emissao_automatica?: boolean;
+  status?: "pendente" | "emitido" | "cancelado";
+  observacoes?: string | null;
+}
+
 // ===== FUNÇÕES AUXILIARES =====
 
 export function formatCNPJ(cnpj: string): string {
@@ -1083,6 +1145,394 @@ export async function generateAccessKey(
     return result[0].chave_acesso;
   } catch (error) {
     console.error("❌ Erro ao gerar chave de acesso:", error);
+    throw error;
+  }
+}
+
+// ===== CONTROLE DE FRETE =====
+
+export async function getFreteDocumentos(): Promise<FreteDocumento[]> {
+  try {
+    console.log("🔍 Buscando documentos de frete");
+
+    const result = await query(`
+      SELECT 
+        f.*,
+        e.razao_social as empresa_razao_social,
+        e.cnpj as empresa_cnpj,
+        co.razao_social as cliente_origem_razao_social,
+        co.cidade as cliente_origem_cidade,
+        co.estado as cliente_origem_estado,
+        cd.razao_social as cliente_destino_razao_social,
+        cd.cidade as cliente_destino_cidade,
+        cd.estado as cliente_destino_estado
+      FROM frete_documentos f
+      JOIN empresas_fiscais e ON f.empresa_id = e.id
+      JOIN cadastros co ON f.cliente_origem_id = co.id
+      JOIN cadastros cd ON f.cliente_destino_id = cd.id
+      ORDER BY f.created_at DESC
+    `);
+
+    console.log("✅ Documentos de frete encontrados:", result.length);
+
+    return result.map((doc) => ({
+      ...doc,
+      empresa: {
+        razao_social: doc.empresa_razao_social,
+        cnpj: doc.empresa_cnpj,
+      },
+      cliente_origem: {
+        razao_social: doc.cliente_origem_razao_social,
+        cidade: doc.cliente_origem_cidade,
+        estado: doc.cliente_origem_estado,
+      },
+      cliente_destino: {
+        razao_social: doc.cliente_destino_razao_social,
+        cidade: doc.cliente_destino_cidade,
+        estado: doc.cliente_destino_estado,
+      },
+    }));
+  } catch (error) {
+    console.error("❌ Erro ao buscar documentos de frete:", error);
+    throw error;
+  }
+}
+
+export async function getFreteDocumento(id: string): Promise<FreteDocumento | null> {
+  try {
+    const result = await queryOne(
+      `
+      SELECT 
+        f.*,
+        e.razao_social as empresa_razao_social,
+        e.cnpj as empresa_cnpj,
+        co.razao_social as cliente_origem_razao_social,
+        co.cidade as cliente_origem_cidade,
+        co.estado as cliente_origem_estado,
+        cd.razao_social as cliente_destino_razao_social,
+        cd.cidade as cliente_destino_cidade,
+        cd.estado as cliente_destino_estado
+      FROM frete_documentos f
+      JOIN empresas_fiscais e ON f.empresa_id = e.id
+      JOIN cadastros co ON f.cliente_origem_id = co.id
+      JOIN cadastros cd ON f.cliente_destino_id = cd.id
+      WHERE f.id = $1
+    `,
+      [id],
+    );
+
+    if (!result) return null;
+
+    return {
+      ...result,
+      empresa: {
+        razao_social: result.empresa_razao_social,
+        cnpj: result.empresa_cnpj,
+      },
+      cliente_origem: {
+        razao_social: result.cliente_origem_razao_social,
+        cidade: result.cliente_origem_cidade,
+        estado: result.cliente_origem_estado,
+      },
+      cliente_destino: {
+        razao_social: result.cliente_destino_razao_social,
+        cidade: result.cliente_destino_cidade,
+        estado: result.cliente_destino_estado,
+      },
+    };
+  } catch (error) {
+    console.error("❌ Erro ao buscar documento de frete:", error);
+    throw error;
+  }
+}
+
+export async function createFreteDocumento(
+  documento: FreteDocumentoCreate,
+): Promise<FreteDocumento> {
+  try {
+    console.log("📝 Criando novo documento de frete:", documento);
+
+    // Verificar se empresa existe
+    const empresa = await queryOne(
+      `
+      SELECT id FROM empresas_fiscais WHERE id = $1 AND status = 'ativo'
+    `,
+      [documento.empresa_id],
+    );
+
+    if (!empresa) {
+      throw new Error("Empresa fiscal não encontrada ou inativa");
+    }
+
+    // Verificar se clientes existem
+    const clienteOrigem = await queryOne(
+      `
+      SELECT id FROM cadastros WHERE id = $1 AND tipo = 'cliente' AND ativo = true
+    `,
+      [documento.cliente_origem_id],
+    );
+
+    const clienteDestino = await queryOne(
+      `
+      SELECT id FROM cadastros WHERE id = $1 AND tipo = 'cliente' AND ativo = true
+    `,
+      [documento.cliente_destino_id],
+    );
+
+    if (!clienteOrigem) {
+      throw new Error("Cliente de origem não encontrado ou inativo");
+    }
+
+    if (!clienteDestino) {
+      throw new Error("Cliente de destino não encontrado ou inativo");
+    }
+
+    const result = await queryOne(
+      `
+      INSERT INTO frete_documentos (
+        empresa_id,
+        cliente_origem_id,
+        cliente_destino_id,
+        cidade_origem_ibge,
+        cidade_destino_ibge,
+        valor_frete,
+        valor_pedagio,
+        valor_seguro,
+        valor_comissao,
+        km,
+        seguro_carga_id,
+        cobranca_pedagio,
+        cobranca_seguro,
+        tomador_frete,
+        tipo_reboque,
+        tipo_produto,
+        emissao_automatica,
+        status,
+        observacoes,
+        created_at,
+        updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW(), NOW())
+      RETURNING *
+    `,
+      [
+        documento.empresa_id,
+        documento.cliente_origem_id,
+        documento.cliente_destino_id,
+        documento.cidade_origem_ibge,
+        documento.cidade_destino_ibge,
+        documento.valor_frete,
+        documento.valor_pedagio || 0,
+        documento.valor_seguro || 0,
+        documento.valor_comissao || 0,
+        documento.km,
+        documento.seguro_carga_id,
+        documento.cobranca_pedagio !== false,
+        documento.cobranca_seguro !== false,
+        documento.tomador_frete,
+        documento.tipo_reboque,
+        documento.tipo_produto,
+        documento.emissao_automatica !== false,
+        documento.status || "pendente",
+        documento.observacoes,
+      ],
+    );
+
+    if (!result) {
+      throw new Error("Erro ao criar documento de frete");
+    }
+
+    console.log("✅ Documento de frete criado com sucesso:", result.id);
+    return result;
+  } catch (error) {
+    console.error("❌ Erro ao criar documento de frete:", error);
+    throw error;
+  }
+}
+
+export async function updateFreteDocumento(
+  id: string,
+  documento: Partial<FreteDocumentoCreate>,
+): Promise<FreteDocumento> {
+  try {
+    console.log("📝 Atualizando documento de frete:", id, documento);
+
+    // Construir query dinamicamente
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    if (documento.empresa_id !== undefined) {
+      updates.push(`empresa_id = $${paramIndex}`);
+      values.push(documento.empresa_id);
+      paramIndex++;
+    }
+
+    if (documento.cliente_origem_id !== undefined) {
+      updates.push(`cliente_origem_id = $${paramIndex}`);
+      values.push(documento.cliente_origem_id);
+      paramIndex++;
+    }
+
+    if (documento.cliente_destino_id !== undefined) {
+      updates.push(`cliente_destino_id = $${paramIndex}`);
+      values.push(documento.cliente_destino_id);
+      paramIndex++;
+    }
+
+    if (documento.cidade_origem_ibge !== undefined) {
+      updates.push(`cidade_origem_ibge = $${paramIndex}`);
+      values.push(documento.cidade_origem_ibge);
+      paramIndex++;
+    }
+
+    if (documento.cidade_destino_ibge !== undefined) {
+      updates.push(`cidade_destino_ibge = $${paramIndex}`);
+      values.push(documento.cidade_destino_ibge);
+      paramIndex++;
+    }
+
+    if (documento.valor_frete !== undefined) {
+      updates.push(`valor_frete = $${paramIndex}`);
+      values.push(documento.valor_frete);
+      paramIndex++;
+    }
+
+    if (documento.valor_pedagio !== undefined) {
+      updates.push(`valor_pedagio = $${paramIndex}`);
+      values.push(documento.valor_pedagio);
+      paramIndex++;
+    }
+
+    if (documento.valor_seguro !== undefined) {
+      updates.push(`valor_seguro = $${paramIndex}`);
+      values.push(documento.valor_seguro);
+      paramIndex++;
+    }
+
+    if (documento.valor_comissao !== undefined) {
+      updates.push(`valor_comissao = $${paramIndex}`);
+      values.push(documento.valor_comissao);
+      paramIndex++;
+    }
+
+    if (documento.km !== undefined) {
+      updates.push(`km = $${paramIndex}`);
+      values.push(documento.km);
+      paramIndex++;
+    }
+
+    if (documento.seguro_carga_id !== undefined) {
+      updates.push(`seguro_carga_id = $${paramIndex}`);
+      values.push(documento.seguro_carga_id);
+      paramIndex++;
+    }
+
+    if (documento.cobranca_pedagio !== undefined) {
+      updates.push(`cobranca_pedagio = $${paramIndex}`);
+      values.push(documento.cobranca_pedagio);
+      paramIndex++;
+    }
+
+    if (documento.cobranca_seguro !== undefined) {
+      updates.push(`cobranca_seguro = $${paramIndex}`);
+      values.push(documento.cobranca_seguro);
+      paramIndex++;
+    }
+
+    if (documento.tomador_frete !== undefined) {
+      updates.push(`tomador_frete = $${paramIndex}`);
+      values.push(documento.tomador_frete);
+      paramIndex++;
+    }
+
+    if (documento.tipo_reboque !== undefined) {
+      updates.push(`tipo_reboque = $${paramIndex}`);
+      values.push(documento.tipo_reboque);
+      paramIndex++;
+    }
+
+    if (documento.tipo_produto !== undefined) {
+      updates.push(`tipo_produto = $${paramIndex}`);
+      values.push(documento.tipo_produto);
+      paramIndex++;
+    }
+
+    if (documento.emissao_automatica !== undefined) {
+      updates.push(`emissao_automatica = $${paramIndex}`);
+      values.push(documento.emissao_automatica);
+      paramIndex++;
+    }
+
+    if (documento.status !== undefined) {
+      updates.push(`status = $${paramIndex}`);
+      values.push(documento.status);
+      paramIndex++;
+    }
+
+    if (documento.observacoes !== undefined) {
+      updates.push(`observacoes = $${paramIndex}`);
+      values.push(documento.observacoes);
+      paramIndex++;
+    }
+
+    // Sempre atualizar updated_at
+    updates.push(`updated_at = NOW()`);
+
+    if (updates.length === 1) {
+      // Apenas updated_at
+      throw new Error("Nenhum campo para atualizar");
+    }
+
+    // Adicionar ID como último parâmetro
+    values.push(id);
+
+    const result = await queryOne(
+      `
+      UPDATE frete_documentos
+      SET ${updates.join(", ")}
+      WHERE id = $${paramIndex}
+      RETURNING *
+    `,
+      values,
+    );
+
+    if (!result) {
+      throw new Error("Documento de frete não encontrado");
+    }
+
+    console.log("✅ Documento de frete atualizado com sucesso:", result.id);
+    return result;
+  } catch (error) {
+    console.error("❌ Erro ao atualizar documento de frete:", error);
+    throw error;
+  }
+}
+
+export async function deleteFreteDocumento(id: string): Promise<void> {
+  try {
+    console.log("🗑️ Excluindo documento de frete:", id);
+
+    await query("DELETE FROM frete_documentos WHERE id = $1", [id]);
+    console.log("✅ Documento de frete excluído com sucesso");
+  } catch (error) {
+    console.error("❌ Erro ao excluir documento de frete:", error);
+    throw error;
+  }
+}
+
+// Função para buscar clientes ativos
+export async function getClientesAtivos() {
+  try {
+    const result = await query(`
+      SELECT id, razao_social, cidade, estado, cep
+      FROM cadastros 
+      WHERE tipo = 'cliente' AND ativo = true
+      ORDER BY razao_social
+    `);
+    
+    return result;
+  } catch (error) {
+    console.error("❌ Erro ao buscar clientes ativos:", error);
     throw error;
   }
 }

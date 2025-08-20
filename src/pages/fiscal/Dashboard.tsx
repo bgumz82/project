@@ -8,7 +8,7 @@ import {
   ExclamationTriangleIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline'
-import { getEmpresasFiscais, getCTeDocumentos, getMDFeDocumentos } from '@/lib/api/fiscal'
+import { getEmpresasFiscais, getCTeDocumentos, getMDFeDocumentos, getFreteDocumentos } from '@/lib/api/fiscal'
 
 export default function DashboardFiscal() {
   const { 
@@ -43,7 +43,17 @@ export default function DashboardFiscal() {
     retry: 3
   })
 
-  const isLoading = isLoadingEmpresas || isLoadingCTe || isLoadingMDFe
+  const { 
+    data: freteDocumentos,
+    isLoading: isLoadingFrete
+  } = useQuery({
+    queryKey: ['frete-documentos'],
+    queryFn: getFreteDocumentos,
+    staleTime: 1000 * 60 * 2,
+    retry: 3
+  })
+
+  const isLoading = isLoadingEmpresas || isLoadingCTe || isLoadingMDFe || isLoadingFrete
   const hasError = empresasError
 
   if (isLoading) {
@@ -82,7 +92,8 @@ export default function DashboardFiscal() {
   const empresasAtivas = empresas?.filter(e => e.status === 'ativo').length || 0
   const ctesPendentes = cteDocumentos?.filter(c => c.status === 'pendente').length || 0
   const mdfesPendentes = mdfeDocumentos?.filter(m => m.status === 'pendente').length || 0
-  const totalDocumentos = (cteDocumentos?.length || 0) + (mdfeDocumentos?.length || 0)
+  const fretesPendentes = freteDocumentos?.filter(f => f.status === 'pendente').length || 0
+  const totalDocumentos = (cteDocumentos?.length || 0) + (mdfeDocumentos?.length || 0) + (freteDocumentos?.length || 0)
 
   return (
     <div className="py-6">
@@ -209,6 +220,44 @@ export default function DashboardFiscal() {
                     className="font-medium text-indigo-600 hover:text-indigo-900"
                   >
                     Gerenciar MDF-e
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Card - Controle de Frete */}
+            <div className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <TruckIcon className="h-6 w-6 text-orange-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 truncate">
+                        Controle de Frete
+                      </dt>
+                      <dd className="flex items-baseline">
+                        <div className="text-2xl font-semibold text-gray-900">
+                          {freteDocumentos?.length || 0}
+                        </div>
+                        {fretesPendentes > 0 && (
+                          <div className="ml-2 text-sm text-yellow-600">
+                            {fretesPendentes} pendentes
+                          </div>
+                        )}
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-5 py-3">
+                <div className="text-sm">
+                  <Link
+                    to="/fiscal/frete"
+                    className="font-medium text-indigo-600 hover:text-indigo-900"
+                  >
+                    Gerenciar Frete
                   </Link>
                 </div>
               </div>
