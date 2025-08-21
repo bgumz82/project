@@ -75,6 +75,8 @@ export default function Frete() {
   const [searchDestinoTerm, setSearchDestinoTerm] = useState("");
   const [showOrigemDropdown, setShowOrigemDropdown] = useState(false);
   const [showDestinoDropdown, setShowDestinoDropdown] = useState(false);
+  const [selectedCidadeOrigemIbge, setSelectedCidadeOrigemIbge] = useState("");
+  const [selectedCidadeDestinoIbge, setSelectedCidadeDestinoIbge] = useState("");
 
   const queryClient = useQueryClient();
   const origemInputRef = useRef<HTMLInputElement>(null);
@@ -151,6 +153,8 @@ export default function Frete() {
     setSearchDestinoTerm("");
     setShowOrigemDropdown(false);
     setShowDestinoDropdown(false);
+    setSelectedCidadeOrigemIbge("");
+    setSelectedCidadeDestinoIbge("");
   };
 
   // Funções de busca de cidades
@@ -188,20 +192,16 @@ export default function Frete() {
 
   const handleOrigemCitySelect = (cidade: Cidade) => {
     setSearchOrigemTerm(`${cidade.name} (${cidade.cod_city})`);
+    setSelectedCidadeOrigemIbge(cidade.cod_city);
     setShowOrigemDropdown(false);
-    if (origemInputRef.current) {
-      origemInputRef.current.value = cidade.cod_city;
-      console.log("Cidade de origem selecionada:",cidade.cod_city);
-    }
+    console.log("Cidade de origem selecionada:", cidade.cod_city);
   };
 
   const handleDestinoCitySelect = (cidade: Cidade) => {
     setSearchDestinoTerm(`${cidade.name} (${cidade.cod_city})`);
+    setSelectedCidadeDestinoIbge(cidade.cod_city);
     setShowDestinoDropdown(false);
-    if (destinoInputRef.current) {
-      destinoInputRef.current.value = cidade.cod_city;
-      console.log("Cidade de destino selecionada:",cidade.cod_city);
-    }
+    console.log("Cidade de destino selecionada:", cidade.cod_city);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -670,12 +670,10 @@ export default function Frete() {
                         )}
 
                         <input
-                          ref={origemInputRef}
                           type="hidden"
                           name="cidade_origem_ibge"
                           id="cidade_origem_ibge"
-                          value=""
-                          defaultValue={selectedDocumento?.cidade_origem_ibge}
+                          value={selectedCidadeOrigemIbge || selectedDocumento?.cidade_origem_ibge || ""}
                           required
                         />
                       </div>
@@ -717,12 +715,10 @@ export default function Frete() {
                         )}
 
                         <input
-                          ref={destinoInputRef}
                           type="hidden"
                           id="cidade_destino_ibge"
                           name="cidade_destino_ibge"
-                          value=""
-                          defaultValue={selectedDocumento?.cidade_destino_ibge}
+                          value={selectedCidadeDestinoIbge || selectedDocumento?.cidade_destino_ibge || ""}
                           required
                         />
                       </div>
