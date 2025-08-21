@@ -208,17 +208,60 @@ export default function Frete() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
+    // Validar campos obrigatórios no frontend
+    const empresa_id = formData.get("empresa_id") as string;
+    const cliente_origem_id = formData.get("cliente_origem_id") as string;
+    const cliente_destino_id = formData.get("cliente_destino_id") as string;
+    const cidade_origem_ibge = formData.get("cidade_origem_ibge") as string;
+    const cidade_destino_ibge = formData.get("cidade_destino_ibge") as string;
+    const valor_frete = parseFloat(formData.get("valor_frete") as string) || 0;
+    const km = parseInt(formData.get("km") as string) || 0;
+
+    // Validações
+    if (!empresa_id) {
+      toast.error("Selecione uma empresa");
+      return;
+    }
+    if (!cliente_origem_id) {
+      toast.error("Selecione o cliente de origem");
+      return;
+    }
+    if (!cliente_destino_id) {
+      toast.error("Selecione o cliente de destino");
+      return;
+    }
+    if (cliente_origem_id === cliente_destino_id) {
+      toast.error("Cliente de origem e destino devem ser diferentes");
+      return;
+    }
+    if (!cidade_origem_ibge) {
+      toast.error("Selecione a cidade de origem");
+      return;
+    }
+    if (!cidade_destino_ibge) {
+      toast.error("Selecione a cidade de destino");
+      return;
+    }
+    if (valor_frete <= 0) {
+      toast.error("Valor do frete deve ser maior que zero");
+      return;
+    }
+    if (km <= 0) {
+      toast.error("KM deve ser maior que zero");
+      return;
+    }
+
     const documentoData: FreteDocumentoCreate = {
-      empresa_id: formData.get("empresa_id") as string,
-      cliente_origem_id: formData.get("cliente_origem_id") as string,
-      cliente_destino_id: formData.get("cliente_destino_id") as string,
-      cidade_origem_ibge: formData.get("cidade_origem_ibge") as string,
-      cidade_destino_ibge: formData.get("cidade_destino_ibge") as string,
-      valor_frete: parseFloat(formData.get("valor_frete") as string) || 0,
+      empresa_id,
+      cliente_origem_id,
+      cliente_destino_id,
+      cidade_origem_ibge,
+      cidade_destino_ibge,
+      valor_frete,
       valor_pedagio: parseFloat(formData.get("valor_pedagio") as string) || 0,
       valor_seguro: parseFloat(formData.get("valor_seguro") as string) || 0,
       valor_comissao: parseFloat(formData.get("valor_comissao") as string) || 0,
-      km: parseInt(formData.get("km") as string) || 0,
+      km,
       seguro_carga_id: (formData.get("seguro_carga_id") as string) || null,
       cobranca_pedagio: formData.get("cobranca_pedagio") === "true",
       cobranca_seguro: formData.get("cobranca_seguro") === "true",
@@ -244,8 +287,34 @@ export default function Frete() {
     }
   };
 
-  const handleEdit = (documento: FreteDocumento) => {
+  const handleEdit = async (documento: FreteDocumento) => {
     setSelectedDocumento(documento);
+    
+    // Preencher campos de cidade se existirem
+    if (documento.cidade_origem_ibge) {
+      try {
+        const cidadeOrigem = await getCidadePorCodigo(documento.cidade_origem_ibge);
+        if (cidadeOrigem) {
+          setSearchOrigemTerm(`${cidadeOrigem.name} (${cidadeOrigem.cod_city})`);
+          setSelectedCidadeOrigemIbge(cidadeOrigem.cod_city);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar cidade de origem:", error);
+      }
+    }
+    
+    if (documento.cidade_destino_ibge) {
+      try {
+        const cidadeDestino = await getCidadePorCodigo(documento.cidade_destino_ibge);
+        if (cidadeDestino) {
+          setSearchDestinoTerm(`${cidadeDestino.name} (${cidadeDestino.cod_city})`);
+          setSelectedCidadeDestinoIbge(cidadeDestino.cod_city);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar cidade de destino:", error);
+      }
+    }
+    
     setIsModalOpen(true);
   };
 
@@ -644,10 +713,20 @@ export default function Frete() {
                           value={searchOrigemTerm}
                           onChange={(e) => {
                             setSearchOrigemTerm(e.target.value);
+                            if (e.target.value !== searchOrigemTerm) {
+                              // Se o usuário está editando, limpar a seleção anterior
+                              setSelectedCidadeOrigemIbge("");
+                            }
                             searchCidadesOrigem(e.target.value);
                           }}
                           placeholder="Digite o nome da cidade de origem..."
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pl-10"
+                          className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pl-10 ${
+                            searchOrigemTerm && !selectedCidadeOrigemIbge 
+                              ? 'border-yellow-300 bg-yellow-50' 
+                              : selectedCidadeOrigemIbge 
+                                ? 'border-green-300 bg-green-50' 
+                                : 'border-gray-300'
+                          }`}
                         />
                         <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
 
@@ -676,6 +755,17 @@ export default function Frete() {
                           value={selectedCidadeOrigemIbge || selectedDocumento?.cidade_origem_ibge || ""}
                           required
                         />
+                        
+                        {searchOrigemTerm && !selectedCidadeOrigemIbge && (
+                          <p className="mt-1 text-xs text-yellow-600">
+                            ⚠️ Selecione uma cidade da lista que aparece
+                          </p>
+                        )}
+                        {selectedCidadeOrigemIbge && (
+                          <p className="mt-1 text-xs text-green-600">
+                            ✅ Cidade selecionada: {selectedCidadeOrigemIbge}
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -689,10 +779,20 @@ export default function Frete() {
                           value={searchDestinoTerm}
                           onChange={(e) => {
                             setSearchDestinoTerm(e.target.value);
+                            if (e.target.value !== searchDestinoTerm) {
+                              // Se o usuário está editando, limpar a seleção anterior
+                              setSelectedCidadeDestinoIbge("");
+                            }
                             searchCidadesDestino(e.target.value);
                           }}
                           placeholder="Digite o nome da cidade de destino..."
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pl-10"
+                          className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pl-10 ${
+                            searchDestinoTerm && !selectedCidadeDestinoIbge 
+                              ? 'border-yellow-300 bg-yellow-50' 
+                              : selectedCidadeDestinoIbge 
+                                ? 'border-green-300 bg-green-50' 
+                                : 'border-gray-300'
+                          }`}
                         />
                         <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
 
@@ -721,6 +821,17 @@ export default function Frete() {
                           value={selectedCidadeDestinoIbge || selectedDocumento?.cidade_destino_ibge || ""}
                           required
                         />
+                        
+                        {searchDestinoTerm && !selectedCidadeDestinoIbge && (
+                          <p className="mt-1 text-xs text-yellow-600">
+                            ⚠️ Selecione uma cidade da lista que aparece
+                          </p>
+                        )}
+                        {selectedCidadeDestinoIbge && (
+                          <p className="mt-1 text-xs text-green-600">
+                            ✅ Cidade selecionada: {selectedCidadeDestinoIbge}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
