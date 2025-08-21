@@ -61,9 +61,6 @@ export default function Frete() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDocumento, setSelectedDocumento] =
     useState<FreteDocumento | null>(null);
-  const [filterStatus, setFilterStatus] = useState<
-    "todos" | "pendente" | "emitido" | "cancelado"
-  >("todos");
   const [filterAtivo, setFilterAtivo] = useState<"todos" | "ativo" | "inativo">(
     "todos",
   );
@@ -327,12 +324,11 @@ export default function Frete() {
   };
 
   const filteredDocumentos = documentos?.filter((d) => {
-    const statusMatch = filterStatus === "todos" || d.status === filterStatus;
     const ativoMatch =
       filterAtivo === "todos" ||
       (filterAtivo === "ativo" && d.ativo) ||
       (filterAtivo === "inativo" && !d.ativo);
-    return statusMatch && ativoMatch;
+    return ativoMatch;
   });
 
   if (isLoading) {
@@ -368,22 +364,6 @@ export default function Frete() {
         {/* Filtros */}
         <div className="mt-6 bg-white shadow rounded-lg p-4">
           <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700">
-                Status:
-              </label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              >
-                <option value="todos">Todos</option>
-                <option value="pendente">Pendentes</option>
-                <option value="emitido">Emitidos</option>
-                <option value="cancelado">Cancelados</option>
-              </select>
-            </div>
-
             <div className="flex items-center space-x-2">
               <label className="text-sm font-medium text-gray-700">
                 Situação:
@@ -424,7 +404,7 @@ export default function Frete() {
                         KM
                       </th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        Status
+                        Situação
                       </th>
                       <th className="relative py-3.5 pl-3 pr-4 sm:pr-6">
                         <span className="sr-only">Ações</span>
@@ -533,14 +513,18 @@ export default function Frete() {
                           {documento.km.toLocaleString("pt-BR")} km
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm">
-                          <span
-                            className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                              STATUS_COLORS[documento.status]
-                            }`}
-                          >
-                            {STATUS_LABELS[documento.status]}
-                          </span>
-                          <div className="flex items-center space-x-1 mt-1">
+                          <div className="mb-2">
+                            <span
+                              className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                                documento.ativo
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {documento.ativo ? "Ativo" : "Inativo"}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-1">
                             {documento.cobranca_pedagio && (
                               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
                                 Pedágio
@@ -556,17 +540,6 @@ export default function Frete() {
                                 Auto
                               </span>
                             )}
-                          </div>
-                          <div className="mt-1">
-                            <span
-                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                                documento.ativo
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {documento.ativo ? "Ativo" : "Inativo"}
-                            </span>
                           </div>
                         </td>
                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
