@@ -1,7 +1,7 @@
-import { useState, useCallback, useRef } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { format, parseISO } from 'date-fns'
-import toast from 'react-hot-toast'
+import { useState, useCallback, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { format, parseISO } from "date-fns";
+import toast from "react-hot-toast";
 import {
   PencilIcon,
   TrashIcon,
@@ -11,7 +11,7 @@ import {
   CurrencyDollarIcon,
   MapPinIcon,
   MagnifyingGlassIcon,
-} from '@heroicons/react/24/outline'
+} from "@heroicons/react/24/outline";
 import {
   getFreteDocumentos,
   createFreteDocumento,
@@ -24,233 +24,254 @@ import {
   formatCNPJ,
   type FreteDocumento,
   type FreteDocumentoCreate,
-  type Cidade
-} from '@/lib/api/fiscal'
+  type Cidade,
+} from "@/lib/api/fiscal";
 
 const STATUS_LABELS = {
-  pendente: 'Pendente',
-  emitido: 'Emitido',
-  cancelado: 'Cancelado'
-}
+  pendente: "Pendente",
+  emitido: "Emitido",
+  cancelado: "Cancelado",
+};
 
 const STATUS_COLORS = {
-  pendente: 'bg-yellow-100 text-yellow-800',
-  emitido: 'bg-green-100 text-green-800',
-  cancelado: 'bg-red-100 text-red-800'
-}
+  pendente: "bg-yellow-100 text-yellow-800",
+  emitido: "bg-green-100 text-green-800",
+  cancelado: "bg-red-100 text-red-800",
+};
 
 const TIPO_REBOQUE_LABELS = {
-  vanderleia: 'Vanderléia',
-  vanderleia_4_eixos: 'Vanderléia 4 Eixos',
-  bi_trem: 'Bi-Trem',
-  julieta: 'Julieta'
-}
+  vanderleia: "Vanderléia",
+  vanderleia_4_eixos: "Vanderléia 4 Eixos",
+  bi_trem: "Bi-Trem",
+  julieta: "Julieta",
+};
 
 const TIPO_PRODUTO_LABELS = {
-  LEITE: 'Leite',
-  CREME: 'Creme',
-  SORO: 'Soro'
-}
+  LEITE: "Leite",
+  CREME: "Creme",
+  SORO: "Soro",
+};
 
 const TOMADOR_FRETE_LABELS = {
-  remetente: 'Remetente',
-  destinatario: 'Destinatário'
-}
+  remetente: "Remetente",
+  destinatario: "Destinatário",
+};
 
 export default function Frete() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedDocumento, setSelectedDocumento] = useState<FreteDocumento | null>(null)
-  const [filterStatus, setFilterStatus] = useState<'todos' | 'pendente' | 'emitido' | 'cancelado'>('todos')
-  const [filterAtivo, setFilterAtivo] = useState<'todos' | 'ativo' | 'inativo'>('todos')
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDocumento, setSelectedDocumento] =
+    useState<FreteDocumento | null>(null);
+  const [filterStatus, setFilterStatus] = useState<
+    "todos" | "pendente" | "emitido" | "cancelado"
+  >("todos");
+  const [filterAtivo, setFilterAtivo] = useState<"todos" | "ativo" | "inativo">(
+    "todos",
+  );
 
   // Estados para busca de cidades
-  const [cidadesOrigem, setCidadesOrigem] = useState<Cidade[]>([])
-  const [cidadesDestino, setCidadesDestino] = useState<Cidade[]>([])
-  const [searchOrigemTerm, setSearchOrigemTerm] = useState('')
-  const [searchDestinoTerm, setSearchDestinoTerm] = useState('')
-  const [showOrigemDropdown, setShowOrigemDropdown] = useState(false)
-  const [showDestinoDropdown, setShowDestinoDropdown] = useState(false)
+  const [cidadesOrigem, setCidadesOrigem] = useState<Cidade[]>([]);
+  const [cidadesDestino, setCidadesDestino] = useState<Cidade[]>([]);
+  const [searchOrigemTerm, setSearchOrigemTerm] = useState("");
+  const [searchDestinoTerm, setSearchDestinoTerm] = useState("");
+  const [showOrigemDropdown, setShowOrigemDropdown] = useState(false);
+  const [showDestinoDropdown, setShowDestinoDropdown] = useState(false);
 
-  const queryClient = useQueryClient()
-  const origemInputRef = useRef<HTMLInputElement>(null)
-  const destinoInputRef = useRef<HTMLInputElement>(null)
+  const queryClient = useQueryClient();
+  const origemInputRef = useRef<HTMLInputElement>(null);
+  const destinoInputRef = useRef<HTMLInputElement>(null);
 
   const { data: documentos, isLoading } = useQuery({
-    queryKey: ['frete-documentos'],
+    queryKey: ["frete-documentos"],
     queryFn: getFreteDocumentos,
     retry: 3,
-    staleTime: 1000 * 60 * 5
-  })
+    staleTime: 1000 * 60 * 5,
+  });
 
   const { data: empresas } = useQuery({
-    queryKey: ['empresas-fiscais'],
-    queryFn: getEmpresasFiscais
-  })
+    queryKey: ["empresas-fiscais"],
+    queryFn: getEmpresasFiscais,
+  });
 
   const { data: clientes } = useQuery({
-    queryKey: ['clientes-ativos'],
-    queryFn: getClientesAtivos
-  })
+    queryKey: ["clientes-ativos"],
+    queryFn: getClientesAtivos,
+  });
 
   const createMutation = useMutation({
     mutationFn: createFreteDocumento,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['frete-documentos'] })
-      toast.success('Documento de frete criado com sucesso!')
-      setIsModalOpen(false)
-      resetForm()
+      queryClient.invalidateQueries({ queryKey: ["frete-documentos"] });
+      toast.success("Documento de frete criado com sucesso!");
+      setIsModalOpen(false);
+      resetForm();
     },
     onError: (error: any) => {
-      console.error('Error creating frete:', error)
-      toast.error(error.message || 'Erro ao criar documento de frete')
-    }
-  })
+      console.error("Error creating frete:", error);
+      toast.error(error.message || "Erro ao criar documento de frete");
+    },
+  });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<FreteDocumentoCreate> }) =>
-      updateFreteDocumento(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<FreteDocumentoCreate>;
+    }) => updateFreteDocumento(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['frete-documentos'] })
-      toast.success('Documento de frete atualizado com sucesso!')
-      setIsModalOpen(false)
-      resetForm()
+      queryClient.invalidateQueries({ queryKey: ["frete-documentos"] });
+      toast.success("Documento de frete atualizado com sucesso!");
+      setIsModalOpen(false);
+      resetForm();
     },
     onError: (error: any) => {
-      console.error('Error updating frete:', error)
-      toast.error(error.message || 'Erro ao atualizar documento de frete')
-    }
-  })
+      console.error("Error updating frete:", error);
+      toast.error(error.message || "Erro ao atualizar documento de frete");
+    },
+  });
 
   const deleteMutation = useMutation({
     mutationFn: deleteFreteDocumento,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['frete-documentos'] })
-      toast.success('Documento de frete excluído com sucesso!')
+      queryClient.invalidateQueries({ queryKey: ["frete-documentos"] });
+      toast.success("Documento de frete excluído com sucesso!");
     },
     onError: (error: any) => {
-      console.error('Error deleting frete:', error)
-      toast.error(error.message || 'Erro ao excluir documento de frete')
-    }
-  })
+      console.error("Error deleting frete:", error);
+      toast.error(error.message || "Erro ao excluir documento de frete");
+    },
+  });
 
   const resetForm = () => {
-    setSelectedDocumento(null)
-    setCidadesOrigem([])
-    setCidadesDestino([])
-    setSearchOrigemTerm('')
-    setSearchDestinoTerm('')
-    setShowOrigemDropdown(false)
-    setShowDestinoDropdown(false)
-  }
+    setSelectedDocumento(null);
+    setCidadesOrigem([]);
+    setCidadesDestino([]);
+    setSearchOrigemTerm("");
+    setSearchDestinoTerm("");
+    setShowOrigemDropdown(false);
+    setShowDestinoDropdown(false);
+  };
 
   // Funções de busca de cidades
   const searchCidadesOrigem = useCallback(async (termo: string) => {
     if (termo.length >= 2) {
       try {
-        const cidades = await getCidadesPorNome(termo)
-        setCidadesOrigem(cidades)
-        setShowOrigemDropdown(true)
+        const cidades = await getCidadesPorNome(termo);
+        setCidadesOrigem(cidades);
+        setShowOrigemDropdown(true);
       } catch (error) {
-        console.error('Erro ao buscar cidades de origem:', error)
-        setCidadesOrigem([])
+        console.error("Erro ao buscar cidades de origem:", error);
+        setCidadesOrigem([]);
       }
     } else {
-      setCidadesOrigem([])
-      setShowOrigemDropdown(false)
+      setCidadesOrigem([]);
+      setShowOrigemDropdown(false);
     }
-  }, [])
+  }, []);
 
   const searchCidadesDestino = useCallback(async (termo: string) => {
     if (termo.length >= 2) {
       try {
-        const cidades = await getCidadesPorNome(termo)
-        setCidadesDestino(cidades)
-        setShowDestinoDropdown(true)
+        const cidades = await getCidadesPorNome(termo);
+        setCidadesDestino(cidades);
+        setShowDestinoDropdown(true);
       } catch (error) {
-        console.error('Erro ao buscar cidades de destino:', error)
-        setCidadesDestino([])
+        console.error("Erro ao buscar cidades de destino:", error);
+        setCidadesDestino([]);
       }
     } else {
-      setCidadesDestino([])
-      setShowDestinoDropdown(false)
+      setCidadesDestino([]);
+      setShowDestinoDropdown(false);
     }
-  }, [])
+  }, []);
 
   const handleOrigemCitySelect = (cidade: Cidade) => {
-    setSearchOrigemTerm(`${cidade.name} (${cidade.cod_city})`)
-    setShowOrigemDropdown(false)
+    setSearchOrigemTerm(`${cidade.name} (${cidade.cod_city})`);
+    setShowOrigemDropdown(false);
     if (origemInputRef.current) {
-      origemInputRef.current.value = cidade.cod_city
+      origemInputRef.current.value = cidade.cod_city;
+      console.log("Cidade de origem selecionada:",cidade.cod_city);
     }
-  }
+  };
 
   const handleDestinoCitySelect = (cidade: Cidade) => {
-    setSearchDestinoTerm(`${cidade.name} (${cidade.cod_city})`)
-    setShowDestinoDropdown(false)
+    setSearchDestinoTerm(`${cidade.name} (${cidade.cod_city})`);
+    setShowDestinoDropdown(false);
     if (destinoInputRef.current) {
-      destinoInputRef.current.value = cidade.cod_city
+      destinoInputRef.current.value = cidade.cod_city;
+      console.log("Cidade de destino selecionada:",cidade.cod_city);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
 
     const documentoData: FreteDocumentoCreate = {
-      empresa_id: formData.get('empresa_id') as string,
-      cliente_origem_id: formData.get('cliente_origem_id') as string,
-      cliente_destino_id: formData.get('cliente_destino_id') as string,
-      cidade_origem_ibge: formData.get('cidade_origem_ibge') as string,
-      cidade_destino_ibge: formData.get('cidade_destino_ibge') as string,
-      valor_frete: parseFloat(formData.get('valor_frete') as string) || 0,
-      valor_pedagio: parseFloat(formData.get('valor_pedagio') as string) || 0,
-      valor_seguro: parseFloat(formData.get('valor_seguro') as string) || 0,
-      valor_comissao: parseFloat(formData.get('valor_comissao') as string) || 0,
-      km: parseInt(formData.get('km') as string) || 0,
-      seguro_carga_id: (formData.get('seguro_carga_id') as string) || null,
-      cobranca_pedagio: formData.get('cobranca_pedagio') === 'true',
-      cobranca_seguro: formData.get('cobranca_seguro') === 'true',
-      tomador_frete: formData.get('tomador_frete') as 'remetente' | 'destinatario',
-      tipo_reboque: formData.get('tipo_reboque') as 'vanderleia' | 'vanderleia_4_eixos' | 'bi_trem' | 'julieta',
-      tipo_produto: formData.get('tipo_produto') as 'LEITE' | 'CREME' | 'SORO',
-      emissao_automatica: formData.get('emissao_automatica') === 'true',
-      status: formData.get('status') as 'pendente' | 'emitido' | 'cancelado',
-      ativo: formData.get('ativo') !== 'false',
-      observacoes: formData.get('observacoes') as string || null
-    }
+      empresa_id: formData.get("empresa_id") as string,
+      cliente_origem_id: formData.get("cliente_origem_id") as string,
+      cliente_destino_id: formData.get("cliente_destino_id") as string,
+      cidade_origem_ibge: formData.get("cidade_origem_ibge") as string,
+      cidade_destino_ibge: formData.get("cidade_destino_ibge") as string,
+      valor_frete: parseFloat(formData.get("valor_frete") as string) || 0,
+      valor_pedagio: parseFloat(formData.get("valor_pedagio") as string) || 0,
+      valor_seguro: parseFloat(formData.get("valor_seguro") as string) || 0,
+      valor_comissao: parseFloat(formData.get("valor_comissao") as string) || 0,
+      km: parseInt(formData.get("km") as string) || 0,
+      seguro_carga_id: (formData.get("seguro_carga_id") as string) || null,
+      cobranca_pedagio: formData.get("cobranca_pedagio") === "true",
+      cobranca_seguro: formData.get("cobranca_seguro") === "true",
+      tomador_frete: formData.get("tomador_frete") as
+        | "remetente"
+        | "destinatario",
+      tipo_reboque: formData.get("tipo_reboque") as
+        | "vanderleia"
+        | "vanderleia_4_eixos"
+        | "bi_trem"
+        | "julieta",
+      tipo_produto: formData.get("tipo_produto") as "LEITE" | "CREME" | "SORO",
+      emissao_automatica: formData.get("emissao_automatica") === "true",
+      status: formData.get("status") as "pendente" | "emitido" | "cancelado",
+      ativo: formData.get("ativo") !== "false",
+      observacoes: (formData.get("observacoes") as string) || null,
+    };
 
     if (selectedDocumento) {
-      updateMutation.mutate({ id: selectedDocumento.id, data: documentoData })
+      updateMutation.mutate({ id: selectedDocumento.id, data: documentoData });
     } else {
-      createMutation.mutate(documentoData)
+      createMutation.mutate(documentoData);
     }
-  }
+  };
 
   const handleEdit = (documento: FreteDocumento) => {
-    setSelectedDocumento(documento)
-    setIsModalOpen(true)
-  }
+    setSelectedDocumento(documento);
+    setIsModalOpen(true);
+  };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este documento de frete?')) {
-      deleteMutation.mutate(id)
+    if (
+      window.confirm("Tem certeza que deseja excluir este documento de frete?")
+    ) {
+      deleteMutation.mutate(id);
     }
-  }
+  };
 
-  const filteredDocumentos = documentos?.filter(d => {
-    const statusMatch = filterStatus === 'todos' || d.status === filterStatus
-    const ativoMatch = filterAtivo === 'todos' ||
-                       (filterAtivo === 'ativo' && d.ativo) ||
-                       (filterAtivo === 'inativo' && !d.ativo)
-    return statusMatch && ativoMatch
-  })
+  const filteredDocumentos = documentos?.filter((d) => {
+    const statusMatch = filterStatus === "todos" || d.status === filterStatus;
+    const ativoMatch =
+      filterAtivo === "todos" ||
+      (filterAtivo === "ativo" && d.ativo) ||
+      (filterAtivo === "inativo" && !d.ativo);
+    return statusMatch && ativoMatch;
+  });
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -259,12 +280,14 @@ export default function Frete() {
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <TruckIcon className="h-8 w-8 text-indigo-600 mr-3" />
-            <h1 className="text-2xl font-semibold text-gray-900">Controle de Frete</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">
+              Controle de Frete
+            </h1>
           </div>
           <button
             onClick={() => {
-              resetForm()
-              setIsModalOpen(true)
+              resetForm();
+              setIsModalOpen(true);
             }}
             className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
           >
@@ -277,7 +300,9 @@ export default function Frete() {
         <div className="mt-6 bg-white shadow rounded-lg p-4">
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700">Status:</label>
+              <label className="text-sm font-medium text-gray-700">
+                Status:
+              </label>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as any)}
@@ -291,7 +316,9 @@ export default function Frete() {
             </div>
 
             <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700">Situação:</label>
+              <label className="text-sm font-medium text-gray-700">
+                Situação:
+              </label>
               <select
                 value={filterAtivo}
                 onChange={(e) => setFilterAtivo(e.target.value as any)}
@@ -344,7 +371,7 @@ export default function Frete() {
                               {documento.empresa?.razao_social}
                             </div>
                             <div className="text-xs text-gray-400 font-mono">
-                              {formatCNPJ(documento.empresa?.cnpj || '')}
+                              {formatCNPJ(documento.empresa?.cnpj || "")}
                             </div>
                           </div>
                         </td>
@@ -352,20 +379,30 @@ export default function Frete() {
                           <div className="space-y-1">
                             <div className="flex items-center text-green-600">
                               <MapPinIcon className="h-4 w-4 mr-1" />
-                              <span className="font-medium">{documento.cliente_origem?.razao_social}</span>
+                              <span className="font-medium">
+                                {documento.cliente_origem?.razao_social}
+                              </span>
                             </div>
                             <div className="text-xs text-gray-500">
-                              {documento.cidade_origem_nome || 'Cidade não encontrada'}
-                              <span className="ml-1">({documento.cidade_origem_ibge})</span>
+                              {documento.cidade_origem_nome ||
+                                "Cidade não encontrada"}
+                              <span className="ml-1">
+                                ({documento.cidade_origem_ibge})
+                              </span>
                             </div>
                             <div className="text-gray-400">↓</div>
                             <div className="flex items-center text-red-600">
                               <MapPinIcon className="h-4 w-4 mr-1" />
-                              <span className="font-medium">{documento.cliente_destino?.razao_social}</span>
+                              <span className="font-medium">
+                                {documento.cliente_destino?.razao_social}
+                              </span>
                             </div>
                             <div className="text-xs text-gray-500">
-                              {documento.cidade_destino_nome || 'Cidade não encontrada'}
-                              <span className="ml-1">({documento.cidade_destino_ibge})</span>
+                              {documento.cidade_destino_nome ||
+                                "Cidade não encontrada"}
+                              <span className="ml-1">
+                                ({documento.cidade_destino_ibge})
+                              </span>
                             </div>
                           </div>
                         </td>
@@ -378,7 +415,8 @@ export default function Frete() {
                               {TIPO_REBOQUE_LABELS[documento.tipo_reboque]}
                             </div>
                             <div className="text-xs text-blue-600 mt-1">
-                              Tomador: {TOMADOR_FRETE_LABELS[documento.tomador_frete]}
+                              Tomador:{" "}
+                              {TOMADOR_FRETE_LABELS[documento.tomador_frete]}
                             </div>
                           </div>
                         </td>
@@ -387,33 +425,50 @@ export default function Frete() {
                             <div className="flex items-center">
                               <CurrencyDollarIcon className="h-4 w-4 text-green-500 mr-1" />
                               <span className="font-medium">
-                                R$ {documento.valor_frete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                R${" "}
+                                {documento.valor_frete.toLocaleString("pt-BR", {
+                                  minimumFractionDigits: 2,
+                                })}
                               </span>
                             </div>
                             {documento.valor_pedagio > 0 && (
                               <div className="text-xs text-gray-600">
-                                Pedágio: R$ {documento.valor_pedagio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                Pedágio: R${" "}
+                                {documento.valor_pedagio.toLocaleString(
+                                  "pt-BR",
+                                  { minimumFractionDigits: 2 },
+                                )}
                               </div>
                             )}
                             {documento.valor_seguro > 0 && (
                               <div className="text-xs text-gray-600">
-                                Seguro: R$ {documento.valor_seguro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                Seguro: R${" "}
+                                {documento.valor_seguro.toLocaleString(
+                                  "pt-BR",
+                                  { minimumFractionDigits: 2 },
+                                )}
                               </div>
                             )}
                             {documento.valor_comissao > 0 && (
                               <div className="text-xs text-gray-600">
-                                Comissão: R$ {documento.valor_comissao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                Comissão: R${" "}
+                                {documento.valor_comissao.toLocaleString(
+                                  "pt-BR",
+                                  { minimumFractionDigits: 2 },
+                                )}
                               </div>
                             )}
                           </div>
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm font-mono text-gray-900">
-                          {documento.km.toLocaleString('pt-BR')} km
+                          {documento.km.toLocaleString("pt-BR")} km
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm">
-                          <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                            STATUS_COLORS[documento.status]
-                          }`}>
+                          <span
+                            className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                              STATUS_COLORS[documento.status]
+                            }`}
+                          >
                             {STATUS_LABELS[documento.status]}
                           </span>
                           <div className="flex items-center space-x-1 mt-1">
@@ -434,12 +489,14 @@ export default function Frete() {
                             )}
                           </div>
                           <div className="mt-1">
-                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                              documento.ativo
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}>
-                              {documento.ativo ? 'Ativo' : 'Inativo'}
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                                documento.ativo
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {documento.ativo ? "Ativo" : "Inativo"}
                             </span>
                           </div>
                         </td>
@@ -475,7 +532,9 @@ export default function Frete() {
           <div className="bg-white rounded-lg max-w-6xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-medium">
-                {selectedDocumento ? 'Editar Documento de Frete' : 'Novo Cadastro Valor Frete'}
+                {selectedDocumento
+                  ? "Editar Documento de Frete"
+                  : "Novo Cadastro Valor Frete"}
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -489,7 +548,10 @@ export default function Frete() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-1">
                   <div>
-                    <label htmlFor="empresa_id" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="empresa_id"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       Empresa (Emissor) *
                     </label>
                     <select
@@ -500,24 +562,35 @@ export default function Frete() {
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
                       <option value="">Selecione uma empresa</option>
-                      {empresas?.filter(e => e.status === 'ativo').map((empresa) => (
-                        <option key={empresa.id} value={empresa.id}>
-                          {empresa.razao_social} - {formatCNPJ(empresa.cnpj)}
-                        </option>
-                      ))}
+                      {empresas
+                        ?.filter((e) => e.status === "ativo")
+                        .map((empresa) => (
+                          <option key={empresa.id} value={empresa.id}>
+                            {empresa.razao_social} - {formatCNPJ(empresa.cnpj)}
+                          </option>
+                        ))}
                     </select>
                   </div>
                 </div>
 
                 {/* Campo status oculto com valor padrão */}
-                <input type="hidden" name="status" value={selectedDocumento?.status || 'pendente'} />
+                <input
+                  type="hidden"
+                  name="status"
+                  value={selectedDocumento?.status || "pendente"}
+                />
 
                 {/* Origem e Destino */}
                 <div className="border-t pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Origem e Destino</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Origem e Destino
+                  </h3>
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div>
-                      <label htmlFor="cliente_origem_id" className="block text-sm font-medium text-gray-700">
+                      <label
+                        htmlFor="cliente_origem_id"
+                        className="block text-sm font-medium text-gray-700"
+                      >
                         Cliente (Origem) *
                       </label>
                       <select
@@ -530,14 +603,18 @@ export default function Frete() {
                         <option value="">Selecione o cliente de origem</option>
                         {clientes?.map((cliente) => (
                           <option key={cliente.id} value={cliente.id}>
-                            {cliente.razao_social} - {cliente.cidade}/{cliente.estado}
+                            {cliente.razao_social} - {cliente.cidade}/
+                            {cliente.estado}
                           </option>
                         ))}
                       </select>
                     </div>
 
                     <div>
-                      <label htmlFor="cliente_destino_id" className="block text-sm font-medium text-gray-700">
+                      <label
+                        htmlFor="cliente_destino_id"
+                        className="block text-sm font-medium text-gray-700"
+                      >
                         Cliente (Destino) *
                       </label>
                       <select
@@ -550,7 +627,8 @@ export default function Frete() {
                         <option value="">Selecione o cliente de destino</option>
                         {clientes?.map((cliente) => (
                           <option key={cliente.id} value={cliente.id}>
-                            {cliente.razao_social} - {cliente.cidade}/{cliente.estado}
+                            {cliente.razao_social} - {cliente.cidade}/
+                            {cliente.estado}
                           </option>
                         ))}
                       </select>
@@ -565,8 +643,8 @@ export default function Frete() {
                           type="text"
                           value={searchOrigemTerm}
                           onChange={(e) => {
-                            setSearchOrigemTerm(e.target.value)
-                            searchCidadesOrigem(e.target.value)
+                            setSearchOrigemTerm(e.target.value);
+                            searchCidadesOrigem(e.target.value);
                           }}
                           placeholder="Digite o nome da cidade de origem..."
                           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pl-10"
@@ -583,7 +661,9 @@ export default function Frete() {
                                 className="w-full px-4 py-2 text-left hover:bg-gray-100 flex justify-between items-center"
                               >
                                 <span>{cidade.name}</span>
-                                <span className="text-xs text-gray-500 font-mono">{cidade.cod_city}</span>
+                                <span className="text-xs text-gray-500 font-mono">
+                                  {cidade.cod_city}
+                                </span>
                               </button>
                             ))}
                           </div>
@@ -593,6 +673,8 @@ export default function Frete() {
                           ref={origemInputRef}
                           type="hidden"
                           name="cidade_origem_ibge"
+                          id="cidade_origem_ibge"
+                          value=""
                           defaultValue={selectedDocumento?.cidade_origem_ibge}
                           required
                         />
@@ -608,8 +690,8 @@ export default function Frete() {
                           type="text"
                           value={searchDestinoTerm}
                           onChange={(e) => {
-                            setSearchDestinoTerm(e.target.value)
-                            searchCidadesDestino(e.target.value)
+                            setSearchDestinoTerm(e.target.value);
+                            searchCidadesDestino(e.target.value);
                           }}
                           placeholder="Digite o nome da cidade de destino..."
                           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pl-10"
@@ -626,7 +708,9 @@ export default function Frete() {
                                 className="w-full px-4 py-2 text-left hover:bg-gray-100 flex justify-between items-center"
                               >
                                 <span>{cidade.name}</span>
-                                <span className="text-xs text-gray-500 font-mono">{cidade.cod_city}</span>
+                                <span className="text-xs text-gray-500 font-mono">
+                                  {cidade.cod_city}
+                                </span>
                               </button>
                             ))}
                           </div>
@@ -635,7 +719,9 @@ export default function Frete() {
                         <input
                           ref={destinoInputRef}
                           type="hidden"
+                          id="cidade_destino_ibge"
                           name="cidade_destino_ibge"
+                          value=""
                           defaultValue={selectedDocumento?.cidade_destino_ibge}
                           required
                         />
@@ -646,10 +732,15 @@ export default function Frete() {
 
                 {/* Valores */}
                 <div className="border-t pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Valores</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Valores
+                  </h3>
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
                     <div>
-                      <label htmlFor="valor_frete" className="block text-sm font-medium text-gray-700">
+                      <label
+                        htmlFor="valor_frete"
+                        className="block text-sm font-medium text-gray-700"
+                      >
                         Valor Frete *
                       </label>
                       <input
@@ -665,7 +756,10 @@ export default function Frete() {
                     </div>
 
                     <div>
-                      <label htmlFor="valor_pedagio" className="block text-sm font-medium text-gray-700">
+                      <label
+                        htmlFor="valor_pedagio"
+                        className="block text-sm font-medium text-gray-700"
+                      >
                         Valor Pedágio
                       </label>
                       <input
@@ -680,7 +774,10 @@ export default function Frete() {
                     </div>
 
                     <div>
-                      <label htmlFor="valor_seguro" className="block text-sm font-medium text-gray-700">
+                      <label
+                        htmlFor="valor_seguro"
+                        className="block text-sm font-medium text-gray-700"
+                      >
                         Valor Seguro
                       </label>
                       <input
@@ -695,7 +792,10 @@ export default function Frete() {
                     </div>
 
                     <div>
-                      <label htmlFor="valor_comissao" className="block text-sm font-medium text-gray-700">
+                      <label
+                        htmlFor="valor_comissao"
+                        className="block text-sm font-medium text-gray-700"
+                      >
                         Valor Comissão
                       </label>
                       <input
@@ -713,10 +813,15 @@ export default function Frete() {
 
                 {/* Detalhes do Frete */}
                 <div className="border-t pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Detalhes do Frete</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Detalhes do Frete
+                  </h3>
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                     <div>
-                      <label htmlFor="km" className="block text-sm font-medium text-gray-700">
+                      <label
+                        htmlFor="km"
+                        className="block text-sm font-medium text-gray-700"
+                      >
                         KM *
                       </label>
                       <input
@@ -731,13 +836,18 @@ export default function Frete() {
                     </div>
 
                     <div>
-                      <label htmlFor="tomador_frete" className="block text-sm font-medium text-gray-700">
+                      <label
+                        htmlFor="tomador_frete"
+                        className="block text-sm font-medium text-gray-700"
+                      >
                         Tomador do Frete *
                       </label>
                       <select
                         name="tomador_frete"
                         id="tomador_frete"
-                        defaultValue={selectedDocumento?.tomador_frete || 'remetente'}
+                        defaultValue={
+                          selectedDocumento?.tomador_frete || "remetente"
+                        }
                         required
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       >
@@ -747,31 +857,43 @@ export default function Frete() {
                     </div>
 
                     <div>
-                      <label htmlFor="tipo_reboque" className="block text-sm font-medium text-gray-700">
+                      <label
+                        htmlFor="tipo_reboque"
+                        className="block text-sm font-medium text-gray-700"
+                      >
                         Tipo de Reboque *
                       </label>
                       <select
                         name="tipo_reboque"
                         id="tipo_reboque"
-                        defaultValue={selectedDocumento?.tipo_reboque || 'vanderleia'}
+                        defaultValue={
+                          selectedDocumento?.tipo_reboque || "vanderleia"
+                        }
                         required
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       >
                         <option value="vanderleia">Vanderléia</option>
-                        <option value="vanderleia_4_eixos">Vanderléia 4 Eixos</option>
+                        <option value="vanderleia_4_eixos">
+                          Vanderléia 4 Eixos
+                        </option>
                         <option value="bi_trem">Bi-Trem</option>
                         <option value="julieta">Julieta</option>
                       </select>
                     </div>
 
                     <div>
-                      <label htmlFor="tipo_produto" className="block text-sm font-medium text-gray-700">
+                      <label
+                        htmlFor="tipo_produto"
+                        className="block text-sm font-medium text-gray-700"
+                      >
                         Tipo de Produto *
                       </label>
                       <select
                         name="tipo_produto"
                         id="tipo_produto"
-                        defaultValue={selectedDocumento?.tipo_produto || 'LEITE'}
+                        defaultValue={
+                          selectedDocumento?.tipo_produto || "LEITE"
+                        }
                         required
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       >
@@ -782,14 +904,17 @@ export default function Frete() {
                     </div>
 
                     <div>
-                      <label htmlFor="seguro_carga_id" className="block text-sm font-medium text-gray-700">
+                      <label
+                        htmlFor="seguro_carga_id"
+                        className="block text-sm font-medium text-gray-700"
+                      >
                         Seguro de Carga
                       </label>
                       <input
                         type="text"
                         name="seguro_carga_id"
                         id="seguro_carga_id"
-                        defaultValue={selectedDocumento?.seguro_carga_id || ''}
+                        defaultValue={selectedDocumento?.seguro_carga_id || ""}
                         placeholder="ID do seguro (futuro)"
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       />
@@ -799,7 +924,9 @@ export default function Frete() {
 
                 {/* Configurações */}
                 <div className="border-t pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Configurações</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Configurações
+                  </h3>
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
@@ -807,7 +934,11 @@ export default function Frete() {
                       </label>
                       <select
                         name="cobranca_pedagio"
-                        defaultValue={selectedDocumento?.cobranca_pedagio !== false ? 'true' : 'false'}
+                        defaultValue={
+                          selectedDocumento?.cobranca_pedagio !== false
+                            ? "true"
+                            : "false"
+                        }
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       >
                         <option value="true">Sim</option>
@@ -821,7 +952,11 @@ export default function Frete() {
                       </label>
                       <select
                         name="cobranca_seguro"
-                        defaultValue={selectedDocumento?.cobranca_seguro !== false ? 'true' : 'false'}
+                        defaultValue={
+                          selectedDocumento?.cobranca_seguro !== false
+                            ? "true"
+                            : "false"
+                        }
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       >
                         <option value="true">Sim</option>
@@ -835,7 +970,11 @@ export default function Frete() {
                       </label>
                       <select
                         name="emissao_automatica"
-                        defaultValue={selectedDocumento?.emissao_automatica !== false ? 'true' : 'false'}
+                        defaultValue={
+                          selectedDocumento?.emissao_automatica !== false
+                            ? "true"
+                            : "false"
+                        }
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       >
                         <option value="true">Sim</option>
@@ -849,7 +988,9 @@ export default function Frete() {
                       </label>
                       <select
                         name="ativo"
-                        defaultValue={selectedDocumento?.ativo !== false ? 'true' : 'false'}
+                        defaultValue={
+                          selectedDocumento?.ativo !== false ? "true" : "false"
+                        }
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       >
                         <option value="true">Ativo</option>
@@ -860,14 +1001,17 @@ export default function Frete() {
                 </div>
 
                 <div>
-                  <label htmlFor="observacoes" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="observacoes"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Observações
                   </label>
                   <textarea
                     name="observacoes"
                     id="observacoes"
                     rows={3}
-                    defaultValue={selectedDocumento?.observacoes || ''}
+                    defaultValue={selectedDocumento?.observacoes || ""}
                     placeholder="Observações sobre o frete..."
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   />
@@ -884,19 +1028,39 @@ export default function Frete() {
                 </button>
                 <button
                   type="submit"
-                  disabled={createMutation.isPending || updateMutation.isPending}
+                  disabled={
+                    createMutation.isPending || updateMutation.isPending
+                  }
                   className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {createMutation.isPending || updateMutation.isPending ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
-                      {selectedDocumento ? 'Atualizando...' : 'Cadastrando...'}
+                      {selectedDocumento ? "Atualizando..." : "Cadastrando..."}
                     </>
+                  ) : selectedDocumento ? (
+                    "Atualizar"
                   ) : (
-                    selectedDocumento ? 'Atualizar' : 'Cadastrar'
+                    "Cadastrar"
                   )}
                 </button>
               </div>
@@ -905,5 +1069,5 @@ export default function Frete() {
         </div>
       )}
     </div>
-  )
+  );
 }
