@@ -697,14 +697,17 @@ export default function CTe() {
                                 setSelectedInicio({
                                   codigo: cidade.cod_city,
                                   nome: cidade.name,
-                                  uf: 'SP' // Ajustar conforme necessário
+                                  uf: cidade.uf || ''
                                 })
                                 setInicioSearchTerm('')
                                 setShowInicioResults(false)
                               }}
-                              className="cursor-pointer hover:bg-gray-100 px-4 py-2"
+                              className="cursor-pointer hover:bg-gray-100 px-4 py-2 flex justify-between items-center"
                             >
-                              {cidade.name}
+                              <span>{cidade.name}/{cidade.uf || ''}</span>
+                              <span className="text-xs text-gray-500 font-mono">
+                                {cidade.cod_city}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -750,14 +753,17 @@ export default function CTe() {
                                 setSelectedTermino({
                                   codigo: cidade.cod_city,
                                   nome: cidade.name,
-                                  uf: 'SP' // Ajustar conforme necessário
+                                  uf: cidade.uf || ''
                                 })
                                 setTerminoSearchTerm('')
                                 setShowTerminoResults(false)
                               }}
-                              className="cursor-pointer hover:bg-gray-100 px-4 py-2"
+                              className="cursor-pointer hover:bg-gray-100 px-4 py-2 flex justify-between items-center"
                             >
-                              {cidade.name}
+                              <span>{cidade.name}/{cidade.uf || ''}</span>
+                              <span className="text-xs text-gray-500 font-mono">
+                                {cidade.cod_city}
+                              </span>
                             </div>
                           ))}
                         </div>

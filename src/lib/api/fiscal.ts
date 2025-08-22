@@ -1630,6 +1630,7 @@ export async function deleteFreteDocumento(id: string): Promise<void> {
 export interface Cidade {
   cod_city: string;
   name: string;
+  uf?: string;
 }
 
 // Função para buscar cidades pelo nome
@@ -1642,10 +1643,14 @@ export async function getCidadesPorNome(nome: string): Promise<Cidade[]> {
     console.log("🔍 Buscando cidades por nome:", nome);
 
     const result = await query(`
-      SELECT cod_city, name
-      FROM cities 
-      WHERE LOWER(name) ILIKE LOWER($1)
-      ORDER BY name
+      SELECT 
+        c.cod_city, 
+        c.name,
+        s.name as uf
+      FROM cities c
+      LEFT JOIN states s ON c.state_id = s.id
+      WHERE LOWER(c.name) ILIKE LOWER($1)
+      ORDER BY c.name, s.name
       LIMIT 20
     `, [`%${nome.trim()}%`]);
 
@@ -1667,9 +1672,13 @@ export async function getCidadePorCodigo(codigo: string): Promise<Cidade | null>
     console.log("🔍 Buscando cidade por código:", codigo);
 
     const result = await queryOne(`
-      SELECT cod_city, name
-      FROM cities 
-      WHERE cod_city = $1
+      SELECT 
+        c.cod_city, 
+        c.name,
+        s.name as uf
+      FROM cities c
+      LEFT JOIN states s ON c.state_id = s.id
+      WHERE c.cod_city = $1
     `, [codigo.trim()]);
 
     console.log("✅ Cidade encontrada:", result);
