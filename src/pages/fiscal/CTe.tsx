@@ -24,6 +24,7 @@ import {
   formatChaveAcesso,
   getUFFromCode,
   getCidadesPorNome,
+  getClientesAtivos,
   type CTeDocumento,
   type CTeDocumentoCreate,
   type Cidade
@@ -101,12 +102,8 @@ export default function CTe() {
 
   // Query para buscar clientes
   const { data: clientes } = useQuery({
-    queryKey: ['clientes'],
-    queryFn: async () => {
-      const response = await fetch('/api/cadastros?tipo=cliente')
-      if (!response.ok) throw new Error('Erro ao buscar clientes')
-      return response.json()
-    }
+    queryKey: ['clientes-ativos'],
+    queryFn: getClientesAtivos
   })
 
   // Query para buscar estados
