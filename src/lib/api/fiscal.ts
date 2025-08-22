@@ -61,6 +61,11 @@ export interface CTeDocumento {
     razao_social: string;
     cnpj: string;
   };
+  // Novos campos para participantes
+  tomador_id?: string | null;
+  remetente_id?: string | null;
+  recebedor_id?: string | null;
+  destinatario_id?: string | null;
 }
 
 export interface CTeDocumentoCreate {
@@ -72,6 +77,11 @@ export interface CTeDocumentoCreate {
   forma_emissao?: number;
   status?: "pendente" | "emitido" | "cancelado";
   observacoes?: string | null;
+  // Novos campos para participantes
+  tomador_id?: string | null;
+  remetente_id?: string | null;
+  recebedor_id?: string | null;
+  destinatario_id?: string | null;
 }
 
 // Tipos para MDF-e
@@ -523,9 +533,13 @@ export async function createCTeDocumento(
         forma_emissao,
         status,
         observacoes,
+        tomador_id,
+        remetente_id,
+        recebedor_id,
+        destinatario_id,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
       RETURNING *
     `,
       [
@@ -537,6 +551,10 @@ export async function createCTeDocumento(
         documento.forma_emissao || 1,
         documento.status || "pendente",
         documento.observacoes,
+        documento.tomador_id,
+        documento.remetente_id,
+        documento.recebedor_id,
+        documento.destinatario_id,
       ],
     );
 
@@ -609,6 +627,30 @@ export async function updateCTeDocumento(
     if (documento.observacoes !== undefined) {
       updates.push(`observacoes = $${paramIndex}`);
       values.push(documento.observacoes);
+      paramIndex++;
+    }
+
+    if (documento.tomador_id !== undefined) {
+      updates.push(`tomador_id = $${paramIndex}`);
+      values.push(documento.tomador_id);
+      paramIndex++;
+    }
+
+    if (documento.remetente_id !== undefined) {
+      updates.push(`remetente_id = $${paramIndex}`);
+      values.push(documento.remetente_id);
+      paramIndex++;
+    }
+
+    if (documento.recebedor_id !== undefined) {
+      updates.push(`recebedor_id = $${paramIndex}`);
+      values.push(documento.recebedor_id);
+      paramIndex++;
+    }
+
+    if (documento.destinatario_id !== undefined) {
+      updates.push(`destinatario_id = $${paramIndex}`);
+      values.push(documento.destinatario_id);
       paramIndex++;
     }
 

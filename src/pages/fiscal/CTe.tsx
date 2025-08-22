@@ -99,6 +99,16 @@ export default function CTe() {
     queryFn: getEmpresasFiscais
   })
 
+  // Query para buscar clientes
+  const { data: clientes } = useQuery({
+    queryKey: ['clientes'],
+    queryFn: async () => {
+      const response = await fetch('/api/cadastros?tipo=cliente')
+      if (!response.ok) throw new Error('Erro ao buscar clientes')
+      return response.json()
+    }
+  })
+
   // Query para buscar estados
   const { data: estados } = useQuery({
     queryKey: ['estados'],
@@ -208,7 +218,11 @@ export default function CTe() {
       codigo_uf: formData.get('codigo_uf') as string,
       forma_emissao: parseInt(formData.get('forma_emissao') as string) || 1,
       status: formData.get('status') as 'pendente' | 'emitido' | 'cancelado',
-      observacoes: formData.get('observacoes') as string || null
+      observacoes: formData.get('observacoes') as string || null,
+      tomador_id: formData.get('tomador_id') as string || null,
+      remetente_id: formData.get('remetente_id') as string || null,
+      recebedor_id: formData.get('recebedor_id') as string || null,
+      destinatario_id: formData.get('destinatario_id') as string || null
     }
 
     if (selectedDocumento) {
@@ -789,43 +803,135 @@ export default function CTe() {
                 </div>
               )}
 
-              {/* Outras Abas - Placeholder por enquanto */}
+              {/* Aba Tomador */}
               {activeTab === 'tomador' && (
                 <div className="space-y-6">
-                  <div className="text-center py-12 text-gray-500">
-                    <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">Aba Tomador</h3>
-                    <p className="mt-1 text-sm text-gray-500">Esta aba será implementada em seguida.</p>
+                  <div>
+                    <label htmlFor="tomador_id" className="block text-sm font-medium text-gray-700">
+                      Tomador do Serviço *
+                    </label>
+                    <select
+                      name="tomador_id"
+                      id="tomador_id"
+                      defaultValue={selectedDocumento?.tomador_id || ''}
+                      required
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    >
+                      <option value="">Selecione o tomador</option>
+                      <option value="remetente">🚚 Remetente</option>
+                      <option value="destinatario">📦 Destinatário</option>
+                      {clientes?.map((cliente) => (
+                        <option key={cliente.id} value={cliente.id}>
+                          {cliente.razao_social} - {cliente.cidade}/{cliente.estado}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-blue-900 mb-2">ℹ️ Informação sobre Tomador</h4>
+                    <p className="text-sm text-blue-700">
+                      O tomador é quem contrata e paga pelo serviço de transporte. Pode ser o remetente, 
+                      destinatário ou um terceiro (cliente cadastrado).
+                    </p>
                   </div>
                 </div>
               )}
 
+              {/* Aba Remetente */}
               {activeTab === 'remetente' && (
                 <div className="space-y-6">
-                  <div className="text-center py-12 text-gray-500">
-                    <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">Aba Remetente</h3>
-                    <p className="mt-1 text-sm text-gray-500">Esta aba será implementada em seguida.</p>
+                  <div>
+                    <label htmlFor="remetente_id" className="block text-sm font-medium text-gray-700">
+                      Remetente *
+                    </label>
+                    <select
+                      name="remetente_id"
+                      id="remetente_id"
+                      defaultValue={selectedDocumento?.remetente_id || ''}
+                      required
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    >
+                      <option value="">Selecione o remetente</option>
+                      {clientes?.map((cliente) => (
+                        <option key={cliente.id} value={cliente.id}>
+                          {cliente.razao_social} - {cliente.cidade}/{cliente.estado}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-green-900 mb-2">🚚 Informação sobre Remetente</h4>
+                    <p className="text-sm text-green-700">
+                      O remetente é quem entrega a mercadoria para transporte. É o ponto de origem da carga.
+                    </p>
                   </div>
                 </div>
               )}
 
+              {/* Aba Recebedor */}
               {activeTab === 'recebedor' && (
                 <div className="space-y-6">
-                  <div className="text-center py-12 text-gray-500">
-                    <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">Aba Recebedor</h3>
-                    <p className="mt-1 text-sm text-gray-500">Esta aba será implementada em seguida.</p>
+                  <div>
+                    <label htmlFor="recebedor_id" className="block text-sm font-medium text-gray-700">
+                      Recebedor
+                    </label>
+                    <select
+                      name="recebedor_id"
+                      id="recebedor_id"
+                      defaultValue={selectedDocumento?.recebedor_id || ''}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    >
+                      <option value="">❌ Sem Recebedor</option>
+                      {clientes?.map((cliente) => (
+                        <option key={cliente.id} value={cliente.id}>
+                          {cliente.razao_social} - {cliente.cidade}/{cliente.estado}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="bg-yellow-50 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-yellow-900 mb-2">⚠️ Informação sobre Recebedor</h4>
+                    <p className="text-sm text-yellow-700">
+                      O recebedor é opcional e representa quem efetivamente recebe a mercadoria, 
+                      quando for diferente do destinatário. Pode ser deixado como "Sem Recebedor" 
+                      se o próprio destinatário for receber.
+                    </p>
                   </div>
                 </div>
               )}
 
+              {/* Aba Destinatário */}
               {activeTab === 'destinatario' && (
                 <div className="space-y-6">
-                  <div className="text-center py-12 text-gray-500">
-                    <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">Aba Destinatário</h3>
-                    <p className="mt-1 text-sm text-gray-500">Esta aba será implementada em seguida.</p>
+                  <div>
+                    <label htmlFor="destinatario_id" className="block text-sm font-medium text-gray-700">
+                      Destinatário *
+                    </label>
+                    <select
+                      name="destinatario_id"
+                      id="destinatario_id"
+                      defaultValue={selectedDocumento?.destinatario_id || ''}
+                      required
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    >
+                      <option value="">Selecione o destinatário</option>
+                      {clientes?.map((cliente) => (
+                        <option key={cliente.id} value={cliente.id}>
+                          {cliente.razao_social} - {cliente.cidade}/{cliente.estado}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-purple-900 mb-2">📦 Informação sobre Destinatário</h4>
+                    <p className="text-sm text-purple-700">
+                      O destinatário é quem deve receber a mercadoria. É o ponto de destino da carga 
+                      e consta obrigatoriamente no CT-e.
+                    </p>
                   </div>
                 </div>
               )}
