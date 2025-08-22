@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format, parseISO } from 'date-fns'
@@ -22,8 +23,10 @@ import {
   formatCNPJ,
   formatChaveAcesso,
   getUFFromCode,
+  getCidadesPorNome,
   type CTeDocumento,
-  type CTeDocumentoCreate
+  type CTeDocumentoCreate,
+  type Cidade
 } from '@/lib/api/fiscal'
 
 const STATUS_LABELS = {
@@ -38,10 +41,50 @@ const STATUS_COLORS = {
   cancelado: 'bg-red-100 text-red-800'
 }
 
+const CFOP_OPTIONS = [
+  { value: '5352', label: '5352 - Prestação de serviço de transporte dentro do Estado' },
+  { value: '6352', label: '6352 - Prestação de serviço de transporte fora do Estado' },
+  { value: '5932', label: '5932 - Prestação de serviço de transporte - Subcontratação' },
+  { value: '6932', label: '6932 - Prestação de serviço de transporte - Subcontratação fora do Estado' }
+]
+
+const FINALIDADE_OPTIONS = [
+  { value: '0', label: '0 - CT-e Normal' },
+  { value: '1', label: '1 - CT-e de Complemento de Valores' },
+  { value: '2', label: '2 - CT-e de Anulação' },
+  { value: '3', label: '3 - CT-e Substituto' }
+]
+
+const TIPO_SERVICO_OPTIONS = [
+  { value: '0', label: '0 - Normal' },
+  { value: '1', label: '1 - Subcontratação' },
+  { value: '2', label: '2 - Redespacho' },
+  { value: '3', label: '3 - Redespacho Intermediário' },
+  { value: '4', label: '4 - Serviço Vinculado a Multimodal' }
+]
+
+interface Estado {
+  id: string;
+  name: string;
+  uf: string;
+}
+
 export default function CTe() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedDocumento, setSelectedDocumento] = useState<CTeDocumento | null>(null)
   const [filterStatus, setFilterStatus] = useState<'todos' | 'pendente' | 'emitido' | 'cancelado'>('todos')
+  const [activeTab, setActiveTab] = useState('dados-cte')
+  
+  // Estados para pesquisa de cidades
+  const [inicioSearchTerm, setInicioSearchTerm] = useState('')
+  const [terminoSearchTerm, setTerminoSearchTerm] = useState('')
+  const [inicioResults, setInicioResults] = useState<Cidade[]>([])
+  const [terminoResults, setTerminoResults] = useState<Cidade[]>([])
+  const [selectedInicio, setSelectedInicio] = useState<{codigo: string, nome: string, uf: string} | null>(null)
+  const [selectedTermino, setSelectedTermino] = useState<{codigo: string, nome: string, uf: string} | null>(null)
+  const [showInicioResults, setShowInicioResults] = useState(false)
+  const [showTerminoResults, setShowTerminoResults] = useState(false)
+
   const queryClient = useQueryClient()
 
   const { data: documentos, isLoading } = useQuery({
@@ -56,11 +99,21 @@ export default function CTe() {
     queryFn: getEmpresasFiscais
   })
 
+  // Query para buscar estados
+  const { data: estados } = useQuery({
+    queryKey: ['estados'],
+    queryFn: async (): Promise<Estado[]> => {
+      const response = await fetch('/api/estados')
+      if (!response.ok) throw new Error('Erro ao buscar estados')
+      return response.json()
+    }
+  })
+
   const createMutation = useMutation({
     mutationFn: createCTeDocumento,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cte-documentos'] })
-      queryClient.invalidateQueries({ queryKey: ['empresas-fiscais'] }) // Atualizar numeração
+      queryClient.invalidateQueries({ queryKey: ['empresas-fiscais'] })
       toast.success('Documento CT-e criado com sucesso!')
       setIsModalOpen(false)
       resetForm()
@@ -100,6 +153,47 @@ export default function CTe() {
 
   const resetForm = () => {
     setSelectedDocumento(null)
+    setActiveTab('dados-cte')
+    setInicioSearchTerm('')
+    setTerminoSearchTerm('')
+    setInicioResults([])
+    setTerminoResults([])
+    setSelectedInicio(null)
+    setSelectedTermino(null)
+    setShowInicioResults(false)
+    setShowTerminoResults(false)
+  }
+
+  // Buscar cidades para início da prestação
+  const searchInicioCity = async (term: string) => {
+    if (term.length < 2) {
+      setInicioResults([])
+      return
+    }
+
+    try {
+      const cities = await getCidadesPorNome(term)
+      setInicioResults(cities)
+    } catch (error) {
+      console.error('Erro ao buscar cidades:', error)
+      setInicioResults([])
+    }
+  }
+
+  // Buscar cidades para término da prestação
+  const searchTerminoCity = async (term: string) => {
+    if (term.length < 2) {
+      setTerminoResults([])
+      return
+    }
+
+    try {
+      const cities = await getCidadesPorNome(term)
+      setTerminoResults(cities)
+    } catch (error) {
+      console.error('Erro ao buscar cidades:', error)
+      setTerminoResults([])
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -137,7 +231,6 @@ export default function CTe() {
 
   const handleViewPDF = (documento: CTeDocumento) => {
     if (documento.pdf_path && documento.pdf_gerado) {
-      // Abrir PDF em nova aba
       window.open(documento.pdf_path, '_blank')
     } else {
       toast.error('PDF não disponível para este documento')
@@ -153,13 +246,11 @@ export default function CTe() {
     try {
       toast.success('Gerando arquivos XML e PDF...')
       
-      // Simular geração de arquivos (aqui você integraria com seu sistema de geração)
       await updateDocumentFiles('cte', documento.id, {
         xmlGerado: true,
         pdfGerado: true
       })
       
-      // Atualizar lista
       queryClient.invalidateQueries({ queryKey: ['cte-documentos'] })
       
       toast.success('Arquivos gerados com sucesso!')
@@ -168,6 +259,18 @@ export default function CTe() {
       toast.error('Erro ao gerar arquivos')
     }
   }
+
+  const tabs = [
+    { id: 'dados-cte', label: 'Dados CT-e' },
+    { id: 'tomador', label: 'Tomador' },
+    { id: 'remetente', label: 'Remetente' },
+    { id: 'recebedor', label: 'Recebedor' },
+    { id: 'destinatario', label: 'Destinatário' },
+    { id: 'servicos-impostos', label: 'Serviços e Impostos' },
+    { id: 'dados-fiscais', label: 'Dados Fiscais' },
+    { id: 'dados-transporte', label: 'Dados Transporte' },
+    { id: 'observacoes', label: 'Observações' }
+  ]
 
   const filteredDocumentos = filterStatus === 'todos' 
     ? documentos 
@@ -363,7 +466,7 @@ export default function CTe() {
       {/* Modal de Cadastro/Edição */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-6xl w-full p-6 max-h-[95vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-medium">
                 {selectedDocumento ? 'Editar Documento CT-e' : 'Novo Documento CT-e'}
@@ -376,178 +479,485 @@ export default function CTe() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-6">
-                <div>
-                  <label htmlFor="empresa_id" className="block text-sm font-medium text-gray-700">
-                    Empresa *
-                  </label>
-                  <select
-                    name="empresa_id"
-                    id="empresa_id"
-                    defaultValue={selectedDocumento?.empresa_id}
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            {/* Navegação por Abas */}
+            <div className="border-b border-gray-200 mb-6">
+              <nav className="-mb-px flex space-x-8 overflow-x-auto">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === tab.id
+                        ? 'border-indigo-500 text-indigo-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
                   >
-                    <option value="">Selecione uma empresa</option>
-                    {empresas?.filter(e => e.status === 'ativo').map((empresa) => (
-                      <option key={empresa.id} value={empresa.id}>
-                        {empresa.razao_social} - {formatCNPJ(empresa.cnpj)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    {tab.label}
+                  </button>
+                ))}
+              </nav>
+            </div>
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
+            <form onSubmit={handleSubmit}>
+              {/* Aba Dados CT-e */}
+              {activeTab === 'dados-cte' && (
+                <div className="space-y-6">
                   <div>
-                    <label htmlFor="numero_cte" className="block text-sm font-medium text-gray-700">
-                      Número CT-e
-                    </label>
-                    <input
-                      type="text"
-                      name="numero_cte"
-                      id="numero_cte"
-                      defaultValue={selectedDocumento?.numero_cte}
-                      placeholder="AUTO"
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Deixe vazio ou "AUTO" para numeração automática
-                    </p>
-                  </div>
-
-                  <div>
-                    <label htmlFor="serie" className="block text-sm font-medium text-gray-700">
-                      Série
-                    </label>
-                    <input
-                      type="text"
-                      name="serie"
-                      id="serie"
-                      defaultValue={selectedDocumento?.serie}
-                      placeholder="Série padrão"
-                      maxLength={3}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Deixe vazio para usar série padrão da empresa
-                    </p>
-                  </div>
-
-
-                  <div>
-                    <label htmlFor="forma_emissao" className="block text-sm font-medium text-gray-700">
-                      Forma Emissão
+                    <label htmlFor="empresa_id" className="block text-sm font-medium text-gray-700">
+                      Empresa Emitente *
                     </label>
                     <select
-                      name="forma_emissao"
-                      id="forma_emissao"
-                      defaultValue={selectedDocumento?.forma_emissao || 1}
+                      name="empresa_id"
+                      id="empresa_id"
+                      defaultValue={selectedDocumento?.empresa_id}
+                      required
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
-                      <option value={1}>1 - Normal</option>
-                      <option value={8}>8 - Contingência</option>
+                      <option value="">Selecione uma empresa</option>
+                      {empresas?.filter(e => e.status === 'ativo').map((empresa) => (
+                        <option key={empresa.id} value={empresa.id}>
+                          {empresa.razao_social} - {formatCNPJ(empresa.cnpj)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                    <div>
+                      <label htmlFor="numero_cte" className="block text-sm font-medium text-gray-700">
+                        Número CT-e
+                      </label>
+                      <input
+                        type="text"
+                        name="numero_cte"
+                        id="numero_cte"
+                        defaultValue={selectedDocumento?.numero_cte}
+                        placeholder="AUTO"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Deixe vazio ou "AUTO" para numeração automática
+                      </p>
+                    </div>
+
+                    <div>
+                      <label htmlFor="serie" className="block text-sm font-medium text-gray-700">
+                        Série
+                      </label>
+                      <input
+                        type="text"
+                        name="serie"
+                        id="serie"
+                        defaultValue={selectedDocumento?.serie}
+                        placeholder="Série padrão"
+                        maxLength={3}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Deixe vazio para usar série padrão da empresa
+                      </p>
+                    </div>
+
+                    <div>
+                      <label htmlFor="forma_emissao" className="block text-sm font-medium text-gray-700">
+                        Forma Emissão
+                      </label>
+                      <select
+                        name="forma_emissao"
+                        id="forma_emissao"
+                        defaultValue={selectedDocumento?.forma_emissao || 1}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      >
+                        <option value={1}>1 - Normal</option>
+                        <option value={8}>8 - Contingência</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="data_emissao" className="block text-sm font-medium text-gray-700">
+                        Data de Emissão *
+                      </label>
+                      <input
+                        type="date"
+                        name="data_emissao"
+                        id="data_emissao"
+                        defaultValue={selectedDocumento?.data_emissao.split('T')[0] || format(new Date(), 'yyyy-MM-dd')}
+                        required
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="hora_emissao" className="block text-sm font-medium text-gray-700">
+                        Hora de Emissão
+                      </label>
+                      <input
+                        type="time"
+                        name="hora_emissao"
+                        id="hora_emissao"
+                        defaultValue="12:00"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                    <div>
+                      <label htmlFor="tipo_servico" className="block text-sm font-medium text-gray-700">
+                        Tipo do Serviço
+                      </label>
+                      <select
+                        name="tipo_servico"
+                        id="tipo_servico"
+                        defaultValue="0"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      >
+                        {TIPO_SERVICO_OPTIONS.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="finalidade_cte" className="block text-sm font-medium text-gray-700">
+                        Finalidade CT-e
+                      </label>
+                      <select
+                        name="finalidade_cte"
+                        id="finalidade_cte"
+                        defaultValue="0"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      >
+                        {FINALIDADE_OPTIONS.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="cfop" className="block text-sm font-medium text-gray-700">
+                        CFOP
+                      </label>
+                      <select
+                        name="cfop"
+                        id="cfop"
+                        defaultValue="5352"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      >
+                        {CFOP_OPTIONS.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Local de Início da Prestação */}
+                  <div>
+                    <label htmlFor="local_inicio" className="block text-sm font-medium text-gray-700">
+                      Local de Início da Prestação *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="local_inicio"
+                        id="local_inicio"
+                        value={selectedInicio ? `${selectedInicio.nome}/${selectedInicio.uf}` : inicioSearchTerm}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setInicioSearchTerm(value)
+                          if (selectedInicio) setSelectedInicio(null)
+                          searchInicioCity(value)
+                          setShowInicioResults(true)
+                        }}
+                        onFocus={() => setShowInicioResults(true)}
+                        placeholder="Digite o nome da cidade..."
+                        required
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      />
+                      <input
+                        type="hidden"
+                        name="cidade_inicio_ibge"
+                        value={selectedInicio?.codigo || ''}
+                      />
+                      
+                      {showInicioResults && inicioResults.length > 0 && (
+                        <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto">
+                          {inicioResults.map((cidade) => (
+                            <div
+                              key={cidade.cod_city}
+                              onClick={() => {
+                                setSelectedInicio({
+                                  codigo: cidade.cod_city,
+                                  nome: cidade.name,
+                                  uf: 'SP' // Ajustar conforme necessário
+                                })
+                                setInicioSearchTerm('')
+                                setShowInicioResults(false)
+                              }}
+                              className="cursor-pointer hover:bg-gray-100 px-4 py-2"
+                            >
+                              {cidade.name}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Local de Término da Prestação */}
+                  <div>
+                    <label htmlFor="local_termino" className="block text-sm font-medium text-gray-700">
+                      Local de Término da Prestação *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="local_termino"
+                        id="local_termino"
+                        value={selectedTermino ? `${selectedTermino.nome}/${selectedTermino.uf}` : terminoSearchTerm}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setTerminoSearchTerm(value)
+                          if (selectedTermino) setSelectedTermino(null)
+                          searchTerminoCity(value)
+                          setShowTerminoResults(true)
+                        }}
+                        onFocus={() => setShowTerminoResults(true)}
+                        placeholder="Digite o nome da cidade..."
+                        required
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      />
+                      <input
+                        type="hidden"
+                        name="cidade_termino_ibge"
+                        value={selectedTermino?.codigo || ''}
+                      />
+                      
+                      {showTerminoResults && terminoResults.length > 0 && (
+                        <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto">
+                          {terminoResults.map((cidade) => (
+                            <div
+                              key={cidade.cod_city}
+                              onClick={() => {
+                                setSelectedTermino({
+                                  codigo: cidade.cod_city,
+                                  nome: cidade.name,
+                                  uf: 'SP' // Ajustar conforme necessário
+                                })
+                                setTerminoSearchTerm('')
+                                setShowTerminoResults(false)
+                              }}
+                              className="cursor-pointer hover:bg-gray-100 px-4 py-2"
+                            >
+                              {cidade.name}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                      Status
+                    </label>
+                    <select
+                      name="status"
+                      id="status"
+                      defaultValue={selectedDocumento?.status || 'pendente'}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    >
+                      <option value="pendente">Pendente</option>
+                      <option value="emitido">Emitido</option>
+                      <option value="cancelado">Cancelado</option>
                     </select>
                   </div>
                 </div>
+              )}
 
-                <div>
-                  <label htmlFor="data_emissao" className="block text-sm font-medium text-gray-700">
-                    Data de Emissão *
-                  </label>
-                  <input
-                    type="date"
-                    name="data_emissao"
-                    id="data_emissao"
-                    defaultValue={selectedDocumento?.data_emissao.split('T')[0] || format(new Date(), 'yyyy-MM-dd')}
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  />
+              {/* Outras Abas - Placeholder por enquanto */}
+              {activeTab === 'tomador' && (
+                <div className="space-y-6">
+                  <div className="text-center py-12 text-gray-500">
+                    <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Aba Tomador</h3>
+                    <p className="mt-1 text-sm text-gray-500">Esta aba será implementada em seguida.</p>
+                  </div>
                 </div>
+              )}
 
-                <div>
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                    Status
-                  </label>
-                  <select
-                    name="status"
-                    id="status"
-                    defaultValue={selectedDocumento?.status || 'pendente'}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  >
-                    <option value="pendente">Pendente</option>
-                    <option value="emitido">Emitido</option>
-                    <option value="cancelado">Cancelado</option>
-                  </select>
+              {activeTab === 'remetente' && (
+                <div className="space-y-6">
+                  <div className="text-center py-12 text-gray-500">
+                    <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Aba Remetente</h3>
+                    <p className="mt-1 text-sm text-gray-500">Esta aba será implementada em seguida.</p>
+                  </div>
                 </div>
+              )}
 
-                <div>
-                  <label htmlFor="observacoes" className="block text-sm font-medium text-gray-700">
-                    Observações
-                  </label>
-                  <textarea
-                    name="observacoes"
-                    id="observacoes"
-                    rows={3}
-                    defaultValue={selectedDocumento?.observacoes || ''}
-                    placeholder="Observações sobre o documento..."
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  />
+              {activeTab === 'recebedor' && (
+                <div className="space-y-6">
+                  <div className="text-center py-12 text-gray-500">
+                    <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Aba Recebedor</h3>
+                    <p className="mt-1 text-sm text-gray-500">Esta aba será implementada em seguida.</p>
+                  </div>
                 </div>
+              )}
 
-                {/* Informações da Chave de Acesso */}
-                {selectedDocumento?.chave_acesso && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Informações da Chave de Acesso</h4>
-                    <div className="grid grid-cols-2 gap-4 text-xs">
-                      <div>
-                        <span className="font-medium">Chave Completa:</span>
-                        <div className="font-mono mt-1 break-all">{selectedDocumento.chave_acesso}</div>
-                      </div>
-                      <div>
-                        <span className="font-medium">Arquivos Gerados:</span>
-                        <div className="mt-1 space-y-1">
-                          {selectedDocumento.xml_proc_path && (
-                            <div className="font-mono text-gray-600">{selectedDocumento.xml_proc_path.split('/').pop()}</div>
-                          )}
-                          {selectedDocumento.xml_path && (
-                            <div className="font-mono text-gray-600">{selectedDocumento.xml_path.split('/').pop()}</div>
-                          )}
-                          {selectedDocumento.pdf_path && (
-                            <div className="font-mono text-gray-600">{selectedDocumento.pdf_path.split('/').pop()}</div>
-                          )}
-                        </div>
+              {activeTab === 'destinatario' && (
+                <div className="space-y-6">
+                  <div className="text-center py-12 text-gray-500">
+                    <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Aba Destinatário</h3>
+                    <p className="mt-1 text-sm text-gray-500">Esta aba será implementada em seguida.</p>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'servicos-impostos' && (
+                <div className="space-y-6">
+                  <div className="text-center py-12 text-gray-500">
+                    <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Aba Serviços e Impostos</h3>
+                    <p className="mt-1 text-sm text-gray-500">Esta aba será implementada em seguida.</p>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'dados-fiscais' && (
+                <div className="space-y-6">
+                  <div className="text-center py-12 text-gray-500">
+                    <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Aba Dados Fiscais</h3>
+                    <p className="mt-1 text-sm text-gray-500">Esta aba será implementada em seguida.</p>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'dados-transporte' && (
+                <div className="space-y-6">
+                  <div className="text-center py-12 text-gray-500">
+                    <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Aba Dados Transporte</h3>
+                    <p className="mt-1 text-sm text-gray-500">Esta aba será implementada em seguida.</p>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'observacoes' && (
+                <div className="space-y-6">
+                  <div>
+                    <label htmlFor="observacoes" className="block text-sm font-medium text-gray-700">
+                      Observações
+                    </label>
+                    <textarea
+                      name="observacoes"
+                      id="observacoes"
+                      rows={6}
+                      defaultValue={selectedDocumento?.observacoes || ''}
+                      placeholder="Observações sobre o documento CT-e..."
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Informações da Chave de Acesso */}
+              {selectedDocumento?.chave_acesso && activeTab === 'dados-cte' && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">Informações da Chave de Acesso</h4>
+                  <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <span className="font-medium">Chave Completa:</span>
+                      <div className="font-mono mt-1 break-all">{selectedDocumento.chave_acesso}</div>
+                    </div>
+                    <div>
+                      <span className="font-medium">Arquivos Gerados:</span>
+                      <div className="mt-1 space-y-1">
+                        {selectedDocumento.xml_proc_path && (
+                          <div className="font-mono text-gray-600">{selectedDocumento.xml_proc_path.split('/').pop()}</div>
+                        )}
+                        {selectedDocumento.xml_path && (
+                          <div className="font-mono text-gray-600">{selectedDocumento.xml_path.split('/').pop()}</div>
+                        )}
+                        {selectedDocumento.pdf_path && (
+                          <div className="font-mono text-gray-600">{selectedDocumento.pdf_path.split('/').pop()}</div>
+                        )}
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                  className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  {createMutation.isPending || updateMutation.isPending ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      {selectedDocumento ? 'Atualizando...' : 'Cadastrando...'}
-                    </>
-                  ) : (
-                    selectedDocumento ? 'Atualizar' : 'Cadastrar'
+              <div className="mt-8 flex justify-between">
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+                <div className="flex space-x-3">
+                  {activeTab !== 'dados-cte' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentIndex = tabs.findIndex(tab => tab.id === activeTab)
+                        if (currentIndex > 0) {
+                          setActiveTab(tabs[currentIndex - 1].id)
+                        }
+                      }}
+                      className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+                    >
+                      Anterior
+                    </button>
                   )}
-                </button>
+                  
+                  {activeTab !== 'observacoes' ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentIndex = tabs.findIndex(tab => tab.id === activeTab)
+                        if (currentIndex < tabs.length - 1) {
+                          setActiveTab(tabs[currentIndex + 1].id)
+                        }
+                      }}
+                      className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
+                    >
+                      Próximo
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={createMutation.isPending || updateMutation.isPending}
+                      className="inline-flex justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {createMutation.isPending || updateMutation.isPending ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          {selectedDocumento ? 'Atualizando...' : 'Cadastrando...'}
+                        </>
+                      ) : (
+                        selectedDocumento ? 'Atualizar' : 'Cadastrar'
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             </form>
           </div>
