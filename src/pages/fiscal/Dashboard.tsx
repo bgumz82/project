@@ -241,11 +241,15 @@ export default function DashboardFiscal() {
                         <div className="text-2xl font-semibold text-gray-900">
                           {freteDocumentos?.length || 0}
                         </div>
-                        {fretesPendentes > 0 && (
-                          <div className="ml-2 text-sm text-yellow-600">
-                            {fretesPendentes} pendentes
+                        <div className="ml-2 flex items-center space-x-2 text-sm">
+                          <div className="text-green-600">
+                            {freteDocumentos?.filter(f => f.ativo).length || 0} ativos
                           </div>
-                        )}
+                          <div className="text-gray-400">•</div>
+                          <div className="text-red-600">
+                            {freteDocumentos?.filter(f => !f.ativo).length || 0} inativos
+                          </div>
+                        </div>
                       </dd>
                     </dl>
                   </div>
