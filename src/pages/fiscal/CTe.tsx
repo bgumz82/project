@@ -174,7 +174,7 @@ export default function CTe() {
   // Função para calcular impostos e valores totais
   const calcularImpostos = () => {
     const valorPrestacaoInput = document.getElementById('valor_prestacao') as HTMLInputElement
-    const valorTributosInput = document.getElementById('valor_tributos') as HTMLInputElement
+    const valorTributosInput = document.getElementById('valor_tributos') as HTMLInputInput
     const valorReceberInput = document.getElementById('valor_receber') as HTMLInputElement
     const icmsValorInput = document.getElementById('icms_valor') as HTMLInputElement
     const icmsBcInput = document.getElementById('icms_bc_valor') as HTMLInputElement
@@ -182,10 +182,10 @@ export default function CTe() {
     if (!valorPrestacaoInput || !valorTributosInput || !valorReceberInput || !icmsValorInput || !icmsBcInput) return
     
     const valorICMS = parseFloat(icmsValorInput.value) || 0
-    const baseCalculoOriginal = parseFloat(icmsBcInput.value) || 0
+    const valorTotalComICMS = parseFloat(icmsBcInput.value) || 0
     
-    // Valor Total da Prestação = Base de Cálculo + ICMS
-    const valorTotalPrestacao = baseCalculoOriginal + valorICMS
+    // Valor Total da Prestação = Valor total já calculado com ICMS
+    const valorTotalPrestacao = valorTotalComICMS
     
     // Atualizar campos
     valorPrestacaoInput.value = valorTotalPrestacao.toFixed(2)
@@ -233,11 +233,22 @@ export default function CTe() {
     
     if (!icmsBcInput || !icmsAliquotaInput || !icmsValorInput) return
     
-    const baseCalculo = parseFloat(icmsBcInput.value) || 0
-    const aliquota = parseFloat(icmsAliquotaInput.value) || 0
-    const valorICMS = (baseCalculo * aliquota) / 100
+    const valorBase = parseFloat(icmsBcInput.value) || 0
+    const aliquotaDecimal = (parseFloat(icmsAliquotaInput.value) || 0) / 100
     
-    icmsValorInput.value = valorICMS.toFixed(2)
+    if (valorBase > 0 && aliquotaDecimal > 0) {
+      // Fórmula: Valor Base / (1 - Alíquota ICMS)
+      const valorTotalComICMS = valorBase / (1 - aliquotaDecimal)
+      const valorICMS = valorTotalComICMS - valorBase
+      
+      // Atualizar o valor do ICMS
+      icmsValorInput.value = valorICMS.toFixed(2)
+      
+      // Atualizar a base de cálculo para o valor total com ICMS
+      icmsBcInput.value = valorTotalComICMS.toFixed(2)
+    } else {
+      icmsValorInput.value = '0.00'
+    }
     
     // Recalcular valores totais após atualizar o ICMS
     calcularImpostos()
@@ -1146,7 +1157,7 @@ export default function CTe() {
                           />
                         </div>
                         <p className="mt-1 text-xs text-gray-500">
-                          Base de Cálculo do ICMS (valor do serviço sem ICMS)
+                          Valor do serviço SEM ICMS (será recalculado automaticamente)
                         </p>
                       </div>
 
