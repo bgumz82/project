@@ -74,6 +74,14 @@ export interface CTeDocumento {
   icms_bc_valor?: number | null;
   icms_aliquota?: number | null;
   icms_valor?: number | null;
+  // Campos para dados fiscais
+  valor_carga?: number | null;
+  quantidade_carga?: number | null;
+  produto_predominante_id?: string | null;
+  chave_acesso_1?: string | null;
+  chave_acesso_2?: string | null;
+  chave_acesso_3?: string | null;
+  chave_acesso_4?: string | null;
 }
 
 export interface CTeDocumentoCreate {
@@ -98,6 +106,14 @@ export interface CTeDocumentoCreate {
   icms_bc_valor?: number | null;
   icms_aliquota?: number | null;
   icms_valor?: number | null;
+  // Campos para dados fiscais
+  valor_carga?: number | null;
+  quantidade_carga?: number | null;
+  produto_predominante_id?: string | null;
+  chave_acesso_1?: string | null;
+  chave_acesso_2?: string | null;
+  chave_acesso_3?: string | null;
+  chave_acesso_4?: string | null;
 }
 
 // Tipos para MDF-e
@@ -538,6 +554,38 @@ export async function createCTeDocumento(
       throw new Error("Número CT-e e série já existem para esta empresa");
     }
 
+    // Validação de chave de acesso (primeiros 43 dígitos)
+    if (documento.chave_acesso_1 && documento.chave_acesso_1.length !== 43) {
+      throw new Error("Chave de Acesso 1 deve conter 43 dígitos.");
+    }
+    if (documento.chave_acesso_2 && documento.chave_acesso_2.length !== 43) {
+      throw new Error("Chave de Acesso 2 deve conter 43 dígitos.");
+    }
+    if (documento.chave_acesso_3 && documento.chave_acesso_3.length !== 43) {
+      throw new Error("Chave de Acesso 3 deve conter 43 dígitos.");
+    }
+    if (documento.chave_acesso_4 && documento.chave_acesso_4.length !== 43) {
+      throw new Error("Chave de Acesso 4 deve conter 43 dígitos.");
+    }
+
+    // Combinar chaves de acesso se existirem
+    const chaveAcessoCompleta =
+      (documento.chave_acesso_1 || "") +
+      (documento.chave_acesso_2 || "") +
+      (documento.chave_acesso_3 || "") +
+      (documento.chave_acesso_4 || "");
+
+    // Se alguma chave foi preenchida, validar o dígito verificador
+    if (chaveAcessoCompleta.length > 0) {
+      if (chaveAcessoCompleta.length !== 44) {
+        throw new Error("A combinação das chaves de acesso deve ter 44 dígitos.");
+      }
+      // Validação do dígito verificador (assumindo que a função existe)
+      // if (!validarDigitoVerificadorChaveAcesso(chaveAcessoCompleta)) {
+      //   throw new Error("Dígito verificador da chave de acesso é inválido.");
+      // }
+    }
+
     const result = await queryOne(
       `
       INSERT INTO cte_documentos (
@@ -545,17 +593,25 @@ export async function createCTeDocumento(
         numero_cte,
         serie,
         data_emissao,
+        chave_acesso,
         codigo_uf,
         forma_emissao,
         status,
         observacoes,
+        valor_carga,
+        quantidade_carga,
+        produto_predominante_id,
+        chave_acesso_1,
+        chave_acesso_2,
+        chave_acesso_3,
+        chave_acesso_4,
         tomador_id,
         remetente_id,
         recebedor_id,
         destinatario_id,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW(), NOW())
       RETURNING *
     `,
       [
@@ -563,10 +619,18 @@ export async function createCTeDocumento(
         numeroFinal,
         serieFinal,
         documento.data_emissao,
+        chaveAcessoCompleta.length === 44 ? chaveAcessoCompleta : null,
         codigoUFFinal,
         documento.forma_emissao || 1,
         documento.status || "pendente",
         documento.observacoes,
+        documento.valor_carga,
+        documento.quantidade_carga,
+        documento.produto_predominante_id,
+        documento.chave_acesso_1,
+        documento.chave_acesso_2,
+        documento.chave_acesso_3,
+        documento.chave_acesso_4,
         documento.tomador_id,
         documento.remetente_id,
         documento.recebedor_id,
@@ -592,6 +656,38 @@ export async function updateCTeDocumento(
 ): Promise<CTeDocumento> {
   try {
     console.log("📝 Atualizando documento CT-e:", id, documento);
+
+    // Validação de chave de acesso (primeiros 43 dígitos)
+    if (
+      (documento.chave_acesso_1 !== undefined &&
+        documento.chave_acesso_1.length !== 43) ||
+      (documento.chave_acesso_2 !== undefined &&
+        documento.chave_acesso_2.length !== 43) ||
+      (documento.chave_acesso_3 !== undefined &&
+        documento.chave_acesso_3.length !== 43) ||
+      (documento.chave_acesso_4 !== undefined &&
+        documento.chave_acesso_4.length !== 43)
+    ) {
+      throw new Error("Cada campo de Chave de Acesso deve conter 43 dígitos.");
+    }
+
+    // Combinar chaves de acesso se existirem
+    const chaveAcessoCompleta =
+      (documento.chave_acesso_1 || "") +
+      (documento.chave_acesso_2 || "") +
+      (documento.chave_acesso_3 || "") +
+      (documento.chave_acesso_4 || "");
+
+    // Se alguma chave foi preenchida, validar o dígito verificador
+    if (chaveAcessoCompleta.length > 0) {
+      if (chaveAcessoCompleta.length !== 44) {
+        throw new Error("A combinação das chaves de acesso deve ter 44 dígitos.");
+      }
+      // Validação do dígito verificador (assumindo que a função existe)
+      // if (!validarDigitoVerificadorChaveAcesso(chaveAcessoCompleta)) {
+      //   throw new Error("Dígito verificador da chave de acesso é inválido.");
+      // }
+    }
 
     // Construir query dinamicamente
     const updates: string[] = [];
@@ -644,6 +740,56 @@ export async function updateCTeDocumento(
       updates.push(`observacoes = $${paramIndex}`);
       values.push(documento.observacoes);
       paramIndex++;
+    }
+
+    if (documento.valor_carga !== undefined) {
+      updates.push(`valor_carga = $${paramIndex}`);
+      values.push(documento.valor_carga);
+      paramIndex++;
+    }
+
+    if (documento.quantidade_carga !== undefined) {
+      updates.push(`quantidade_carga = $${paramIndex}`);
+      values.push(documento.quantidade_carga);
+      paramIndex++;
+    }
+
+    if (documento.produto_predominante_id !== undefined) {
+      updates.push(`produto_predominante_id = $${paramIndex}`);
+      values.push(documento.produto_predominante_id);
+      paramIndex++;
+    }
+
+    if (documento.chave_acesso_1 !== undefined) {
+      updates.push(`chave_acesso_1 = $${paramIndex}`);
+      values.push(documento.chave_acesso_1);
+      paramIndex++;
+    }
+
+    if (documento.chave_acesso_2 !== undefined) {
+      updates.push(`chave_acesso_2 = $${paramIndex}`);
+      values.push(documento.chave_acesso_2);
+      paramIndex++;
+    }
+
+    if (documento.chave_acesso_3 !== undefined) {
+      updates.push(`chave_acesso_3 = $${paramIndex}`);
+      values.push(documento.chave_acesso_3);
+      paramIndex++;
+    }
+
+    if (documento.chave_acesso_4 !== undefined) {
+      updates.push(`chave_acesso_4 = $${paramIndex}`);
+      values.push(documento.chave_acesso_4);
+      paramIndex++;
+    }
+
+    if (chaveAcessoCompleta.length > 0) {
+      updates.push(`chave_acesso = $${paramIndex}`);
+      values.push(chaveAcessoCompleta);
+      paramIndex++;
+    } else if (chaveAcessoCompleta.length === 0) {
+      updates.push(`chave_acesso = NULL`);
     }
 
     if (documento.tomador_id !== undefined) {

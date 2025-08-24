@@ -25,9 +25,12 @@ import {
   getUFFromCode,
   getCidadesPorNome,
   getClientesAtivos,
+  getProdutosCTe,
+  validarChaveAcesso,
   type CTeDocumento,
   type CTeDocumentoCreate,
-  type Cidade
+  type Cidade,
+  type ProdutoCTe
 } from '@/lib/api/fiscal'
 
 const STATUS_LABELS = {
@@ -85,6 +88,27 @@ export default function CTe() {
   const [selectedTermino, setSelectedTermino] = useState<{codigo: string, nome: string, uf: string} | null>(null)
   const [showInicioResults, setShowInicioResults] = useState(false)
   const [showTerminoResults, setShowTerminoResults] = useState(false)
+  
+  // Estados para validação de chaves de acesso
+  const [chaveErrors, setChaveErrors] = useState<{[key: string]: string}>({})
+  
+  // Função para validar chave de acesso em tempo real
+  const validateChaveAcesso = (value: string, fieldName: string) => {
+    const chaveNumerica = value.replace(/\D/g, '')
+    const newErrors = { ...chaveErrors }
+    
+    if (chaveNumerica.length === 0) {
+      delete newErrors[fieldName]
+    } else if (chaveNumerica.length !== 44) {
+      newErrors[fieldName] = 'Chave deve ter exatamente 44 dígitos'
+    } else if (!validarChaveAcesso(chaveNumerica)) {
+      newErrors[fieldName] = 'Chave de acesso inválida - dígito verificador incorreto'
+    } else {
+      delete newErrors[fieldName]
+    }
+    
+    setChaveErrors(newErrors)
+  }
 
   const queryClient = useQueryClient()
 
@@ -104,6 +128,12 @@ export default function CTe() {
   const { data: clientes } = useQuery({
     queryKey: ['clientes-ativos'],
     queryFn: getClientesAtivos
+  })
+
+  // Query para buscar produtos CT-e
+  const { data: produtos } = useQuery({
+    queryKey: ['produtos-cte'],
+    queryFn: getProdutosCTe
   })
 
   // Query para buscar estados
@@ -169,6 +199,7 @@ export default function CTe() {
     setSelectedTermino(null)
     setShowInicioResults(false)
     setShowTerminoResults(false)
+    setChaveErrors({})
   }
 
   // Função para calcular impostos e valores totais
@@ -310,7 +341,15 @@ export default function CTe() {
       icms_situacao_tributaria: formData.get('icms_situacao_tributaria') as string || null,
       icms_bc_valor: parseFloat(formData.get('icms_bc_valor') as string) || null,
       icms_aliquota: parseFloat(formData.get('icms_aliquota') as string) || null,
-      icms_valor: parseFloat(formData.get('icms_valor') as string) || null
+      icms_valor: parseFloat(formData.get('icms_valor') as string) || null,
+      // Campos de dados fiscais
+      valor_carga: parseFloat(formData.get('valor_carga') as string) || null,
+      quantidade_carga: parseFloat(formData.get('quantidade_carga') as string) || null,
+      produto_predominante_id: formData.get('produto_predominante_id') as string || null,
+      chave_acesso_1: formData.get('chave_acesso_1') as string || null,
+      chave_acesso_2: formData.get('chave_acesso_2') as string || null,
+      chave_acesso_3: formData.get('chave_acesso_3') as string || null,
+      chave_acesso_4: formData.get('chave_acesso_4') as string || null
     }
 
     if (selectedDocumento) {
@@ -1246,10 +1285,212 @@ export default function CTe() {
 
               {activeTab === 'dados-fiscais' && (
                 <div className="space-y-6">
-                  <div className="text-center py-12 text-gray-500">
-                    <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">Aba Dados Fiscais</h3>
-                    <p className="mt-1 text-sm text-gray-500">Esta aba será implementada em seguida.</p>
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-blue-900 mb-2">📋 Dados Fiscais da Carga</h4>
+                    <p className="text-sm text-blue-700">
+                      Informações sobre a carga transportada e chaves de acesso dos documentos relacionados.
+                    </p>
+                  </div>
+
+                  {/* Dados da Carga */}
+                  <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                    <h4 className="text-lg font-medium text-gray-900 mb-4">🚚 Dados da Carga</h4>
+                    
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="valor_carga" className="block text-sm font-medium text-gray-700">
+                          Valor da Carga
+                        </label>
+                        <div className="mt-1 relative rounded-md shadow-sm">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 sm:text-sm">R$</span>
+                          </div>
+                          <input
+                            type="number"
+                            name="valor_carga"
+                            id="valor_carga"
+                            step="0.01"
+                            min="0"
+                            placeholder="0,00"
+                            className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="quantidade_carga" className="block text-sm font-medium text-gray-700">
+                          Quantidade da Carga
+                        </label>
+                        <div className="mt-1 relative rounded-md shadow-sm">
+                          <input
+                            type="number"
+                            name="quantidade_carga"
+                            id="quantidade_carga"
+                            step="0.001"
+                            min="0"
+                            placeholder="0,000"
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          />
+                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 sm:text-sm">kg</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="produto_predominante_id" className="block text-sm font-medium text-gray-700">
+                        Produto Predominante *
+                      </label>
+                      <select
+                        name="produto_predominante_id"
+                        id="produto_predominante_id"
+                        required
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      >
+                        <option value="">Selecione o produto predominante</option>
+                        {produtos?.map((produto) => (
+                          <option key={produto.id} value={produto.id}>
+                            {produto.cod_ncm} - {produto.descricao}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Chaves de Acesso de Documentos Relacionados */}
+                  <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                    <h4 className="text-lg font-medium text-gray-900 mb-4">🔑 Chaves de Acesso de Documentos Relacionados</h4>
+                    
+                    <div className="bg-yellow-50 p-3 rounded-md">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-yellow-800">
+                            Informação sobre Chaves de Acesso
+                          </h3>
+                          <div className="mt-2 text-sm text-yellow-700">
+                            <p>As chaves de acesso devem conter exatamente 44 dígitos numéricos e ter um dígito verificador válido.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="chave_acesso_1" className="block text-sm font-medium text-gray-700">
+                          Chave de Acesso 1
+                        </label>
+                        <input
+                          type="text"
+                          name="chave_acesso_1"
+                          id="chave_acesso_1"
+                          maxLength="44"
+                          placeholder="Digite apenas números (44 dígitos)"
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '')
+                            e.target.value = value
+                            validateChaveAcesso(value, 'chave_acesso_1')
+                          }}
+                          className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
+                            chaveErrors.chave_acesso_1 
+                              ? 'border-red-300 focus:border-red-500' 
+                              : 'border-gray-300 focus:border-indigo-500'
+                          }`}
+                        />
+                        {chaveErrors.chave_acesso_1 && (
+                          <p className="mt-1 text-xs text-red-600">{chaveErrors.chave_acesso_1}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label htmlFor="chave_acesso_2" className="block text-sm font-medium text-gray-700">
+                          Chave de Acesso 2
+                        </label>
+                        <input
+                          type="text"
+                          name="chave_acesso_2"
+                          id="chave_acesso_2"
+                          maxLength="44"
+                          placeholder="Digite apenas números (44 dígitos)"
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '')
+                            e.target.value = value
+                            validateChaveAcesso(value, 'chave_acesso_2')
+                          }}
+                          className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
+                            chaveErrors.chave_acesso_2 
+                              ? 'border-red-300 focus:border-red-500' 
+                              : 'border-gray-300 focus:border-indigo-500'
+                          }`}
+                        />
+                        {chaveErrors.chave_acesso_2 && (
+                          <p className="mt-1 text-xs text-red-600">{chaveErrors.chave_acesso_2}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label htmlFor="chave_acesso_3" className="block text-sm font-medium text-gray-700">
+                          Chave de Acesso 3
+                        </label>
+                        <input
+                          type="text"
+                          name="chave_acesso_3"
+                          id="chave_acesso_3"
+                          maxLength="44"
+                          placeholder="Digite apenas números (44 dígitos)"
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '')
+                            e.target.value = value
+                            validateChaveAcesso(value, 'chave_acesso_3')
+                          }}
+                          className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
+                            chaveErrors.chave_acesso_3 
+                              ? 'border-red-300 focus:border-red-500' 
+                              : 'border-gray-300 focus:border-indigo-500'
+                          }`}
+                        />
+                        {chaveErrors.chave_acesso_3 && (
+                          <p className="mt-1 text-xs text-red-600">{chaveErrors.chave_acesso_3}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label htmlFor="chave_acesso_4" className="block text-sm font-medium text-gray-700">
+                          Chave de Acesso 4
+                        </label>
+                        <input
+                          type="text"
+                          name="chave_acesso_4"
+                          id="chave_acesso_4"
+                          maxLength="44"
+                          placeholder="Digite apenas números (44 dígitos)"
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '')
+                            e.target.value = value
+                            validateChaveAcesso(value, 'chave_acesso_4')
+                          }}
+                          className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
+                            chaveErrors.chave_acesso_4 
+                              ? 'border-red-300 focus:border-red-500' 
+                              : 'border-gray-300 focus:border-indigo-500'
+                          }`}
+                        />
+                        {chaveErrors.chave_acesso_4 && (
+                          <p className="mt-1 text-xs text-red-600">{chaveErrors.chave_acesso_4}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Contador de caracteres para as chaves */}
+                    <div className="text-xs text-gray-500 space-y-1">
+                      <p>💡 <strong>Dica:</strong> Cole as chaves completas de 44 dígitos. O sistema validará automaticamente.</p>
+                      <p>✅ Uma chave válida tem formato: 31200614200166000188550010000000012345678901</p>
+                    </div>
                   </div>
                 </div>
               )}
