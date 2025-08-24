@@ -172,20 +172,25 @@ export default function CTe() {
   }
 
   // Função para calcular impostos e valores totais
-  const calcularImpostos = (valorPrestacao: number) => {
+  const calcularImpostos = () => {
     const valorPrestacaoInput = document.getElementById('valor_prestacao') as HTMLInputElement
     const valorTributosInput = document.getElementById('valor_tributos') as HTMLInputElement
     const valorReceberInput = document.getElementById('valor_receber') as HTMLInputElement
     const icmsValorInput = document.getElementById('icms_valor') as HTMLInputElement
+    const icmsBcInput = document.getElementById('icms_bc_valor') as HTMLInputElement
     
-    if (!valorPrestacaoInput || !valorTributosInput || !valorReceberInput || !icmsValorInput) return
+    if (!valorPrestacaoInput || !valorTributosInput || !valorReceberInput || !icmsValorInput || !icmsBcInput) return
     
     const valorICMS = parseFloat(icmsValorInput.value) || 0
-    const valorTributos = valorICMS // Por enquanto só ICMS, pode expandir para outros tributos
-    const valorReceber = valorPrestacao - valorTributos
+    const baseCalculoOriginal = parseFloat(icmsBcInput.value) || 0
     
-    valorTributosInput.value = valorTributos.toFixed(2)
-    valorReceberInput.value = valorReceber.toFixed(2)
+    // Valor Total da Prestação = Base de Cálculo + ICMS
+    const valorTotalPrestacao = baseCalculoOriginal + valorICMS
+    
+    // Atualizar campos
+    valorPrestacaoInput.value = valorTotalPrestacao.toFixed(2)
+    valorTributosInput.value = valorICMS.toFixed(2)
+    valorReceberInput.value = valorTotalPrestacao.toFixed(2) // Valor a receber = valor total
   }
 
   // Função para lidar com mudança na situação tributária
@@ -206,10 +211,7 @@ export default function CTe() {
       icmsIsencaoInfo.classList.remove('hidden')
       
       // Recalcular valores totais
-      const valorPrestacaoInput = document.getElementById('valor_prestacao') as HTMLInputElement
-      if (valorPrestacaoInput) {
-        calcularImpostos(parseFloat(valorPrestacaoInput.value) || 0)
-      }
+      calcularImpostos()
     } else {
       icmsBcInput.disabled = false
       icmsAliquotaInput.disabled = false
@@ -228,9 +230,8 @@ export default function CTe() {
     const icmsBcInput = document.getElementById('icms_bc_valor') as HTMLInputElement
     const icmsAliquotaInput = document.getElementById('icms_aliquota') as HTMLInputElement
     const icmsValorInput = document.getElementById('icms_valor') as HTMLInputElement
-    const valorPrestacaoInput = document.getElementById('valor_prestacao') as HTMLInputElement
     
-    if (!icmsBcInput || !icmsAliquotaInput || !icmsValorInput || !valorPrestacaoInput) return
+    if (!icmsBcInput || !icmsAliquotaInput || !icmsValorInput) return
     
     const baseCalculo = parseFloat(icmsBcInput.value) || 0
     const aliquota = parseFloat(icmsAliquotaInput.value) || 0
@@ -238,9 +239,8 @@ export default function CTe() {
     
     icmsValorInput.value = valorICMS.toFixed(2)
     
-    // Recalcular valores totais
-    const valorPrestacao = parseFloat(valorPrestacaoInput.value) || 0
-    calcularImpostos(valorPrestacao)
+    // Recalcular valores totais após atualizar o ICMS
+    calcularImpostos()
   }
 
   // Buscar cidades para início da prestação
@@ -1026,7 +1026,7 @@ export default function CTe() {
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                     <div>
                       <label htmlFor="valor_prestacao" className="block text-sm font-medium text-gray-700">
-                        Valor Total da Prestação de Serviço *
+                        Valor Total da Prestação de Serviço
                       </label>
                       <div className="mt-1 relative rounded-md shadow-sm">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -1039,14 +1039,13 @@ export default function CTe() {
                           step="0.01"
                           min="0"
                           placeholder="0,00"
-                          onChange={(e) => {
-                            const valor = parseFloat(e.target.value) || 0;
-                            calcularImpostos(valor);
-                          }}
-                          required
-                          className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          readOnly
+                          className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
                       </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Calculado automaticamente (Base + ICMS)
+                      </p>
                     </div>
 
                     <div>
@@ -1069,7 +1068,7 @@ export default function CTe() {
                         />
                       </div>
                       <p className="mt-1 text-xs text-gray-500">
-                        Calculado automaticamente (Prestação - Tributos)
+                        Valor total a receber (Base + ICMS)
                       </p>
                     </div>
 
@@ -1147,7 +1146,7 @@ export default function CTe() {
                           />
                         </div>
                         <p className="mt-1 text-xs text-gray-500">
-                          Base de Cálculo do ICMS
+                          Base de Cálculo do ICMS (valor do serviço sem ICMS)
                         </p>
                       </div>
 
