@@ -1909,3 +1909,64 @@ export async function getClientesAtivos() {
     throw error;
   }
 }
+
+// Tipos para produtos CT-e
+export interface ProdutoCTe {
+  id: string;
+  cod_ncm: string;
+  descricao: string;
+}
+
+// Função para buscar produtos CT-e
+export async function getProdutosCTe(): Promise<ProdutoCTe[]> {
+  try {
+    console.log("🔍 Buscando produtos CT-e");
+
+    const result = await query(`
+      SELECT id, cod_ncm, descricao
+      FROM cte_produtos
+      ORDER BY descricao
+    `);
+
+    console.log("✅ Produtos CT-e encontrados:", result.length);
+    return result;
+  } catch (error) {
+    console.error("❌ Erro ao buscar produtos CT-e:", error);
+    throw error;
+  }
+}
+
+// Função para validar chave de acesso
+export function validarChaveAcesso(chave: string): boolean {
+  try {
+    // Remove caracteres não numéricos
+    const chaveNumerica = chave.replace(/\D/g, '');
+    
+    // Deve ter exatamente 44 dígitos
+    if (chaveNumerica.length !== 44) {
+      return false;
+    }
+
+    // Calcula o dígito verificador
+    const chaveBase = chaveNumerica.substring(0, 43);
+    const dv = chaveNumerica.substring(43, 44);
+    
+    let soma = 0;
+    let peso = 2;
+    
+    // Cálculo do DV (algoritmo módulo 11)
+    for (let i = chaveBase.length - 1; i >= 0; i--) {
+      soma += parseInt(chaveBase[i]) * peso;
+      peso++;
+      if (peso > 9) peso = 2;
+    }
+    
+    const resto = soma % 11;
+    const dvCalculado = resto < 2 ? 0 : 11 - resto;
+    
+    return parseInt(dv) === dvCalculado;
+  } catch (error) {
+    console.error("❌ Erro ao validar chave de acesso:", error);
+    return false;
+  }
+}
