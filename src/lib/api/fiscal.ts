@@ -61,11 +61,19 @@ export interface CTeDocumento {
     razao_social: string;
     cnpj: string;
   };
-  // Novos campos para participantes
+  // Campos para participantes
   tomador_id?: string | null;
   remetente_id?: string | null;
   recebedor_id?: string | null;
   destinatario_id?: string | null;
+  // Campos para serviços e impostos
+  valor_prestacao?: number | null;
+  valor_receber?: number | null;
+  valor_tributos?: number | null;
+  icms_situacao_tributaria?: string | null;
+  icms_bc_valor?: number | null;
+  icms_aliquota?: number | null;
+  icms_valor?: number | null;
 }
 
 export interface CTeDocumentoCreate {
@@ -77,11 +85,19 @@ export interface CTeDocumentoCreate {
   forma_emissao?: number;
   status?: "pendente" | "emitido" | "cancelado";
   observacoes?: string | null;
-  // Novos campos para participantes
+  // Campos para participantes
   tomador_id?: string | null;
   remetente_id?: string | null;
   recebedor_id?: string | null;
   destinatario_id?: string | null;
+  // Campos para serviços e impostos
+  valor_prestacao?: number | null;
+  valor_receber?: number | null;
+  valor_tributos?: number | null;
+  icms_situacao_tributaria?: string | null;
+  icms_bc_valor?: number | null;
+  icms_aliquota?: number | null;
+  icms_valor?: number | null;
 }
 
 // Tipos para MDF-e

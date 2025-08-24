@@ -171,6 +171,78 @@ export default function CTe() {
     setShowTerminoResults(false)
   }
 
+  // Função para calcular impostos e valores totais
+  const calcularImpostos = (valorPrestacao: number) => {
+    const valorPrestacaoInput = document.getElementById('valor_prestacao') as HTMLInputElement
+    const valorTributosInput = document.getElementById('valor_tributos') as HTMLInputElement
+    const valorReceberInput = document.getElementById('valor_receber') as HTMLInputElement
+    const icmsValorInput = document.getElementById('icms_valor') as HTMLInputElement
+    
+    if (!valorPrestacaoInput || !valorTributosInput || !valorReceberInput || !icmsValorInput) return
+    
+    const valorICMS = parseFloat(icmsValorInput.value) || 0
+    const valorTributos = valorICMS // Por enquanto só ICMS, pode expandir para outros tributos
+    const valorReceber = valorPrestacao - valorTributos
+    
+    valorTributosInput.value = valorTributos.toFixed(2)
+    valorReceberInput.value = valorReceber.toFixed(2)
+  }
+
+  // Função para lidar com mudança na situação tributária
+  const handleSituacaoTributariaChange = (situacao: string) => {
+    const icmsBcInput = document.getElementById('icms_bc_valor') as HTMLInputElement
+    const icmsAliquotaInput = document.getElementById('icms_aliquota') as HTMLInputElement
+    const icmsValorInput = document.getElementById('icms_valor') as HTMLInputElement
+    const icmsIsencaoInfo = document.getElementById('icms-isencao-info')
+    
+    if (!icmsBcInput || !icmsAliquotaInput || !icmsValorInput || !icmsIsencaoInfo) return
+    
+    if (situacao === '40') { // ICMS Isenção
+      icmsBcInput.value = '0.00'
+      icmsBcInput.disabled = true
+      icmsAliquotaInput.value = '0.00'
+      icmsAliquotaInput.disabled = true
+      icmsValorInput.value = '0.00'
+      icmsIsencaoInfo.classList.remove('hidden')
+      
+      // Recalcular valores totais
+      const valorPrestacaoInput = document.getElementById('valor_prestacao') as HTMLInputElement
+      if (valorPrestacaoInput) {
+        calcularImpostos(parseFloat(valorPrestacaoInput.value) || 0)
+      }
+    } else {
+      icmsBcInput.disabled = false
+      icmsAliquotaInput.disabled = false
+      icmsIsencaoInfo.classList.add('hidden')
+      
+      // Para tributação normal (00) e Simples Nacional (90), habilitar campos
+      if (situacao === '00' || situacao === '90') {
+        // Pode aplicar regras específicas aqui se necessário
+        recalcularICMS()
+      }
+    }
+  }
+
+  // Função para recalcular ICMS
+  const recalcularICMS = () => {
+    const icmsBcInput = document.getElementById('icms_bc_valor') as HTMLInputElement
+    const icmsAliquotaInput = document.getElementById('icms_aliquota') as HTMLInputElement
+    const icmsValorInput = document.getElementById('icms_valor') as HTMLInputElement
+    const valorPrestacaoInput = document.getElementById('valor_prestacao') as HTMLInputElement
+    
+    if (!icmsBcInput || !icmsAliquotaInput || !icmsValorInput || !valorPrestacaoInput) return
+    
+    const baseCalculo = parseFloat(icmsBcInput.value) || 0
+    const aliquota = parseFloat(icmsAliquotaInput.value) || 0
+    const valorICMS = (baseCalculo * aliquota) / 100
+    
+    icmsValorInput.value = valorICMS.toFixed(2)
+    
+    // Recalcular valores totais
+    const valorPrestacao = parseFloat(valorPrestacaoInput.value) || 0
+    calcularImpostos(valorPrestacao)
+  }
+
   // Buscar cidades para início da prestação
   const searchInicioCity = async (term: string) => {
     if (term.length < 2) {
@@ -219,7 +291,15 @@ export default function CTe() {
       tomador_id: formData.get('tomador_id') as string || null,
       remetente_id: formData.get('remetente_id') as string || null,
       recebedor_id: formData.get('recebedor_id') as string || null,
-      destinatario_id: formData.get('destinatario_id') as string || null
+      destinatario_id: formData.get('destinatario_id') as string || null,
+      // Campos de serviços e impostos
+      valor_prestacao: parseFloat(formData.get('valor_prestacao') as string) || null,
+      valor_receber: parseFloat(formData.get('valor_receber') as string) || null,
+      valor_tributos: parseFloat(formData.get('valor_tributos') as string) || null,
+      icms_situacao_tributaria: formData.get('icms_situacao_tributaria') as string || null,
+      icms_bc_valor: parseFloat(formData.get('icms_bc_valor') as string) || null,
+      icms_aliquota: parseFloat(formData.get('icms_aliquota') as string) || null,
+      icms_valor: parseFloat(formData.get('icms_valor') as string) || null
     }
 
     if (selectedDocumento) {
@@ -935,10 +1015,210 @@ export default function CTe() {
 
               {activeTab === 'servicos-impostos' && (
                 <div className="space-y-6">
-                  <div className="text-center py-12 text-gray-500">
-                    <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">Aba Serviços e Impostos</h3>
-                    <p className="mt-1 text-sm text-gray-500">Esta aba será implementada em seguida.</p>
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-blue-900 mb-2">💰 Valores do Serviço</h4>
+                    <p className="text-sm text-blue-700">
+                      Configure os valores da prestação de serviço e tributos aplicáveis.
+                    </p>
+                  </div>
+
+                  {/* Valores da Prestação */}
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                    <div>
+                      <label htmlFor="valor_prestacao" className="block text-sm font-medium text-gray-700">
+                        Valor Total da Prestação de Serviço *
+                      </label>
+                      <div className="mt-1 relative rounded-md shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">R$</span>
+                        </div>
+                        <input
+                          type="number"
+                          name="valor_prestacao"
+                          id="valor_prestacao"
+                          step="0.01"
+                          min="0"
+                          placeholder="0,00"
+                          onChange={(e) => {
+                            const valor = parseFloat(e.target.value) || 0;
+                            calcularImpostos(valor);
+                          }}
+                          required
+                          className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="valor_receber" className="block text-sm font-medium text-gray-700">
+                        Valor Total a Receber
+                      </label>
+                      <div className="mt-1 relative rounded-md shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">R$</span>
+                        </div>
+                        <input
+                          type="number"
+                          name="valor_receber"
+                          id="valor_receber"
+                          step="0.01"
+                          min="0"
+                          placeholder="0,00"
+                          readOnly
+                          className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Calculado automaticamente (Prestação - Tributos)
+                      </p>
+                    </div>
+
+                    <div>
+                      <label htmlFor="valor_tributos" className="block text-sm font-medium text-gray-700">
+                        Valor Total dos Tributos
+                      </label>
+                      <div className="mt-1 relative rounded-md shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">R$</span>
+                        </div>
+                        <input
+                          type="number"
+                          name="valor_tributos"
+                          id="valor_tributos"
+                          step="0.01"
+                          min="0"
+                          placeholder="0,00"
+                          readOnly
+                          className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Calculado automaticamente baseado no ICMS
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Separador */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <h4 className="text-lg font-medium text-gray-900 mb-4">🏛️ ICMS - Imposto sobre Circulação de Mercadorias e Serviços</h4>
+                  </div>
+
+                  {/* ICMS */}
+                  <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                    <div>
+                      <label htmlFor="icms_situacao_tributaria" className="block text-sm font-medium text-gray-700">
+                        Código da Situação Tributária *
+                      </label>
+                      <select
+                        name="icms_situacao_tributaria"
+                        id="icms_situacao_tributaria"
+                        required
+                        onChange={(e) => {
+                          const situacao = e.target.value;
+                          handleSituacaoTributariaChange(situacao);
+                        }}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      >
+                        <option value="">Selecione a situação tributária</option>
+                        <option value="00">00 - Tributação Normal do ICMS</option>
+                        <option value="40">40 - ICMS Isenção</option>
+                        <option value="90">90 - Simples Nacional</option>
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                      <div>
+                        <label htmlFor="icms_bc_valor" className="block text-sm font-medium text-gray-700">
+                          Valor da BC do ICMS
+                        </label>
+                        <div className="mt-1 relative rounded-md shadow-sm">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 sm:text-sm">R$</span>
+                          </div>
+                          <input
+                            type="number"
+                            name="icms_bc_valor"
+                            id="icms_bc_valor"
+                            step="0.01"
+                            min="0"
+                            placeholder="0,00"
+                            onChange={recalcularICMS}
+                            className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          />
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Base de Cálculo do ICMS
+                        </p>
+                      </div>
+
+                      <div>
+                        <label htmlFor="icms_aliquota" className="block text-sm font-medium text-gray-700">
+                          Alíquota do ICMS (%)
+                        </label>
+                        <div className="mt-1 relative rounded-md shadow-sm">
+                          <input
+                            type="number"
+                            name="icms_aliquota"
+                            id="icms_aliquota"
+                            step="0.01"
+                            min="0"
+                            max="100"
+                            placeholder="0,00"
+                            onChange={recalcularICMS}
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          />
+                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 sm:text-sm">%</span>
+                          </div>
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Percentual de ICMS aplicável
+                        </p>
+                      </div>
+
+                      <div>
+                        <label htmlFor="icms_valor" className="block text-sm font-medium text-gray-700">
+                          Valor do ICMS
+                        </label>
+                        <div className="mt-1 relative rounded-md shadow-sm">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 sm:text-sm">R$</span>
+                          </div>
+                          <input
+                            type="number"
+                            name="icms_valor"
+                            id="icms_valor"
+                            step="0.01"
+                            min="0"
+                            placeholder="0,00"
+                            readOnly
+                            className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          />
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Calculado automaticamente (BC × Alíquota)
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Informações sobre ICMS Isenção */}
+                    <div id="icms-isencao-info" className="hidden bg-yellow-50 p-3 rounded-md">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-yellow-800">
+                            ICMS Isenção Selecionado
+                          </h3>
+                          <div className="mt-2 text-sm text-yellow-700">
+                            <p>Com ICMS Isenção, não há cobrança de imposto. Os campos de base de cálculo, alíquota e valor serão zerados automaticamente.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
