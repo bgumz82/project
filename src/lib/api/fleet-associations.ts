@@ -674,3 +674,85 @@ export async function getHistoricoAssociacoesVeiculo(veiculoId: string): Promise
     throw error
   }
 }
+
+// Função para obter associações ativas para uso em CT-e
+export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> {
+  try {
+    console.log('🔍 Buscando associações ativas para CT-e')
+    
+    const result = await query(`
+      SELECT 
+        af.*,
+        f.nome as funcionario_nome,
+        f.matricula as funcionario_matricula,
+        f.cnh as funcionario_cnh,
+        f.validade_cnh as funcionario_validade_cnh,
+        vp.placa as veiculo_principal_placa,
+        vp.modelo as veiculo_principal_modelo,
+        vp.marca as veiculo_principal_marca,
+        vp.tipo as veiculo_principal_tipo,
+        vr1.placa as veiculo_reboque1_placa,
+        vr1.modelo as veiculo_reboque1_modelo,
+        vr1.marca as veiculo_reboque1_marca,
+        vr1.tipo as veiculo_reboque1_tipo,
+        vr2.placa as veiculo_reboque2_placa,
+        vr2.modelo as veiculo_reboque2_modelo,
+        vr2.marca as veiculo_reboque2_marca,
+        vr2.tipo as veiculo_reboque2_tipo,
+        vi.placa as veiculo_implemento_placa,
+        vi.modelo as veiculo_implemento_modelo,
+        vi.marca as veiculo_implemento_marca,
+        vi.tipo as veiculo_implemento_tipo
+      FROM associacoes_frota af
+      JOIN funcionarios f ON af.funcionario_id = f.id
+      JOIN veiculos vp ON af.veiculo_principal_id = vp.id
+      LEFT JOIN veiculos vr1 ON af.veiculo_reboque1_id = vr1.id
+      LEFT JOIN veiculos vr2 ON af.veiculo_reboque2_id = vr2.id
+      LEFT JOIN veiculos vi ON af.veiculo_implemento_id = vi.id
+      WHERE af.ativo = true 
+        AND (af.data_fim IS NULL OR af.data_fim > CURRENT_DATE)
+        AND f.status = 'ativo'
+        AND f.cnh IS NOT NULL
+      ORDER BY f.nome, vp.placa
+    `)
+    
+    console.log('✅ Associações ativas para CT-e encontradas:', result.length)
+    
+    return result.map(associacao => ({
+      ...associacao,
+      funcionario: {
+        nome: associacao.funcionario_nome,
+        matricula: associacao.funcionario_matricula,
+        cnh: associacao.funcionario_cnh,
+        validade_cnh: associacao.funcionario_validade_cnh
+      },
+      veiculo_principal: {
+        placa: associacao.veiculo_principal_placa,
+        modelo: associacao.veiculo_principal_modelo,
+        marca: associacao.veiculo_principal_marca,
+        tipo: associacao.veiculo_principal_tipo
+      },
+      veiculo_reboque1: associacao.veiculo_reboque1_placa ? {
+        placa: associacao.veiculo_reboque1_placa,
+        modelo: associacao.veiculo_reboque1_modelo,
+        marca: associacao.veiculo_reboque1_marca,
+        tipo: associacao.veiculo_reboque1_tipo
+      } : null,
+      veiculo_reboque2: associacao.veiculo_reboque2_placa ? {
+        placa: associacao.veiculo_reboque2_placa,
+        modelo: associacao.veiculo_reboque2_modelo,
+        marca: associacao.veiculo_reboque2_marca,
+        tipo: associacao.veiculo_reboque2_tipo
+      } : null,
+      veiculo_implemento: associacao.veiculo_implemento_placa ? {
+        placa: associacao.veiculo_implemento_placa,
+        modelo: associacao.veiculo_implemento_modelo,
+        marca: associacao.veiculo_implemento_marca,
+        tipo: associacao.veiculo_implemento_tipo
+      } : null
+    }))
+  } catch (error) {
+    console.error('❌ Erro ao buscar associações ativas para CT-e:', error)
+    throw error
+  }
+}

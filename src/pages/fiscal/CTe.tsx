@@ -52,7 +52,7 @@ const CFOP_OPTIONS = [
 ]
 
 const FINALIDADE_OPTIONS = [
-  { value: '0', label: '0 - CT-e Normal' },
+  { value: '0', label: '0 - CT-e de Complemento de Valores' },
   { value: '1', label: '1 - CT-e de Complemento de Valores' },
   { value: '2', label: '2 - CT-e de Anulação' },
   { value: '3', label: '3 - CT-e Substituto' }
@@ -204,7 +204,7 @@ export default function CTe() {
   // Função para calcular impostos e valores totais
   const calcularImpostos = () => {
     const valorPrestacaoInput = document.getElementById('valor_prestacao') as HTMLInputElement
-    const valorTributosInput = document.getElementById('valor_tributos') as HTMLInputInput
+    const valorTributosInput = document.getElementById('valor_tributos') as HTMLInputElement
     const valorReceberInput = document.getElementById('valor_receber') as HTMLInputElement
     const icmsValorInput = document.getElementById('icms_valor') as HTMLInputElement
     const icmsBcInput = document.getElementById('icms_bc_valor') as HTMLInputElement
@@ -244,43 +244,43 @@ export default function CTe() {
       icmsAliquotaInput.value = '0.00'
       icmsAliquotaInput.disabled = true
       icmsValorInput.value = '0.00'
-      
+
       // Zerar campo de tributos
       valorTributosInput.value = '0.00'
-      
-      // Liberar campos de valor total para edição manual
+
+      // Liberar campos de valor para edição manual
       valorPrestacaoInput.readOnly = false
       valorPrestacaoInput.classList.remove('bg-gray-50')
       valorPrestacaoInput.classList.add('bg-white')
-      
+
       valorReceberInput.readOnly = false
       valorReceberInput.classList.remove('bg-gray-50')
       valorReceberInput.classList.add('bg-white')
-      
+
       // Limpar descrições dos campos de valor
       if (valorPrestacaoDesc) valorPrestacaoDesc.textContent = ''
       if (valorReceberDesc) valorReceberDesc.textContent = ''
-      
+
       // Mostrar informação sobre isenção
       icmsIsencaoInfo.classList.remove('hidden')
     } else {
       // Habilitar campos ICMS
       icmsBcInput.disabled = false
       icmsAliquotaInput.disabled = false
-      
+
       // Tornar campos de valor total somente leitura (calculados automaticamente)
       valorPrestacaoInput.readOnly = true
       valorPrestacaoInput.classList.add('bg-gray-50')
       valorPrestacaoInput.classList.remove('bg-white')
-      
+
       valorReceberInput.readOnly = true
       valorReceberInput.classList.add('bg-gray-50')
       valorReceberInput.classList.remove('bg-white')
-      
+
       // Restaurar descrições dos campos de valor
       if (valorPrestacaoDesc) valorPrestacaoDesc.textContent = 'Calculado automaticamente (Base + ICMS)'
       if (valorReceberDesc) valorReceberDesc.textContent = 'Valor total a receber (Base + ICMS)'
-      
+
       // Esconder informação sobre isenção
       icmsIsencaoInfo.classList.add('hidden')
 
@@ -687,6 +687,14 @@ export default function CTe() {
                       id="empresa_id"
                       defaultValue={selectedDocumento?.empresa_id}
                       required
+                      onChange={(e) => {
+                        const empresaId = e.target.value
+                        const empresa = empresas?.find(emp => emp.id === empresaId)
+                        const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
+                        if (rntrcInput) {
+                          rntrcInput.value = empresa?.rntrc || 'RNTRC não informado'
+                        }
+                      }}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
                       <option value="">Selecione uma empresa</option>
@@ -1532,10 +1540,65 @@ export default function CTe() {
 
               {activeTab === 'dados-transporte' && (
                 <div className="space-y-6">
-                  <div className="text-center py-12 text-gray-500">
-                    <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">Aba Dados Transporte</h3>
-                    <p className="mt-1 text-sm text-gray-500">Esta aba será implementada em seguida.</p>
+                  {/* RNTRC */}
+                  <div>
+                    <label htmlFor="rntrc_display" className="block text-sm font-medium text-gray-700">
+                      RNTRC
+                    </label>
+                    <input
+                      type="text"
+                      name="rntrc_display"
+                      id="rntrc_display"
+                      readOnly
+                      placeholder="RNTRC da empresa"
+                      className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    />
+                  </div>
+
+                  {/* Motorista */}
+                  <div>
+                    <label htmlFor="motorista_id" className="block text-sm font-medium text-gray-700">
+                      Motorista
+                    </label>
+                    <select
+                      name="motorista_id"
+                      id="motorista_id"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    >
+                      <option value="">Selecione um motorista</option>
+                      {/* Aqui você buscará e listará os motoristas associados à frota */}
+                    </select>
+                  </div>
+
+                  {/* Placas do Veículo e Reboque */}
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="placa_veiculo" className="block text-sm font-medium text-gray-700">
+                        Placa do Veículo
+                      </label>
+                      <input
+                        type="text"
+                        name="placa_veiculo"
+                        id="placa_veiculo"
+                        readOnly
+                        placeholder="Placa do veículo associado ao motorista"
+                        className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="placa_reboque" className="block text-sm font-medium text-gray-700">
+                        Placa do Reboque
+                      </label>
+                      <input
+                        type="text"
+                        name="placa_reboque"
+                        id="placa_reboque"
+                        readOnly
+                        placeholder="Placa do reboque associado ao motorista"
+                        className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
