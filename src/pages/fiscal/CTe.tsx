@@ -142,20 +142,22 @@ export default function CTe() {
   // Query para buscar associações de frota ativas
   const { data: associacoesFrota, isLoading: isLoadingAssociacoes, error: errorAssociacoes } = useQuery({
     queryKey: ['associacoes-frota-ativas'],
-    queryFn: getAssociacoesAtivasParaCTe,
-    retry: 2,
-    staleTime: 1000 * 60 * 5,
-    refetchOnWindowFocus: false,
-    onSuccess: (data) => {
-      console.log('📊 Associações de frota carregadas no frontend:', data)
-      console.log('📊 Total de associações:', data?.length || 0)
-      if (data && data.length > 0) {
-        console.log('📊 Primeira associação:', data[0])
+    queryFn: async () => {
+      try {
+        console.log('🔄 Iniciando busca de associações de frota ativas...')
+        const result = await getAssociacoesAtivasParaCTe()
+        console.log('✅ Associações carregadas com sucesso:', result?.length || 0)
+        return result
+      } catch (error) {
+        console.error('❌ Erro detalhado ao buscar associações:', error)
+        return []
       }
     },
+    retry: 1,
+    staleTime: 1000 * 60 * 2,
+    refetchOnWindowFocus: false,
     onError: (error) => {
-      console.error('❌ Erro ao carregar associações de frota:', error)
-      toast.error('Erro ao carregar motoristas. Tente novamente.')
+      console.error('❌ Erro final na query de associações:', error)
     }
   })
 
@@ -227,21 +229,23 @@ export default function CTe() {
 
   // useEffect para carregar RNTRC inicial e quando empresas carregam
   React.useEffect(() => {
-    // Se estivermos editando um documento, carregar RNTRC da empresa já selecionada
-    if (selectedDocumento && empresas) {
-      const empresa = empresas.find(emp => emp.id === selectedDocumento.empresa_id)
+    if (!isModalOpen) return
+
+    // Usar setTimeout para aguardar o DOM ser renderizado
+    setTimeout(() => {
       const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
-      if (rntrcInput && empresa) {
-        rntrcInput.value = empresa.rntrc || 'RNTRC não informado'
-      }
-    }
-    // Se não há documento selecionado mas há empresas, limpar o campo
-    else if (!selectedDocumento && empresas) {
-      const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
-      if (rntrcInput) {
+      if (!rntrcInput) return
+
+      if (selectedDocumento && empresas) {
+        const empresa = empresas.find(emp => emp.id === selectedDocumento.empresa_id)
+        if (empresa) {
+          rntrcInput.value = empresa.rntrc || 'RNTRC não informado'
+          console.log('✅ RNTRC carregado para documento:', empresa.rntrc)
+        }
+      } else if (!selectedDocumento) {
         rntrcInput.value = 'Selecione uma empresa para exibir o RNTRC'
       }
-    }
+    }, 100)
   }, [selectedDocumento, empresas, isModalOpen])
 
   // Função para calcular impostos e valores totais

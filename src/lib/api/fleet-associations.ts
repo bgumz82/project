@@ -682,7 +682,18 @@ export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> 
     
     const result = await query(`
       SELECT 
-        af.*,
+        af.id,
+        af.funcionario_id,
+        af.veiculo_principal_id,
+        af.veiculo_reboque1_id,
+        af.veiculo_reboque2_id,
+        af.veiculo_implemento_id,
+        af.data_inicio,
+        af.data_fim,
+        af.ativo,
+        af.observacoes,
+        af.created_at,
+        af.updated_at,
         f.nome as funcionario_nome,
         f.matricula as funcionario_matricula,
         f.cnh as funcionario_cnh,
