@@ -228,28 +228,64 @@ export default function CTe() {
     const icmsBcInput = document.getElementById('icms_bc_valor') as HTMLInputElement
     const icmsAliquotaInput = document.getElementById('icms_aliquota') as HTMLInputElement
     const icmsValorInput = document.getElementById('icms_valor') as HTMLInputElement
+    const valorPrestacaoInput = document.getElementById('valor_prestacao') as HTMLInputElement
+    const valorReceberInput = document.getElementById('valor_receber') as HTMLInputElement
+    const valorTributosInput = document.getElementById('valor_tributos') as HTMLInputElement
     const icmsIsencaoInfo = document.getElementById('icms-isencao-info')
+    const valorPrestacaoDesc = document.getElementById('valor_prestacao_desc')
+    const valorReceberDesc = document.getElementById('valor_receber_desc')
 
-    if (!icmsBcInput || !icmsAliquotaInput || !icmsValorInput || !icmsIsencaoInfo) return
+    if (!icmsBcInput || !icmsAliquotaInput || !icmsValorInput || !valorPrestacaoInput || !valorReceberInput || !valorTributosInput || !icmsIsencaoInfo) return
 
     if (situacao === '40') { // ICMS Isenção
+      // Zerar campos ICMS
       icmsBcInput.value = '0.00'
       icmsBcInput.disabled = true
       icmsAliquotaInput.value = '0.00'
       icmsAliquotaInput.disabled = true
       icmsValorInput.value = '0.00'
+      
+      // Zerar campo de tributos
+      valorTributosInput.value = '0.00'
+      
+      // Liberar campos de valor total para edição manual
+      valorPrestacaoInput.readOnly = false
+      valorPrestacaoInput.classList.remove('bg-gray-50')
+      valorPrestacaoInput.classList.add('bg-white')
+      
+      valorReceberInput.readOnly = false
+      valorReceberInput.classList.remove('bg-gray-50')
+      valorReceberInput.classList.add('bg-white')
+      
+      // Limpar descrições dos campos de valor
+      if (valorPrestacaoDesc) valorPrestacaoDesc.textContent = ''
+      if (valorReceberDesc) valorReceberDesc.textContent = ''
+      
+      // Mostrar informação sobre isenção
       icmsIsencaoInfo.classList.remove('hidden')
-
-      // Recalcular valores totais
-      calcularImpostos()
     } else {
+      // Habilitar campos ICMS
       icmsBcInput.disabled = false
       icmsAliquotaInput.disabled = false
+      
+      // Tornar campos de valor total somente leitura (calculados automaticamente)
+      valorPrestacaoInput.readOnly = true
+      valorPrestacaoInput.classList.add('bg-gray-50')
+      valorPrestacaoInput.classList.remove('bg-white')
+      
+      valorReceberInput.readOnly = true
+      valorReceberInput.classList.add('bg-gray-50')
+      valorReceberInput.classList.remove('bg-white')
+      
+      // Restaurar descrições dos campos de valor
+      if (valorPrestacaoDesc) valorPrestacaoDesc.textContent = 'Calculado automaticamente (Base + ICMS)'
+      if (valorReceberDesc) valorReceberDesc.textContent = 'Valor total a receber (Base + ICMS)'
+      
+      // Esconder informação sobre isenção
       icmsIsencaoInfo.classList.add('hidden')
 
-      // Para tributação normal (00) e Simples Nacional (90), habilitar campos
+      // Para tributação normal (00) e Simples Nacional (90), recalcular
       if (situacao === '00' || situacao === '90') {
-        // Pode aplicar regras específicas aqui se necessário
         recalcularICMS()
       }
     }
@@ -1092,7 +1128,7 @@ export default function CTe() {
                           className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">
+                      <p id="valor_prestacao_desc" className="mt-1 text-xs text-gray-500">
                         Calculado automaticamente (Base + ICMS)
                       </p>
                     </div>
@@ -1116,7 +1152,7 @@ export default function CTe() {
                           className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">
+                      <p id="valor_receber_desc" className="mt-1 text-xs text-gray-500">
                         Valor total a receber (Base + ICMS)
                       </p>
                     </div>
