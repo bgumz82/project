@@ -683,14 +683,14 @@ export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> 
     const result = await query(`
       SELECT 
         af.*,
-        COALESCE(f.nome, 'Nome não informado') as funcionario_nome,
-        COALESCE(f.matricula, 'Matrícula não informada') as funcionario_matricula,
-        COALESCE(f.cnh, 'CNH não informada') as funcionario_cnh,
+        f.nome as funcionario_nome,
+        f.matricula as funcionario_matricula,
+        f.cnh as funcionario_cnh,
         f.validade_cnh as funcionario_validade_cnh,
-        COALESCE(vp.placa, 'Placa não informada') as veiculo_principal_placa,
-        COALESCE(vp.modelo, 'Modelo não informado') as veiculo_principal_modelo,
-        COALESCE(vp.marca, 'Marca não informada') as veiculo_principal_marca,
-        COALESCE(vp.tipo, 'Tipo não informado') as veiculo_principal_tipo,
+        vp.placa as veiculo_principal_placa,
+        vp.modelo as veiculo_principal_modelo,
+        vp.marca as veiculo_principal_marca,
+        vp.tipo as veiculo_principal_tipo,
         vr1.placa as veiculo_reboque1_placa,
         vr1.modelo as veiculo_reboque1_modelo,
         vr1.marca as veiculo_reboque1_marca,
@@ -704,20 +704,23 @@ export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> 
         vi.marca as veiculo_implemento_marca,
         vi.tipo as veiculo_implemento_tipo
       FROM associacoes_frota af
-      LEFT JOIN funcionarios f ON af.funcionario_id = f.id
-      LEFT JOIN veiculos vp ON af.veiculo_principal_id = vp.id
+      JOIN funcionarios f ON af.funcionario_id = f.id
+      JOIN veiculos vp ON af.veiculo_principal_id = vp.id
       LEFT JOIN veiculos vr1 ON af.veiculo_reboque1_id = vr1.id
       LEFT JOIN veiculos vr2 ON af.veiculo_reboque2_id = vr2.id
       LEFT JOIN veiculos vi ON af.veiculo_implemento_id = vi.id
       WHERE af.ativo = true 
         AND (af.data_fim IS NULL OR af.data_fim > CURRENT_DATE)
-        AND COALESCE(f.status, 'ativo') = 'ativo'
+        AND f.status = 'ativo'
         AND f.funcao = 'motorista'
-      ORDER BY COALESCE(f.nome, 'ZZZ'), COALESCE(vp.placa, 'ZZZ')
+        AND f.cnh IS NOT NULL
+      ORDER BY f.nome, vp.placa
     `)
     
     console.log('✅ Associações ativas para CT-e encontradas:', result.length)
-    console.log('📊 Primeiro resultado:', result[0])
+    if (result.length > 0) {
+      console.log('📊 Primeiro resultado:', result[0])
+    }
     
     return result.map(associacao => ({
       ...associacao,

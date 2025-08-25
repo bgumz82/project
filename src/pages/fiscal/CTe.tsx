@@ -140,11 +140,12 @@ export default function CTe() {
   })
 
   // Query para buscar associações de frota ativas
-  const { data: associacoesFrota } = useQuery({
+  const { data: associacoesFrota, isLoading: isLoadingAssociacoes, error: errorAssociacoes } = useQuery({
     queryKey: ['associacoes-frota-ativas'],
     queryFn: getAssociacoesAtivasParaCTe,
-    retry: 3,
+    retry: 2,
     staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
     onSuccess: (data) => {
       console.log('📊 Associações de frota carregadas no frontend:', data)
       console.log('📊 Total de associações:', data?.length || 0)
@@ -154,6 +155,7 @@ export default function CTe() {
     },
     onError: (error) => {
       console.error('❌ Erro ao carregar associações de frota:', error)
+      toast.error('Erro ao carregar motoristas. Tente novamente.')
     }
   })
 
@@ -223,8 +225,9 @@ export default function CTe() {
     setChaveErrors({})
   }
 
-  // useEffect para carregar RNTRC inicial
+  // useEffect para carregar RNTRC inicial e quando empresas carregam
   React.useEffect(() => {
+    // Se estivermos editando um documento, carregar RNTRC da empresa já selecionada
     if (selectedDocumento && empresas) {
       const empresa = empresas.find(emp => emp.id === selectedDocumento.empresa_id)
       const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
@@ -232,7 +235,14 @@ export default function CTe() {
         rntrcInput.value = empresa.rntrc || 'RNTRC não informado'
       }
     }
-  }, [selectedDocumento, empresas])
+    // Se não há documento selecionado mas há empresas, limpar o campo
+    else if (!selectedDocumento && empresas) {
+      const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
+      if (rntrcInput) {
+        rntrcInput.value = 'Selecione uma empresa para exibir o RNTRC'
+      }
+    }
+  }, [selectedDocumento, empresas, isModalOpen])
 
   // Função para calcular impostos e valores totais
   const calcularImpostos = () => {
@@ -797,11 +807,28 @@ export default function CTe() {
                       required
                       onChange={(e) => {
                         const empresaId = e.target.value
-                        const empresa = empresas?.find(emp => emp.id === empresaId)
-                        const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
-                        if (rntrcInput) {
-                          rntrcInput.value = empresa?.rntrc || 'RNTRC não informado'
-                        }
+                        console.log('🏢 Empresa selecionada:', empresaId)
+                        
+                        // Usar setTimeout para garantir que o DOM foi atualizado
+                        setTimeout(() => {
+                          const empresa = empresas?.find(emp => emp.id === empresaId)
+                          const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
+                          
+                          console.log('🏢 Empresa encontrada:', empresa)
+                          console.log('🏢 RNTRC da empresa:', empresa?.rntrc)
+                          
+                          if (rntrcInput) {
+                            if (empresa && empresa.rntrc) {
+                              rntrcInput.value = empresa.rntrc
+                              console.log('✅ RNTRC atualizado:', empresa.rntrc)
+                            } else {
+                              rntrcInput.value = 'RNTRC não informado'
+                              console.log('⚠️ RNTRC não encontrado para esta empresa')
+                            }
+                          } else {
+                            console.log('❌ Input RNTRC não encontrado')
+                          }
+                        }, 100)
                       }}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
@@ -1682,9 +1709,12 @@ export default function CTe() {
                       name="associacao_frota_id"
                       id="associacao_frota_id"
                       onChange={(e) => handleMotoristaChange(e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      disabled={isLoadingAssociacoes}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100"
                     >
-                      <option value="">Selecione um motorista</option>
+                      <option value="">
+                        {isLoadingAssociacoes ? 'Carregando motoristas...' : 'Selecione um motorista'}
+                      </option>
                       {associacoesFrota?.map((associacao) => (
                         <option key={associacao.id} value={associacao.id}>
                           {associacao.funcionario?.nome || 'Nome não informado'} - CNH: {associacao.funcionario?.cnh || 'CNH não informada'} - {associacao.veiculo_principal?.placa || 'Placa não informada'}
@@ -1695,7 +1725,12 @@ export default function CTe() {
                       ))}
                     </select>
                     <p className="mt-1 text-xs text-gray-500">
-                      Lista apenas motoristas com associações ativas de frota
+                      {isLoadingAssociacoes ? 'Carregando...' : 'Lista apenas motoristas com associações ativas de frota'}
+                      {errorAssociacoes && (
+                        <span className="text-red-600 ml-2">
+                          ⚠️ Erro ao carregar dados
+                        </span>
+                      )}
                     </p>
                   </div>
 
