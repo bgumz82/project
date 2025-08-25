@@ -140,25 +140,11 @@ export default function CTe() {
   })
 
   // Query para buscar associações de frota ativas
-  const { data: associacoesFrota, isLoading: isLoadingAssociacoes, error: errorAssociacoes } = useQuery({
+  const { data: associacoesFrota, isLoading: isLoadingAssociacoes } = useQuery({
     queryKey: ['associacoes-frota-ativas'],
-    queryFn: async () => {
-      try {
-        console.log('🔄 Iniciando busca de associações de frota ativas...')
-        const result = await getAssociacoesAtivasParaCTe()
-        console.log('✅ Associações carregadas com sucesso:', result?.length || 0)
-        return result
-      } catch (error) {
-        console.error('❌ Erro detalhado ao buscar associações:', error)
-        return []
-      }
-    },
-    retry: 1,
-    staleTime: 1000 * 60 * 2,
-    refetchOnWindowFocus: false,
-    onError: (error) => {
-      console.error('❌ Erro final na query de associações:', error)
-    }
+    queryFn: getAssociacoesAtivasParaCTe,
+    retry: 2,
+    staleTime: 1000 * 60 * 5,
   })
 
   // Query para buscar estados
@@ -231,13 +217,9 @@ export default function CTe() {
   React.useEffect(() => {
     if (!isModalOpen) return
 
-    // Usar setTimeout para aguardar o DOM ser renderizado
-    setTimeout(() => {
+    const updateRNTRC = () => {
       const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
-      if (!rntrcInput) {
-        console.log('❌ Input RNTRC não encontrado')
-        return
-      }
+      if (!rntrcInput) return
 
       if (selectedDocumento && empresas) {
         const empresa = empresas.find(emp => emp.id === selectedDocumento.empresa_id)
@@ -248,7 +230,13 @@ export default function CTe() {
       } else if (!selectedDocumento) {
         rntrcInput.value = 'Selecione uma empresa para exibir o RNTRC'
       }
-    }, 200) // Aumentar timeout para garantir renderização
+    }
+
+    // Tentar imediatamente e depois com delay
+    updateRNTRC()
+    const timer = setTimeout(updateRNTRC, 300)
+    
+    return () => clearTimeout(timer)
   }, [selectedDocumento, empresas, isModalOpen])
 
   // Função para calcular impostos e valores totais
@@ -816,8 +804,7 @@ export default function CTe() {
                         const empresaId = e.target.value
                         console.log('🏢 Empresa selecionada:', empresaId)
                         
-                        // Usar setTimeout para garantir que o DOM foi atualizado
-                        setTimeout(() => {
+                        const updateRNTRCField = () => {
                           const empresa = empresas?.find(emp => emp.id === empresaId)
                           const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
                           
@@ -825,17 +812,24 @@ export default function CTe() {
                           console.log('🏢 RNTRC da empresa:', empresa?.rntrc)
                           
                           if (rntrcInput) {
-                            if (empresa && empresa.rntrc) {
+                            if (empresa?.rntrc) {
                               rntrcInput.value = empresa.rntrc
                               console.log('✅ RNTRC atualizado:', empresa.rntrc)
-                            } else {
+                            } else if (empresaId) {
                               rntrcInput.value = 'RNTRC não informado'
                               console.log('⚠️ RNTRC não encontrado para esta empresa')
+                            } else {
+                              rntrcInput.value = 'Selecione uma empresa para exibir o RNTRC'
                             }
                           } else {
                             console.log('❌ Input RNTRC não encontrado')
                           }
-                        }, 100)
+                        }
+                        
+                        // Executar imediatamente e com delay
+                        updateRNTRCField()
+                        setTimeout(updateRNTRCField, 100)
+                        setTimeout(updateRNTRCField, 300)
                       }}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
