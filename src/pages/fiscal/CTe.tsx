@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format, parseISO } from 'date-fns'
@@ -13,10 +12,10 @@ import {
   DocumentArrowDownIcon,
   ClipboardDocumentIcon,
 } from '@heroicons/react/24/outline'
-import { 
-  getCTeDocumentos, 
-  createCTeDocumento, 
-  updateCTeDocumento, 
+import {
+  getCTeDocumentos,
+  createCTeDocumento,
+  updateCTeDocumento,
   deleteCTeDocumento,
   getEmpresasFiscais,
   updateDocumentFiles,
@@ -78,7 +77,7 @@ export default function CTe() {
   const [selectedDocumento, setSelectedDocumento] = useState<CTeDocumento | null>(null)
   const [filterStatus, setFilterStatus] = useState<'todos' | 'pendente' | 'emitido' | 'cancelado'>('todos')
   const [activeTab, setActiveTab] = useState('dados-cte')
-  
+
   // Estados para pesquisa de cidades
   const [inicioSearchTerm, setInicioSearchTerm] = useState('')
   const [terminoSearchTerm, setTerminoSearchTerm] = useState('')
@@ -88,15 +87,15 @@ export default function CTe() {
   const [selectedTermino, setSelectedTermino] = useState<{codigo: string, nome: string, uf: string} | null>(null)
   const [showInicioResults, setShowInicioResults] = useState(false)
   const [showTerminoResults, setShowTerminoResults] = useState(false)
-  
+
   // Estados para validação de chaves de acesso
   const [chaveErrors, setChaveErrors] = useState<{[key: string]: string}>({})
-  
+
   // Função para validar chave de acesso em tempo real
   const validateChaveAcesso = (value: string, fieldName: string) => {
     const chaveNumerica = value.replace(/\D/g, '')
     const newErrors = { ...chaveErrors }
-    
+
     if (chaveNumerica.length === 0) {
       delete newErrors[fieldName]
     } else if (chaveNumerica.length !== 44) {
@@ -106,7 +105,7 @@ export default function CTe() {
     } else {
       delete newErrors[fieldName]
     }
-    
+
     setChaveErrors(newErrors)
   }
 
@@ -209,15 +208,15 @@ export default function CTe() {
     const valorReceberInput = document.getElementById('valor_receber') as HTMLInputElement
     const icmsValorInput = document.getElementById('icms_valor') as HTMLInputElement
     const icmsBcInput = document.getElementById('icms_bc_valor') as HTMLInputElement
-    
+
     if (!valorPrestacaoInput || !valorTributosInput || !valorReceberInput || !icmsValorInput || !icmsBcInput) return
-    
+
     const valorICMS = parseFloat(icmsValorInput.value) || 0
     const valorTotalComICMS = parseFloat(icmsBcInput.value) || 0
-    
+
     // Valor Total da Prestação = Valor total já calculado com ICMS
     const valorTotalPrestacao = valorTotalComICMS
-    
+
     // Atualizar campos
     valorPrestacaoInput.value = valorTotalPrestacao.toFixed(2)
     valorTributosInput.value = valorICMS.toFixed(2)
@@ -230,9 +229,9 @@ export default function CTe() {
     const icmsAliquotaInput = document.getElementById('icms_aliquota') as HTMLInputElement
     const icmsValorInput = document.getElementById('icms_valor') as HTMLInputElement
     const icmsIsencaoInfo = document.getElementById('icms-isencao-info')
-    
+
     if (!icmsBcInput || !icmsAliquotaInput || !icmsValorInput || !icmsIsencaoInfo) return
-    
+
     if (situacao === '40') { // ICMS Isenção
       icmsBcInput.value = '0.00'
       icmsBcInput.disabled = true
@@ -240,14 +239,14 @@ export default function CTe() {
       icmsAliquotaInput.disabled = true
       icmsValorInput.value = '0.00'
       icmsIsencaoInfo.classList.remove('hidden')
-      
+
       // Recalcular valores totais
       calcularImpostos()
     } else {
       icmsBcInput.disabled = false
       icmsAliquotaInput.disabled = false
       icmsIsencaoInfo.classList.add('hidden')
-      
+
       // Para tributação normal (00) e Simples Nacional (90), habilitar campos
       if (situacao === '00' || situacao === '90') {
         // Pode aplicar regras específicas aqui se necessário
@@ -261,26 +260,26 @@ export default function CTe() {
     const icmsBcInput = document.getElementById('icms_bc_valor') as HTMLInputElement
     const icmsAliquotaInput = document.getElementById('icms_aliquota') as HTMLInputElement
     const icmsValorInput = document.getElementById('icms_valor') as HTMLInputElement
-    
+
     if (!icmsBcInput || !icmsAliquotaInput || !icmsValorInput) return
-    
+
     const valorBase = parseFloat(icmsBcInput.value) || 0
     const aliquotaDecimal = (parseFloat(icmsAliquotaInput.value) || 0) / 100
-    
+
     if (valorBase > 0 && aliquotaDecimal > 0) {
       // Fórmula: Valor Base / (1 - Alíquota ICMS)
       const valorTotalComICMS = valorBase / (1 - aliquotaDecimal)
       const valorICMS = valorTotalComICMS - valorBase
-      
+
       // Atualizar o valor do ICMS
       icmsValorInput.value = valorICMS.toFixed(2)
-      
+
       // Atualizar a base de cálculo para o valor total com ICMS
       icmsBcInput.value = valorTotalComICMS.toFixed(2)
     } else {
       icmsValorInput.value = '0.00'
     }
-    
+
     // Recalcular valores totais após atualizar o ICMS
     calcularImpostos()
   }
@@ -320,7 +319,7 @@ export default function CTe() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
-    
+
     const documentoData: CTeDocumentoCreate = {
       empresa_id: formData.get('empresa_id') as string,
       numero_cte: formData.get('numero_cte') as string,
@@ -386,14 +385,14 @@ export default function CTe() {
   const handleGenerateFiles = async (documento: CTeDocumento) => {
     try {
       toast.success('Gerando arquivos XML e PDF...')
-      
+
       await updateDocumentFiles('cte', documento.id, {
         xmlGerado: true,
         pdfGerado: true
       })
-      
+
       queryClient.invalidateQueries({ queryKey: ['cte-documentos'] })
-      
+
       toast.success('Arquivos gerados com sucesso!')
     } catch (error: any) {
       console.error('Error generating files:', error)
@@ -413,8 +412,8 @@ export default function CTe() {
     { id: 'observacoes', label: 'Observações' }
   ]
 
-  const filteredDocumentos = filterStatus === 'todos' 
-    ? documentos 
+  const filteredDocumentos = filterStatus === 'todos'
+    ? documentos
     : documentos?.filter(d => d.status === filterStatus)
 
   if (isLoading) {
@@ -455,7 +454,7 @@ export default function CTe() {
               className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             >
               <option value="todos">Todos</option>
-              <option value="pendente">Pendentes</option>
+              <option value="pendente">Pendes</option>
               <option value="emitido">Emitidos</option>
               <option value="cancelado">Cancelados</option>
             </select>
@@ -542,15 +541,15 @@ export default function CTe() {
                         <td className="px-3 py-4 text-sm">
                           <div className="flex items-center space-x-1">
                             <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                              documento.xml_gerado 
-                                ? 'bg-green-100 text-green-800' 
+                              documento.xml_gerado
+                                ? 'bg-green-100 text-green-800'
                                 : 'bg-gray-100 text-gray-800'
                             }`}>
                               XML {documento.xml_gerado ? '✓' : '○'}
                             </span>
                             <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                              documento.pdf_gerado 
-                                ? 'bg-blue-100 text-blue-800' 
+                              documento.pdf_gerado
+                                ? 'bg-blue-100 text-blue-800'
                                 : 'bg-gray-100 text-gray-800'
                             }`}>
                               PDF {documento.pdf_gerado ? '✓' : '○'}
@@ -828,7 +827,7 @@ export default function CTe() {
                         name="cidade_inicio_ibge"
                         value={selectedInicio?.codigo || ''}
                       />
-                      
+
                       {showInicioResults && inicioResults.length > 0 && (
                         <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto">
                           {inicioResults.map((cidade) => (
@@ -884,7 +883,7 @@ export default function CTe() {
                         name="cidade_termino_ibge"
                         value={selectedTermino?.codigo || ''}
                       />
-                      
+
                       {showTerminoResults && terminoResults.length > 0 && (
                         <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto">
                           {terminoResults.map((cidade) => (
@@ -958,7 +957,7 @@ export default function CTe() {
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <h4 className="text-sm font-medium text-blue-900 mb-2">ℹ️ Informação sobre Tomador</h4>
                     <p className="text-sm text-blue-700">
-                      O tomador é quem contrata e paga pelo serviço de transporte. Pode ser o remetente, 
+                      O tomador é quem contrata e paga pelo serviço de transporte. Pode ser o remetente,
                       destinatário ou um terceiro (cliente cadastrado).
                     </p>
                   </div>
@@ -1022,8 +1021,8 @@ export default function CTe() {
                   <div className="bg-yellow-50 p-4 rounded-lg">
                     <h4 className="text-sm font-medium text-yellow-900 mb-2">⚠️ Informação sobre Recebedor</h4>
                     <p className="text-sm text-yellow-700">
-                      O recebedor é opcional e representa quem efetivamente recebe a mercadoria, 
-                      quando for diferente do destinatário. Pode ser deixado como "Sem Recebedor" 
+                      O recebedor é opcional e representa quem efetivamente recebe a mercadoria,
+                      quando for diferente do destinatário. Pode ser deixado como "Sem Recebedor"
                       se o próprio destinatário for receber.
                     </p>
                   </div>
@@ -1056,7 +1055,7 @@ export default function CTe() {
                   <div className="bg-purple-50 p-4 rounded-lg">
                     <h4 className="text-sm font-medium text-purple-900 mb-2">📦 Informação sobre Destinatário</h4>
                     <p className="text-sm text-purple-700">
-                      O destinatário é quem deve receber a mercadoria. É o ponto de destino da carga 
+                      O destinatário é quem deve receber a mercadoria. É o ponto de destino da carga
                       e consta obrigatoriamente no CT-e.
                     </p>
                   </div>
@@ -1295,7 +1294,7 @@ export default function CTe() {
                   {/* Dados da Carga */}
                   <div className="bg-gray-50 p-4 rounded-lg space-y-4">
                     <h4 className="text-lg font-medium text-gray-900 mb-4">🚚 Dados da Carga</h4>
-                    
+
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                       <div>
                         <label htmlFor="valor_carga" className="block text-sm font-medium text-gray-700">
@@ -1332,7 +1331,7 @@ export default function CTe() {
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <span className="text-gray-500 sm:text-sm">kg</span>
+                            <span className="text-gray-500 sm:text-sm">Litros</span>
                           </div>
                         </div>
                       </div>
@@ -1361,7 +1360,7 @@ export default function CTe() {
                   {/* Chaves de Acesso de Documentos Relacionados */}
                   <div className="bg-gray-50 p-4 rounded-lg space-y-4">
                     <h4 className="text-lg font-medium text-gray-900 mb-4">🔑 Chaves de Acesso de Documentos Relacionados</h4>
-                    
+
                     <div className="bg-yellow-50 p-3 rounded-md">
                       <div className="flex">
                         <div className="flex-shrink-0">
@@ -1397,8 +1396,8 @@ export default function CTe() {
                             validateChaveAcesso(value, 'chave_acesso_1')
                           }}
                           className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
-                            chaveErrors.chave_acesso_1 
-                              ? 'border-red-300 focus:border-red-500' 
+                            chaveErrors.chave_acesso_1
+                              ? 'border-red-300 focus:border-red-500'
                               : 'border-gray-300 focus:border-indigo-500'
                           }`}
                         />
@@ -1423,8 +1422,8 @@ export default function CTe() {
                             validateChaveAcesso(value, 'chave_acesso_2')
                           }}
                           className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
-                            chaveErrors.chave_acesso_2 
-                              ? 'border-red-300 focus:border-red-500' 
+                            chaveErrors.chave_acesso_2
+                              ? 'border-red-300 focus:border-red-500'
                               : 'border-gray-300 focus:border-indigo-500'
                           }`}
                         />
@@ -1449,8 +1448,8 @@ export default function CTe() {
                             validateChaveAcesso(value, 'chave_acesso_3')
                           }}
                           className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
-                            chaveErrors.chave_acesso_3 
-                              ? 'border-red-300 focus:border-red-500' 
+                            chaveErrors.chave_acesso_3
+                              ? 'border-red-300 focus:border-red-500'
                               : 'border-gray-300 focus:border-indigo-500'
                           }`}
                         />
@@ -1475,8 +1474,8 @@ export default function CTe() {
                             validateChaveAcesso(value, 'chave_acesso_4')
                           }}
                           className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
-                            chaveErrors.chave_acesso_4 
-                              ? 'border-red-300 focus:border-red-500' 
+                            chaveErrors.chave_acesso_4
+                              ? 'border-red-300 focus:border-red-500'
                               : 'border-gray-300 focus:border-indigo-500'
                           }`}
                         />
@@ -1575,7 +1574,7 @@ export default function CTe() {
                       Anterior
                     </button>
                   )}
-                  
+
                   {activeTab !== 'observacoes' ? (
                     <button
                       type="button"
