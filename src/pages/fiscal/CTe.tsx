@@ -305,11 +305,12 @@ export default function CTe() {
       setPlacaVeiculo('')
       setPlacaReboque('')
       setMotoristaInfo(null)
+      console.log('🔄 Dados do motorista resetados')
       return
     }
 
     const associacao = associacoesFrota?.find(a => a.id === associacaoId)
-    console.log('🔍 Associação encontrada:', associacao)
+    console.log('🔍 Associação encontrada completa:', associacao)
     
     if (!associacao) {
       console.log('❌ Associação não encontrada para ID:', associacaoId)
@@ -328,16 +329,25 @@ export default function CTe() {
     let placaReboque = ''
     if (associacao.veiculo_implemento?.placa) {
       placaReboque = associacao.veiculo_implemento.placa
+      console.log('🚛 Implemento encontrado:', placaReboque)
     } else {
       const placas = []
-      if (associacao.veiculo_reboque1?.placa) placas.push(associacao.veiculo_reboque1.placa)
-      if (associacao.veiculo_reboque2?.placa) placas.push(associacao.veiculo_reboque2.placa)
+      if (associacao.veiculo_reboque1?.placa) {
+        placas.push(associacao.veiculo_reboque1.placa)
+        console.log('🚛 Reboque 1 encontrado:', associacao.veiculo_reboque1.placa)
+      }
+      if (associacao.veiculo_reboque2?.placa) {
+        placas.push(associacao.veiculo_reboque2.placa)
+        console.log('🚛 Reboque 2 encontrado:', associacao.veiculo_reboque2.placa)
+      }
       placaReboque = placas.join(' + ')
     }
     setPlacaReboque(placaReboque || 'Nenhum reboque/implemento')
     console.log('🚛 Placa reboque/implemento definida:', placaReboque)
 
     // Definir informações do motorista
+    console.log('👨‍💼 Dados do funcionário recebidos:', associacao.funcionario)
+    
     const validadeCnh = associacao.funcionario?.validade_cnh 
       ? format(parseISO(associacao.funcionario.validade_cnh), 'dd/MM/yyyy')
       : 'Não informado'
@@ -350,7 +360,7 @@ export default function CTe() {
     }
     
     setMotoristaInfo(info)
-    console.log('👨‍💼 Informações do motorista definidas:', info)
+    console.log('✅ Informações do motorista definidas:', info)
   }
 
   // Função para lidar com mudança na situação tributária

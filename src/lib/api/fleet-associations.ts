@@ -678,7 +678,7 @@ export async function getHistoricoAssociacoesVeiculo(veiculoId: string): Promise
 // Função para obter associações ativas para uso em CT-e
 export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> {
   try {
-    console.log('🔍 Buscando associações ativas para CT-e')
+    console.log('🔍 Buscando associações ativas para CT-e com dados completos')
     
     const result = await query(`
       SELECT 
@@ -729,43 +729,53 @@ export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> 
       ORDER BY f.nome, vp.placa
     `)
     
-    console.log('✅ Associações ativas encontradas:', result.length)
+    console.log('✅ Associações ativas encontradas para CT-e:', result.length)
+    
+    if (result.length > 0) {
+      console.log('📋 Primeira associação encontrada:', {
+        motorista: result[0].funcionario_nome,
+        cnh: result[0].funcionario_cnh,
+        matricula: result[0].funcionario_matricula,
+        placa_principal: result[0].veiculo_principal_placa
+      })
+    }
     
     return result.map(associacao => ({
       ...associacao,
       funcionario: {
-        nome: associacao.funcionario_nome,
-        matricula: associacao.funcionario_matricula,
-        cnh: associacao.funcionario_cnh,
-        validade_cnh: associacao.funcionario_validade_cnh
+        nome: associacao.funcionario_nome || 'Nome não informado',
+        matricula: associacao.funcionario_matricula || 'Matrícula não informada',
+        cnh: associacao.funcionario_cnh || 'CNH não informada',
+        validade_cnh: associacao.funcionario_validade_cnh || null
       },
       veiculo_principal: {
-        placa: associacao.veiculo_principal_placa,
-        modelo: associacao.veiculo_principal_modelo,
-        marca: associacao.veiculo_principal_marca,
-        tipo: associacao.veiculo_principal_tipo
+        placa: associacao.veiculo_principal_placa || 'Placa não informada',
+        modelo: associacao.veiculo_principal_modelo || 'Modelo não informado',
+        marca: associacao.veiculo_principal_marca || 'Marca não informada',
+        tipo: associacao.veiculo_principal_tipo || 'Tipo não informado'
       },
       veiculo_reboque1: associacao.veiculo_reboque1_placa ? {
         placa: associacao.veiculo_reboque1_placa,
-        modelo: associacao.veiculo_reboque1_modelo,
-        marca: associacao.veiculo_reboque1_marca,
-        tipo: associacao.veiculo_reboque1_tipo
+        modelo: associacao.veiculo_reboque1_modelo || 'Modelo não informado',
+        marca: associacao.veiculo_reboque1_marca || 'Marca não informada',
+        tipo: associacao.veiculo_reboque1_tipo || 'Tipo não informado'
       } : null,
       veiculo_reboque2: associacao.veiculo_reboque2_placa ? {
         placa: associacao.veiculo_reboque2_placa,
-        modelo: associacao.veiculo_reboque2_modelo,
-        marca: associacao.veiculo_reboque2_marca,
-        tipo: associacao.veiculo_reboque2_tipo
+        modelo: associacao.veiculo_reboque2_modelo || 'Modelo não informado',
+        marca: associacao.veiculo_reboque2_marca || 'Marca não informada',
+        tipo: associacao.veiculo_reboque2_tipo || 'Tipo não informado'
       } : null,
       veiculo_implemento: associacao.veiculo_implemento_placa ? {
         placa: associacao.veiculo_implemento_placa,
-        modelo: associacao.veiculo_implemento_modelo,
-        marca: associacao.veiculo_implemento_marca,
-        tipo: associacao.veiculo_implemento_tipo
+        modelo: associacao.veiculo_implemento_modelo || 'Modelo não informado',
+        marca: associacao.veiculo_implemento_marca || 'Marca não informada',
+        tipo: associacao.veiculo_implemento_tipo || 'Tipo não informado'
       } : null
     }))
   } catch (error) {
     console.error('❌ Erro ao buscar associações ativas para CT-e:', error)
+    console.error('❌ Stack trace:', error.stack)
     return []
   }
 }
