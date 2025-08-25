@@ -213,38 +213,31 @@ export default function CTe() {
     setChaveErrors({})
   }
 
-  // useEffect para carregar RNTRC inicial e quando empresas carregam
+  // useEffect para carregar RNTRC quando modal abre ou documento selecionado muda
   React.useEffect(() => {
     if (!isModalOpen) return
 
     const updateRNTRC = () => {
       const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
-      if (!rntrcInput) {
-        console.log('❌ Input RNTRC não encontrado no DOM')
-        return
-      }
+      if (!rntrcInput) return
 
       if (selectedDocumento && empresas) {
         const empresa = empresas.find(emp => emp.id === selectedDocumento.empresa_id)
-        if (empresa) {
-          rntrcInput.value = empresa.rntrc || 'RNTRC não informado'
-          console.log('✅ RNTRC carregado para documento:', empresa.rntrc)
+        if (empresa?.rntrc) {
+          rntrcInput.value = empresa.rntrc
+          console.log('✅ RNTRC carregado para edição:', empresa.rntrc)
+        } else {
+          rntrcInput.value = 'RNTRC não informado para esta empresa'
         }
-      } else if (!selectedDocumento) {
+      } else {
         rntrcInput.value = 'Selecione uma empresa para exibir o RNTRC'
-        console.log('⚠️ Nenhum documento selecionado, campo RNTRC resetado')
       }
     }
 
-    // Tentar com múltiplos delays para garantir que o DOM seja renderizado
-    const timeouts = [0, 100, 300, 500]
-    timeouts.forEach(delay => {
-      setTimeout(updateRNTRC, delay)
-    })
+    // Executar após um pequeno delay para garantir que o DOM esteja renderizado
+    const timeout = setTimeout(updateRNTRC, 100)
     
-    return () => {
-      // Limpar timeouts se o componente desmontar
-    }
+    return () => clearTimeout(timeout)
   }, [selectedDocumento, empresas, isModalOpen])
 
   // Função para calcular impostos e valores totais
@@ -812,32 +805,29 @@ export default function CTe() {
                         const empresaId = e.target.value
                         console.log('🏢 Empresa selecionada:', empresaId)
                         
-                        const updateRNTRCField = () => {
-                          const empresa = empresas?.find(emp => emp.id === empresaId)
-                          const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
-                          
-                          console.log('🏢 Empresa encontrada:', empresa)
-                          console.log('🏢 RNTRC da empresa:', empresa?.rntrc)
-                          
-                          if (rntrcInput) {
+                        // Buscar o input RNTRC e atualizar imediatamente
+                        const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
+                        
+                        if (rntrcInput) {
+                          if (empresaId && empresas) {
+                            const empresa = empresas.find(emp => emp.id === empresaId)
+                            console.log('🏢 Empresa encontrada:', empresa)
+                            console.log('🏢 RNTRC da empresa:', empresa?.rntrc)
+                            
                             if (empresa?.rntrc) {
                               rntrcInput.value = empresa.rntrc
                               console.log('✅ RNTRC atualizado:', empresa.rntrc)
-                            } else if (empresaId) {
-                              rntrcInput.value = 'RNTRC não informado'
-                              console.log('⚠️ RNTRC não encontrado para esta empresa')
                             } else {
-                              rntrcInput.value = 'Selecione uma empresa para exibir o RNTRC'
+                              rntrcInput.value = 'RNTRC não informado para esta empresa'
+                              console.log('⚠️ RNTRC não encontrado para esta empresa')
                             }
                           } else {
-                            console.log('❌ Input RNTRC não encontrado')
+                            rntrcInput.value = 'Selecione uma empresa para exibir o RNTRC'
+                            console.log('🔄 Campo RNTRC resetado')
                           }
+                        } else {
+                          console.log('❌ Input RNTRC não encontrado no DOM')
                         }
-                        
-                        // Executar imediatamente e com delay
-                        updateRNTRCField()
-                        setTimeout(updateRNTRCField, 100)
-                        setTimeout(updateRNTRCField, 300)
                       }}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
@@ -1726,10 +1716,7 @@ export default function CTe() {
                       </option>
                       {associacoesFrota?.map((associacao) => (
                         <option key={associacao.id} value={associacao.id}>
-                          {associacao.funcionario?.nome || 'Nome não informado'} - CNH: {associacao.funcionario?.cnh || 'CNH não informada'} - {associacao.veiculo_principal?.placa || 'Placa não informada'}
-                          {associacao.veiculo_implemento?.placa && ` + ${associacao.veiculo_implemento.placa}`}
-                          {associacao.veiculo_reboque1?.placa && ` + ${associacao.veiculo_reboque1.placa}`}
-                          {associacao.veiculo_reboque2?.placa && ` + ${associacao.veiculo_reboque2.placa}`}
+                          {associacao.funcionario?.nome || 'Nome não informado'}
                         </option>
                       ))}
                     </select>
