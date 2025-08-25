@@ -1,0 +1,29 @@
+🏢 Empresa encontrada: 
+Object {id: "c4b8f87e-18b5-46b3-9b90-24026b558227", razao_social: "Empresa Exemplo Ltda", cnpj: "19660324000184", ie: "123456789012", endereco_completo: "Rua Exemplo, 123, Centro, São Paulo, SP, 01234-567", …}
+🏢 RNTRC da empresa: 12345678
+❌ Input RNTRC não encontrado
+errorAssociacoes is not defined
+errorAssociacoes is not defined
+The above error occurred in the <CTe> component:
+
+    at CTe (https://3f235b19-6883-4b3c-982d-a890f1dfbc20-00-3ewfbg3gbe34w.janeway.replit.dev:8000/src/pages/fiscal/CTe.tsx:80:41)
+    at ProtectedRoute (https://3f235b19-6883-4b3c-982d-a890f1dfbc20-00-3ewfbg3gbe34w.janeway.replit.dev:8000/src/routes.tsx:51:3)
+    at RenderedRoute (https://3f235b19-6883-4b3c-982d-a890f1dfbc20-00-3ewfbg3gbe34w.janeway.replit.dev:8000/node_modules/.vite/deps/react-router-dom.js?v=9565a922:4103:5)
+    at Outlet (https://3f235b19-6883-4b3c-982d-a890f1dfbc20-00-3ewfbg3gbe34w.janeway.replit.dev:8000/node_modules/.vite/deps/react-router-dom.js?v=9565a922:4510:26)
+    at main
+    at div
+    at div
+    at Layout
+    at RenderedRoute (https://3f235b19-6883-4b3c-982d-a890f1dfbc20-00-3ewfbg3gbe34w.janeway.replit.dev:8000/node_modules/.vite/deps/react-router-dom.js?v=9565a922:4103:5)
+    at Routes (https://3f235b19-6883-4b3c-982d-a890f1dfbc20-00-3ewfbg3gbe34w.janeway.replit.dev:8000/node_modules/.vite/deps/react-router-dom.js?v=9565a922:4574:5)
+    at AppRoutes (https://3f235b19-6883-4b3c-982d-a890f1dfbc20-00-3ewfbg3gbe34w.janeway.replit.dev:8000/src/routes.tsx:138:32)
+    at Router (https://3f235b19-6883-4b3c-982d-a890f1dfbc20-00-3ewfbg3gbe34w.janeway.replit.dev:8000/node_modules/.vite/deps/react-router-dom.js?v=9565a922:4517:15)
+    at BrowserRouter (https://3f235b19-6883-4b3c-982d-a890f1dfbc20-00-3ewfbg3gbe34w.janeway.replit.dev:8000/node_modules/.vite/deps/react-router-dom.js?v=9565a922:5266:5)
+    at PermissionsProvider (https://3f235b19-6883-4b3c-982d-a890f1dfbc20-00-3ewfbg3gbe34w.janeway.replit.dev:8000/src/contexts/PermissionsContext.tsx:40:39)
+    at AuthProvider (https://3f235b19-6883-4b3c-982d-a890f1dfbc20-00-3ewfbg3gbe34w.janeway.replit.dev:8000/src/contexts/AuthContext.tsx:24:32)
+    at QueryClientProvider (https://3f235b19-6883-4b3c-982d-a890f1dfbc20-00-3ewfbg3gbe34w.janeway.replit.dev:8000/node_modules/.vite/deps/@tanstack_react-query.js?v=9565a922:2951:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+errorAssociacoes is not defined
