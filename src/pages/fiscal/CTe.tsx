@@ -140,7 +140,7 @@ export default function CTe() {
   })
 
   // Query para buscar associações de frota ativas
-  const { data: associacoesFrota, isLoading: isLoadingAssociacoes } = useQuery({
+  const { data: associacoesFrota, isLoading: isLoadingAssociacoes, error: errorAssociacoes } = useQuery({
     queryKey: ['associacoes-frota-ativas'],
     queryFn: getAssociacoesAtivasParaCTe,
     retry: 2,
@@ -219,7 +219,10 @@ export default function CTe() {
 
     const updateRNTRC = () => {
       const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
-      if (!rntrcInput) return
+      if (!rntrcInput) {
+        console.log('❌ Input RNTRC não encontrado no DOM')
+        return
+      }
 
       if (selectedDocumento && empresas) {
         const empresa = empresas.find(emp => emp.id === selectedDocumento.empresa_id)
@@ -229,14 +232,19 @@ export default function CTe() {
         }
       } else if (!selectedDocumento) {
         rntrcInput.value = 'Selecione uma empresa para exibir o RNTRC'
+        console.log('⚠️ Nenhum documento selecionado, campo RNTRC resetado')
       }
     }
 
-    // Tentar imediatamente e depois com delay
-    updateRNTRC()
-    const timer = setTimeout(updateRNTRC, 300)
+    // Tentar com múltiplos delays para garantir que o DOM seja renderizado
+    const timeouts = [0, 100, 300, 500]
+    timeouts.forEach(delay => {
+      setTimeout(updateRNTRC, delay)
+    })
     
-    return () => clearTimeout(timer)
+    return () => {
+      // Limpar timeouts se o componente desmontar
+    }
   }, [selectedDocumento, empresas, isModalOpen])
 
   // Função para calcular impostos e valores totais

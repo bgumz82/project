@@ -715,8 +715,8 @@ export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> 
         vi.marca as veiculo_implemento_marca,
         vi.tipo as veiculo_implemento_tipo
       FROM associacoes_frota af
-      JOIN funcionarios f ON af.funcionario_id = f.id
-      JOIN veiculos vp ON af.veiculo_principal_id = vp.id
+      INNER JOIN funcionarios f ON af.funcionario_id = f.id
+      INNER JOIN veiculos vp ON af.veiculo_principal_id = vp.id
       LEFT JOIN veiculos vr1 ON af.veiculo_reboque1_id = vr1.id
       LEFT JOIN veiculos vr2 ON af.veiculo_reboque2_id = vr2.id
       LEFT JOIN veiculos vi ON af.veiculo_implemento_id = vi.id
@@ -725,6 +725,7 @@ export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> 
         AND f.status = 'ativo'
         AND f.funcao = 'motorista'
         AND f.cnh IS NOT NULL
+        AND vp.ativo = true
       ORDER BY f.nome, vp.placa
     `)
     
