@@ -95,6 +95,19 @@ export default function CTe() {
   // Estados para validação de chaves de acesso
   const [chaveErrors, setChaveErrors] = useState<{[key: string]: string}>({})
 
+  // Estados para controlar RNTRC e motorista
+  const [selectedEmpresaId, setSelectedEmpresaId] = useState<string>('')
+  const [rntrcValue, setRntrcValue] = useState<string>('Selecione uma empresa para exibir o RNTRC')
+  const [selectedMotoristaId, setSelectedMotoristaId] = useState<string>('')
+  const [placaVeiculo, setPlacaVeiculo] = useState<string>('')
+  const [placaReboque, setPlacaReboque] = useState<string>('')
+  const [motoristaInfo, setMotoristaInfo] = useState<{
+    nome: string
+    cnh: string
+    matricula: string
+    validadeCnh: string
+  } | null>(null)
+
   // Função para validar chave de acesso em tempo real
   const validateChaveAcesso = (value: string, fieldName: string) => {
     const chaveNumerica = value.replace(/\D/g, '')
@@ -213,31 +226,30 @@ export default function CTe() {
     setChaveErrors({})
   }
 
-  // useEffect para carregar RNTRC quando modal abre ou documento selecionado muda
+  // useEffect para carregar dados quando modal abre ou documento selecionado muda
   React.useEffect(() => {
     if (!isModalOpen) return
 
-    const updateRNTRC = () => {
-      const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
-      if (!rntrcInput) return
-
-      if (selectedDocumento && empresas) {
-        const empresa = empresas.find(emp => emp.id === selectedDocumento.empresa_id)
-        if (empresa?.rntrc) {
-          rntrcInput.value = empresa.rntrc
-          console.log('✅ RNTRC carregado para edição:', empresa.rntrc)
-        } else {
-          rntrcInput.value = 'RNTRC não informado para esta empresa'
-        }
+    if (selectedDocumento && empresas) {
+      // Carregar dados do documento em edição
+      const empresa = empresas.find(emp => emp.id === selectedDocumento.empresa_id)
+      setSelectedEmpresaId(selectedDocumento.empresa_id)
+      
+      if (empresa?.rntrc) {
+        setRntrcValue(empresa.rntrc)
+        console.log('✅ RNTRC carregado para edição:', empresa.rntrc)
       } else {
-        rntrcInput.value = 'Selecione uma empresa para exibir o RNTRC'
+        setRntrcValue('RNTRC não informado para esta empresa')
       }
+    } else {
+      // Reset para novo documento
+      setSelectedEmpresaId('')
+      setRntrcValue('Selecione uma empresa para exibir o RNTRC')
+      setSelectedMotoristaId('')
+      setPlacaVeiculo('')
+      setPlacaReboque('')
+      setMotoristaInfo(null)
     }
-
-    // Executar após um pequeno delay para garantir que o DOM esteja renderizado
-    const timeout = setTimeout(updateRNTRC, 100)
-    
-    return () => clearTimeout(timeout)
   }, [selectedDocumento, empresas, isModalOpen])
 
   // Função para calcular impostos e valores totais
@@ -262,28 +274,37 @@ export default function CTe() {
     valorReceberInput.value = valorTotalPrestacao.toFixed(2) // Valor a receber = valor total
   }
 
-  // Função para atualizar placas baseado no motorista selecionado
+  // Função para atualizar dados baseado na empresa selecionada
+  const handleEmpresaChange = (empresaId: string) => {
+    console.log('🏢 Empresa selecionada:', empresaId)
+    setSelectedEmpresaId(empresaId)
+    
+    if (empresaId && empresas) {
+      const empresa = empresas.find(emp => emp.id === empresaId)
+      console.log('🏢 Empresa encontrada:', empresa)
+      
+      if (empresa?.rntrc) {
+        setRntrcValue(empresa.rntrc)
+        console.log('✅ RNTRC atualizado:', empresa.rntrc)
+      } else {
+        setRntrcValue('RNTRC não informado para esta empresa')
+        console.log('⚠️ RNTRC não encontrado para esta empresa')
+      }
+    } else {
+      setRntrcValue('Selecione uma empresa para exibir o RNTRC')
+      console.log('🔄 Campo RNTRC resetado')
+    }
+  }
+
+  // Função para atualizar dados baseado no motorista selecionado
   const handleMotoristaChange = (associacaoId: string) => {
     console.log('🚚 Motorista selecionado:', associacaoId)
-    console.log('📋 Associações disponíveis:', associacoesFrota)
+    setSelectedMotoristaId(associacaoId)
     
-    const placaVeiculoInput = document.getElementById('placa_veiculo') as HTMLInputElement
-    const placaReboqueInput = document.getElementById('placa_reboque') as HTMLInputElement
-    const infoMotorista = document.getElementById('info-motorista')
-    const motoristaNome = document.getElementById('motorista-nome')
-    const motoristaCnh = document.getElementById('motorista-cnh')
-    const motoristaValidadeCnh = document.getElementById('motorista-validade-cnh')
-    const motoristaMatricula = document.getElementById('motorista-matricula')
-
-    if (!placaVeiculoInput || !placaReboqueInput) {
-      console.log('❌ Inputs de placa não encontrados')
-      return
-    }
-
     if (!associacaoId) {
-      placaVeiculoInput.value = ''
-      placaReboqueInput.value = ''
-      if (infoMotorista) infoMotorista.classList.add('hidden')
+      setPlacaVeiculo('')
+      setPlacaReboque('')
+      setMotoristaInfo(null)
       return
     }
 
@@ -292,12 +313,15 @@ export default function CTe() {
     
     if (!associacao) {
       console.log('❌ Associação não encontrada para ID:', associacaoId)
+      setPlacaVeiculo('')
+      setPlacaReboque('')
+      setMotoristaInfo(null)
       return
     }
 
-    // Definir placa do veículo principal - usar dados diretos da associação
+    // Definir placa do veículo principal
     const placaPrincipal = associacao.veiculo_principal?.placa || 'Placa não informada'
-    placaVeiculoInput.value = placaPrincipal
+    setPlacaVeiculo(placaPrincipal)
     console.log('🚛 Placa principal definida:', placaPrincipal)
 
     // Definir placa do reboque (combinando reboque1 e reboque2 se existirem, ou implemento)
@@ -310,31 +334,23 @@ export default function CTe() {
       if (associacao.veiculo_reboque2?.placa) placas.push(associacao.veiculo_reboque2.placa)
       placaReboque = placas.join(' + ')
     }
-    placaReboqueInput.value = placaReboque || 'Nenhum reboque/implemento'
+    setPlacaReboque(placaReboque || 'Nenhum reboque/implemento')
     console.log('🚛 Placa reboque/implemento definida:', placaReboque)
 
-    // Mostrar informações do motorista - usar dados diretos da associação
-    const nomeMotorista = associacao.funcionario?.nome || 'Nome não informado'
-    const cnhMotorista = associacao.funcionario?.cnh || 'CNH não informada'
-    const matriculaMotorista = associacao.funcionario?.matricula || 'Matrícula não informada'
-    
-    if (motoristaNome) motoristaNome.textContent = nomeMotorista
-    if (motoristaCnh) motoristaCnh.textContent = cnhMotorista
-    if (motoristaMatricula) motoristaMatricula.textContent = matriculaMotorista
-    
-    if (motoristaValidadeCnh) {
-      const validadeCnh = associacao.funcionario?.validade_cnh
-      const validadeTexto = validadeCnh ? format(parseISO(validadeCnh), 'dd/MM/yyyy') : 'Não informado'
-      motoristaValidadeCnh.textContent = validadeTexto
+    // Definir informações do motorista
+    const validadeCnh = associacao.funcionario?.validade_cnh 
+      ? format(parseISO(associacao.funcionario.validade_cnh), 'dd/MM/yyyy')
+      : 'Não informado'
+
+    const info = {
+      nome: associacao.funcionario?.nome || 'Nome não informado',
+      cnh: associacao.funcionario?.cnh || 'CNH não informada',
+      matricula: associacao.funcionario?.matricula || 'Matrícula não informada',
+      validadeCnh
     }
     
-    console.log('👨‍💼 Informações do motorista definidas:', {
-      nome: nomeMotorista,
-      cnh: cnhMotorista,
-      matricula: matriculaMotorista
-    })
-    
-    if (infoMotorista) infoMotorista.classList.remove('hidden')
+    setMotoristaInfo(info)
+    console.log('👨‍💼 Informações do motorista definidas:', info)
   }
 
   // Função para lidar com mudança na situação tributária
@@ -799,36 +815,9 @@ export default function CTe() {
                     <select
                       name="empresa_id"
                       id="empresa_id"
-                      defaultValue={selectedDocumento?.empresa_id}
+                      value={selectedEmpresaId}
                       required
-                      onChange={(e) => {
-                        const empresaId = e.target.value
-                        console.log('🏢 Empresa selecionada:', empresaId)
-                        
-                        // Buscar o input RNTRC e atualizar imediatamente
-                        const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
-                        
-                        if (rntrcInput) {
-                          if (empresaId && empresas) {
-                            const empresa = empresas.find(emp => emp.id === empresaId)
-                            console.log('🏢 Empresa encontrada:', empresa)
-                            console.log('🏢 RNTRC da empresa:', empresa?.rntrc)
-                            
-                            if (empresa?.rntrc) {
-                              rntrcInput.value = empresa.rntrc
-                              console.log('✅ RNTRC atualizado:', empresa.rntrc)
-                            } else {
-                              rntrcInput.value = 'RNTRC não informado para esta empresa'
-                              console.log('⚠️ RNTRC não encontrado para esta empresa')
-                            }
-                          } else {
-                            rntrcInput.value = 'Selecione uma empresa para exibir o RNTRC'
-                            console.log('🔄 Campo RNTRC resetado')
-                          }
-                        } else {
-                          console.log('❌ Input RNTRC não encontrado no DOM')
-                        }
-                      }}
+                      onChange={(e) => handleEmpresaChange(e.target.value)}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
                       <option value="">Selecione uma empresa</option>
@@ -1690,8 +1679,8 @@ export default function CTe() {
                       type="text"
                       name="rntrc_display"
                       id="rntrc_display"
+                      value={rntrcValue}
                       readOnly
-                      placeholder="Selecione uma empresa para exibir o RNTRC"
                       className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     />
                     <p className="mt-1 text-xs text-gray-500">
@@ -1707,6 +1696,7 @@ export default function CTe() {
                     <select
                       name="associacao_frota_id"
                       id="associacao_frota_id"
+                      value={selectedMotoristaId}
                       onChange={(e) => handleMotoristaChange(e.target.value)}
                       disabled={isLoadingAssociacoes}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100"
@@ -1740,6 +1730,7 @@ export default function CTe() {
                         type="text"
                         name="placa_veiculo"
                         id="placa_veiculo"
+                        value={placaVeiculo}
                         readOnly
                         placeholder="Será preenchido automaticamente"
                         className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-mono text-center"
@@ -1757,6 +1748,7 @@ export default function CTe() {
                         type="text"
                         name="placa_reboque"
                         id="placa_reboque"
+                        value={placaReboque}
                         readOnly
                         placeholder="Será preenchido automaticamente"
                         className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-mono text-center"
@@ -1768,27 +1760,29 @@ export default function CTe() {
                   </div>
 
                   {/* Informações do Motorista Selecionado */}
-                  <div id="info-motorista" className="hidden bg-gray-50 p-4 rounded-lg">
-                    <h5 className="text-sm font-medium text-gray-900 mb-2">👨‍💼 Informações do Motorista</h5>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-sm">
-                      <div>
-                        <span className="font-medium text-gray-700">Nome:</span>
-                        <span id="motorista-nome" className="ml-2 text-gray-600"></span>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">CNH:</span>
-                        <span id="motorista-cnh" className="ml-2 text-gray-600 font-mono"></span>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Validade CNH:</span>
-                        <span id="motorista-validade-cnh" className="ml-2 text-gray-600"></span>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Matrícula:</span>
-                        <span id="motorista-matricula" className="ml-2 text-gray-600"></span>
+                  {motoristaInfo && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h5 className="text-sm font-medium text-gray-900 mb-2">👨‍💼 Informações do Motorista</h5>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-700">Nome:</span>
+                          <span className="ml-2 text-gray-600">{motoristaInfo.nome}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">CNH:</span>
+                          <span className="ml-2 text-gray-600 font-mono">{motoristaInfo.cnh}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Validade CNH:</span>
+                          <span className="ml-2 text-gray-600">{motoristaInfo.validadeCnh}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Matrícula:</span>
+                          <span className="ml-2 text-gray-600">{motoristaInfo.matricula}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Aviso quando não há associações */}
                   {!associacoesFrota || associacoesFrota.length === 0 && (
