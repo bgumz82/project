@@ -158,6 +158,17 @@ export default function CTe() {
     queryFn: getAssociacoesAtivasParaCTe,
     retry: 2,
     staleTime: 1000 * 60 * 5,
+    onSuccess: (data) => {
+      console.log('🎯 Associações carregadas no componente CT-e:', data?.length || 0)
+      if (data && data.length > 0) {
+        console.log('🎯 Primeira associação no componente:', data[0])
+        console.log('🎯 Funcionário da primeira associação:', data[0].funcionario)
+        console.log('🎯 Veículo principal da primeira associação:', data[0].veiculo_principal)
+      }
+    },
+    onError: (error) => {
+      console.error('❌ Erro ao carregar associações no componente:', error)
+    }
   })
 
   // Query para buscar estados
@@ -230,6 +241,9 @@ export default function CTe() {
   React.useEffect(() => {
     if (!isModalOpen) return
 
+    // Invalidar cache das associações para garantir dados atualizados
+    queryClient.invalidateQueries({ queryKey: ['associacoes-frota-ativas'] })
+
     if (selectedDocumento && empresas) {
       // Carregar dados do documento em edição
       const empresa = empresas.find(emp => emp.id === selectedDocumento.empresa_id)
@@ -250,7 +264,7 @@ export default function CTe() {
       setPlacaReboque('')
       setMotoristaInfo(null)
     }
-  }, [selectedDocumento, empresas, isModalOpen])
+  }, [selectedDocumento, empresas, isModalOpen, queryClient])
 
   // Função para calcular impostos e valores totais
   const calcularImpostos = () => {
@@ -320,6 +334,10 @@ export default function CTe() {
       return
     }
 
+    console.log('🔍 Estrutura completa da associação:', JSON.stringify(associacao, null, 2))
+    console.log('👨‍💼 Dados do funcionário na associação:', associacao.funcionario)
+    console.log('🚛 Dados do veículo principal na associação:', associacao.veiculo_principal)
+
     // Definir placa do veículo principal
     const placaPrincipal = associacao.veiculo_principal?.placa || 'Placa não informada'
     setPlacaVeiculo(placaPrincipal)
@@ -347,6 +365,9 @@ export default function CTe() {
 
     // Definir informações do motorista
     console.log('👨‍💼 Dados do funcionário recebidos:', associacao.funcionario)
+    console.log('👨‍💼 Nome do funcionário:', associacao.funcionario?.nome)
+    console.log('👨‍💼 CNH do funcionário:', associacao.funcionario?.cnh)
+    console.log('👨‍💼 Matrícula do funcionário:', associacao.funcionario?.matricula)
     
     const validadeCnh = associacao.funcionario?.validade_cnh 
       ? format(parseISO(associacao.funcionario.validade_cnh), 'dd/MM/yyyy')

@@ -732,47 +732,90 @@ export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> 
     console.log('✅ Associações ativas encontradas para CT-e:', result.length)
     
     if (result.length > 0) {
-      console.log('📋 Primeira associação encontrada:', {
-        motorista: result[0].funcionario_nome,
+      console.log('📋 Primeira associação encontrada (RAW):', result[0])
+      console.log('📋 Dados do funcionário:', {
+        nome: result[0].funcionario_nome,
         cnh: result[0].funcionario_cnh,
-        matricula: result[0].funcionario_matricula,
-        placa_principal: result[0].veiculo_principal_placa
+        matricula: result[0].funcionario_matricula
+      })
+      console.log('📋 Dados do veículo principal:', {
+        placa: result[0].veiculo_principal_placa,
+        modelo: result[0].veiculo_principal_modelo
       })
     }
     
-    return result.map(associacao => ({
-      ...associacao,
-      funcionario: {
-        nome: associacao.funcionario_nome || 'Nome não informado',
-        matricula: associacao.funcionario_matricula || 'Matrícula não informada',
-        cnh: associacao.funcionario_cnh || 'CNH não informada',
-        validade_cnh: associacao.funcionario_validade_cnh || null
-      },
-      veiculo_principal: {
-        placa: associacao.veiculo_principal_placa || 'Placa não informada',
-        modelo: associacao.veiculo_principal_modelo || 'Modelo não informado',
-        marca: associacao.veiculo_principal_marca || 'Marca não informada',
-        tipo: associacao.veiculo_principal_tipo || 'Tipo não informado'
-      },
-      veiculo_reboque1: associacao.veiculo_reboque1_placa ? {
-        placa: associacao.veiculo_reboque1_placa,
-        modelo: associacao.veiculo_reboque1_modelo || 'Modelo não informado',
-        marca: associacao.veiculo_reboque1_marca || 'Marca não informada',
-        tipo: associacao.veiculo_reboque1_tipo || 'Tipo não informado'
-      } : null,
-      veiculo_reboque2: associacao.veiculo_reboque2_placa ? {
-        placa: associacao.veiculo_reboque2_placa,
-        modelo: associacao.veiculo_reboque2_modelo || 'Modelo não informado',
-        marca: associacao.veiculo_reboque2_marca || 'Marca não informada',
-        tipo: associacao.veiculo_reboque2_tipo || 'Tipo não informado'
-      } : null,
-      veiculo_implemento: associacao.veiculo_implemento_placa ? {
-        placa: associacao.veiculo_implemento_placa,
-        modelo: associacao.veiculo_implemento_modelo || 'Modelo não informado',
-        marca: associacao.veiculo_implemento_marca || 'Marca não informada',
-        tipo: associacao.veiculo_implemento_tipo || 'Tipo não informado'
-      } : null
-    }))
+    const mappedData = result.map(associacao => {
+      console.log('🔄 Processando associação:', associacao.id)
+      console.log('🔄 Dados do funcionário RAW:', {
+        nome: associacao.funcionario_nome,
+        matricula: associacao.funcionario_matricula,
+        cnh: associacao.funcionario_cnh,
+        validade_cnh: associacao.funcionario_validade_cnh
+      })
+      console.log('🔄 Dados do veículo principal RAW:', {
+        placa: associacao.veiculo_principal_placa,
+        modelo: associacao.veiculo_principal_modelo,
+        marca: associacao.veiculo_principal_marca,
+        tipo: associacao.veiculo_principal_tipo
+      })
+      
+      const mapped = {
+        id: associacao.id,
+        funcionario_id: associacao.funcionario_id,
+        veiculo_principal_id: associacao.veiculo_principal_id,
+        veiculo_reboque1_id: associacao.veiculo_reboque1_id,
+        veiculo_reboque2_id: associacao.veiculo_reboque2_id,
+        veiculo_implemento_id: associacao.veiculo_implemento_id,
+        data_inicio: associacao.data_inicio,
+        data_fim: associacao.data_fim,
+        ativo: associacao.ativo,
+        observacoes: associacao.observacoes,
+        created_at: associacao.created_at,
+        updated_at: associacao.updated_at,
+        funcionario: {
+          nome: associacao.funcionario_nome || 'Nome não informado',
+          matricula: associacao.funcionario_matricula || 'Matrícula não informada',
+          cnh: associacao.funcionario_cnh || 'CNH não informada',
+          validade_cnh: associacao.funcionario_validade_cnh || null
+        },
+        veiculo_principal: {
+          placa: associacao.veiculo_principal_placa || 'Placa não informada',
+          modelo: associacao.veiculo_principal_modelo || 'Modelo não informado',
+          marca: associacao.veiculo_principal_marca || 'Marca não informada',
+          tipo: associacao.veiculo_principal_tipo || 'Tipo não informado'
+        },
+        veiculo_reboque1: associacao.veiculo_reboque1_placa ? {
+          placa: associacao.veiculo_reboque1_placa,
+          modelo: associacao.veiculo_reboque1_modelo || 'Modelo não informado',
+          marca: associacao.veiculo_reboque1_marca || 'Marca não informada',
+          tipo: associacao.veiculo_reboque1_tipo || 'Tipo não informado'
+        } : null,
+        veiculo_reboque2: associacao.veiculo_reboque2_placa ? {
+          placa: associacao.veiculo_reboque2_placa,
+          modelo: associacao.veiculo_reboque2_modelo || 'Modelo não informado',
+          marca: associacao.veiculo_reboque2_marca || 'Marca não informada',
+          tipo: associacao.veiculo_reboque2_tipo || 'Tipo não informado'
+        } : null,
+        veiculo_implemento: associacao.veiculo_implemento_placa ? {
+          placa: associacao.veiculo_implemento_placa,
+          modelo: associacao.veiculo_implemento_modelo || 'Modelo não informado',
+          marca: associacao.veiculo_implemento_marca || 'Marca não informada',
+          tipo: associacao.veiculo_implemento_tipo || 'Tipo não informado'
+        } : null
+      }
+      
+      console.log('✅ Dados mapeados final:', {
+        id: mapped.id,
+        funcionario: mapped.funcionario,
+        veiculo_principal: mapped.veiculo_principal,
+        veiculo_implemento: mapped.veiculo_implemento
+      })
+      
+      return mapped
+    })
+    
+    console.log('✅ Total de associações processadas:', mappedData.length)
+    return mappedData
   } catch (error) {
     console.error('❌ Erro ao buscar associações ativas para CT-e:', error)
     console.error('❌ Stack trace:', error.stack)
