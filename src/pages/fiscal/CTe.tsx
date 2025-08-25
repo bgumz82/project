@@ -31,6 +31,10 @@ import {
   type Cidade,
   type ProdutoCTe
 } from '@/lib/api/fiscal'
+import {
+  getAssociacoesAtivasParaCTe,
+  type AssociacaoFrota
+} from '@/lib/api/fleet-associations'
 
 const STATUS_LABELS = {
   pendente: 'Pendente',
@@ -135,6 +139,12 @@ export default function CTe() {
     queryFn: getProdutosCTe
   })
 
+  // Query para buscar associações de frota ativas
+  const { data: associacoesFrota } = useQuery({
+    queryKey: ['associacoes-frota-ativas'],
+    queryFn: getAssociacoesAtivasParaCTe
+  })
+
   // Query para buscar estados
   const { data: estados } = useQuery({
     queryKey: ['estados'],
@@ -221,6 +231,55 @@ export default function CTe() {
     valorPrestacaoInput.value = valorTotalPrestacao.toFixed(2)
     valorTributosInput.value = valorICMS.toFixed(2)
     valorReceberInput.value = valorTotalPrestacao.toFixed(2) // Valor a receber = valor total
+  }
+
+  // Função para atualizar placas baseado no motorista selecionado
+  const handleMotoristaChange = (associacaoId: string) => {
+    const placaVeiculoInput = document.getElementById('placa_veiculo') as HTMLInputElement
+    const placaReboqueInput = document.getElementById('placa_reboque') as HTMLInputElement
+    const infoMotorista = document.getElementById('info-motorista')
+    const motoristaNome = document.getElementById('motorista-nome')
+    const motoristaCnh = document.getElementById('motorista-cnh')
+    const motoristaValidadeCnh = document.getElementById('motorista-validade-cnh')
+    const motoristaMatricula = document.getElementById('motorista-matricula')
+
+    if (!placaVeiculoInput || !placaReboqueInput) return
+
+    if (!associacaoId) {
+      placaVeiculoInput.value = ''
+      placaReboqueInput.value = ''
+      if (infoMotorista) infoMotorista.classList.add('hidden')
+      return
+    }
+
+    const associacao = associacoesFrota?.find(a => a.id === associacaoId)
+    if (!associacao) return
+
+    // Definir placa do veículo principal
+    placaVeiculoInput.value = associacao.veiculo_principal?.placa || ''
+
+    // Definir placa do reboque (combinando reboque1 e reboque2 se existirem, ou implemento)
+    let placaReboque = ''
+    if (associacao.veiculo_implemento?.placa) {
+      placaReboque = associacao.veiculo_implemento.placa
+    } else {
+      const placas = []
+      if (associacao.veiculo_reboque1?.placa) placas.push(associacao.veiculo_reboque1.placa)
+      if (associacao.veiculo_reboque2?.placa) placas.push(associacao.veiculo_reboque2.placa)
+      placaReboque = placas.join(' + ')
+    }
+    placaReboqueInput.value = placaReboque
+
+    // Mostrar informações do motorista
+    if (motoristaNome) motoristaNome.textContent = associacao.funcionario?.nome || ''
+    if (motoristaCnh) motoristaCnh.textContent = associacao.funcionario?.cnh || ''
+    if (motoristaValidadeCnh) {
+      const validadeCnh = associacao.funcionario?.validade_cnh
+      motoristaValidadeCnh.textContent = validadeCnh ? format(parseISO(validadeCnh), 'dd/MM/yyyy') : 'Não informado'
+    }
+    if (motoristaMatricula) motoristaMatricula.textContent = associacao.funcionario?.matricula || ''
+    
+    if (infoMotorista) infoMotorista.classList.remove('hidden')
   }
 
   // Função para lidar com mudança na situação tributária
@@ -1540,66 +1599,137 @@ export default function CTe() {
 
               {activeTab === 'dados-transporte' && (
                 <div className="space-y-6">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-blue-900 mb-2">🚛 Dados do Transporte</h4>
+                    <p className="text-sm text-blue-700">
+                      Informações sobre o transportador, motorista e veículos utilizados no transporte.
+                    </p>
+                  </div>
+
                   {/* RNTRC */}
                   <div>
                     <label htmlFor="rntrc_display" className="block text-sm font-medium text-gray-700">
-                      RNTRC
+                      RNTRC da Empresa Transportadora
                     </label>
                     <input
                       type="text"
                       name="rntrc_display"
                       id="rntrc_display"
                       readOnly
-                      placeholder="RNTRC da empresa"
+                      placeholder="Selecione uma empresa para exibir o RNTRC"
                       className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     />
+                    <p className="mt-1 text-xs text-gray-500">
+                      RNTRC é obtido automaticamente da empresa selecionada
+                    </p>
                   </div>
 
                   {/* Motorista */}
                   <div>
-                    <label htmlFor="motorista_id" className="block text-sm font-medium text-gray-700">
-                      Motorista
+                    <label htmlFor="associacao_frota_id" className="block text-sm font-medium text-gray-700">
+                      Motorista (Associação de Frota) *
                     </label>
                     <select
-                      name="motorista_id"
-                      id="motorista_id"
+                      name="associacao_frota_id"
+                      id="associacao_frota_id"
+                      onChange={(e) => handleMotoristaChange(e.target.value)}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
                       <option value="">Selecione um motorista</option>
-                      {/* Aqui você buscará e listará os motoristas associados à frota */}
+                      {associacoesFrota?.map((associacao) => (
+                        <option key={associacao.id} value={associacao.id}>
+                          {associacao.funcionario?.nome} - CNH: {associacao.funcionario?.cnh} - {associacao.veiculo_principal?.placa}
+                          {associacao.veiculo_implemento?.placa && ` + ${associacao.veiculo_implemento.placa}`}
+                          {associacao.veiculo_reboque1?.placa && ` + ${associacao.veiculo_reboque1.placa}`}
+                          {associacao.veiculo_reboque2?.placa && ` + ${associacao.veiculo_reboque2.placa}`}
+                        </option>
+                      ))}
                     </select>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Lista apenas motoristas com associações ativas de frota
+                    </p>
                   </div>
 
                   {/* Placas do Veículo e Reboque */}
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div>
                       <label htmlFor="placa_veiculo" className="block text-sm font-medium text-gray-700">
-                        Placa do Veículo
+                        Placa do Veículo Principal
                       </label>
                       <input
                         type="text"
                         name="placa_veiculo"
                         id="placa_veiculo"
                         readOnly
-                        placeholder="Placa do veículo associado ao motorista"
-                        className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        placeholder="Será preenchido automaticamente"
+                        className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-mono text-center"
                       />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Placa do caminhão principal
+                      </p>
                     </div>
 
                     <div>
                       <label htmlFor="placa_reboque" className="block text-sm font-medium text-gray-700">
-                        Placa do Reboque
+                        Placa(s) do(s) Reboque(s)/Implemento(s)
                       </label>
                       <input
                         type="text"
                         name="placa_reboque"
                         id="placa_reboque"
                         readOnly
-                        placeholder="Placa do reboque associado ao motorista"
-                        className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        placeholder="Será preenchido automaticamente"
+                        className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-mono text-center"
                       />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Implementos, reboques ou vanderleia associados
+                      </p>
                     </div>
                   </div>
+
+                  {/* Informações do Motorista Selecionado */}
+                  <div id="info-motorista" className="hidden bg-gray-50 p-4 rounded-lg">
+                    <h5 className="text-sm font-medium text-gray-900 mb-2">👨‍💼 Informações do Motorista</h5>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-sm">
+                      <div>
+                        <span className="font-medium text-gray-700">Nome:</span>
+                        <span id="motorista-nome" className="ml-2 text-gray-600"></span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">CNH:</span>
+                        <span id="motorista-cnh" className="ml-2 text-gray-600 font-mono"></span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Validade CNH:</span>
+                        <span id="motorista-validade-cnh" className="ml-2 text-gray-600"></span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Matrícula:</span>
+                        <span id="motorista-matricula" className="ml-2 text-gray-600"></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Aviso quando não há associações */}
+                  {!associacoesFrota || associacoesFrota.length === 0 && (
+                    <div className="bg-yellow-50 p-4 rounded-lg">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-yellow-800">
+                            Nenhuma Associação de Frota Ativa
+                          </h3>
+                          <div className="mt-2 text-sm text-yellow-700">
+                            <p>Não há motoristas com associações ativas de frota. Para usar esta funcionalidade, é necessário primeiro criar associações entre motoristas e veículos no módulo "Associações de Frota".</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
