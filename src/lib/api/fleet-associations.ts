@@ -682,7 +682,7 @@ export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> 
     
     const result = await query(`
       SELECT 
-        af.id,
+        af.id as associacao_id,
         af.funcionario_id,
         af.veiculo_principal_id,
         af.veiculo_reboque1_id,
@@ -692,28 +692,28 @@ export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> 
         af.data_fim,
         af.ativo,
         af.observacoes,
-        af.created_at,
-        af.updated_at,
-        f.nome as funcionario_nome,
-        f.matricula as funcionario_matricula,
-        f.cnh as funcionario_cnh,
-        f.validade_cnh as funcionario_validade_cnh,
-        vp.placa as veiculo_principal_placa,
-        vp.modelo as veiculo_principal_modelo,
-        vp.marca as veiculo_principal_marca,
-        vp.tipo as veiculo_principal_tipo,
-        vr1.placa as veiculo_reboque1_placa,
-        vr1.modelo as veiculo_reboque1_modelo,
-        vr1.marca as veiculo_reboque1_marca,
-        vr1.tipo as veiculo_reboque1_tipo,
-        vr2.placa as veiculo_reboque2_placa,
-        vr2.modelo as veiculo_reboque2_modelo,
-        vr2.marca as veiculo_reboque2_marca,
-        vr2.tipo as veiculo_reboque2_tipo,
-        vi.placa as veiculo_implemento_placa,
-        vi.modelo as veiculo_implemento_modelo,
-        vi.marca as veiculo_implemento_marca,
-        vi.tipo as veiculo_implemento_tipo
+        af.created_at as associacao_created_at,
+        af.updated_at as associacao_updated_at,
+        f.nome as func_nome,
+        f.matricula as func_matricula,
+        f.cnh as func_cnh,
+        f.validade_cnh as func_validade_cnh,
+        vp.placa as vp_placa,
+        vp.modelo as vp_modelo,
+        vp.marca as vp_marca,
+        vp.tipo as vp_tipo,
+        vr1.placa as vr1_placa,
+        vr1.modelo as vr1_modelo,
+        vr1.marca as vr1_marca,
+        vr1.tipo as vr1_tipo,
+        vr2.placa as vr2_placa,
+        vr2.modelo as vr2_modelo,
+        vr2.marca as vr2_marca,
+        vr2.tipo as vr2_tipo,
+        vi.placa as vi_placa,
+        vi.modelo as vi_modelo,
+        vi.marca as vi_marca,
+        vi.tipo as vi_tipo
       FROM associacoes_frota af
       JOIN funcionarios f ON af.funcionario_id = f.id
       JOIN veiculos vp ON af.veiculo_principal_id = vp.id
@@ -733,55 +733,55 @@ export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> 
       console.log('📊 Primeiro resultado completo:', JSON.stringify(result[0], null, 2))
     }
     
-    const mappedResults = result.map(associacao => {
-      console.log(`🔄 Mapeando associação ${associacao.id}:`, {
-        funcionario_nome: associacao.funcionario_nome,
-        veiculo_principal_placa: associacao.veiculo_principal_placa,
-        veiculo_implemento_placa: associacao.veiculo_implemento_placa
+    const mappedResults = result.map(row => {
+      console.log(`🔄 Mapeando associação ${row.associacao_id}:`, {
+        funcionario_nome: row.func_nome,
+        veiculo_principal_placa: row.vp_placa,
+        veiculo_implemento_placa: row.vi_placa
       })
 
       return {
-        id: associacao.id,
-        funcionario_id: associacao.funcionario_id,
-        veiculo_principal_id: associacao.veiculo_principal_id,
-        veiculo_reboque1_id: associacao.veiculo_reboque1_id,
-        veiculo_reboque2_id: associacao.veiculo_reboque2_id,
-        veiculo_implemento_id: associacao.veiculo_implemento_id,
-        data_inicio: associacao.data_inicio,
-        data_fim: associacao.data_fim,
-        ativo: associacao.ativo,
-        observacoes: associacao.observacoes,
-        created_at: associacao.created_at,
-        updated_at: associacao.updated_at,
+        id: row.associacao_id,
+        funcionario_id: row.funcionario_id,
+        veiculo_principal_id: row.veiculo_principal_id,
+        veiculo_reboque1_id: row.veiculo_reboque1_id,
+        veiculo_reboque2_id: row.veiculo_reboque2_id,
+        veiculo_implemento_id: row.veiculo_implemento_id,
+        data_inicio: row.data_inicio,
+        data_fim: row.data_fim,
+        ativo: row.ativo,
+        observacoes: row.observacoes,
+        created_at: row.associacao_created_at,
+        updated_at: row.associacao_updated_at,
         funcionario: {
-          nome: associacao.funcionario_nome || 'Nome não informado',
-          matricula: associacao.funcionario_matricula || 'Matrícula não informada',
-          cnh: associacao.funcionario_cnh || 'CNH não informada',
-          validade_cnh: associacao.funcionario_validade_cnh
+          nome: row.func_nome || 'Nome não informado',
+          matricula: row.func_matricula || 'Matrícula não informada',
+          cnh: row.func_cnh || 'CNH não informada',
+          validade_cnh: row.func_validade_cnh
         },
         veiculo_principal: {
-          placa: associacao.veiculo_principal_placa || 'Placa não informada',
-          modelo: associacao.veiculo_principal_modelo || 'Modelo não informado',
-          marca: associacao.veiculo_principal_marca || 'Marca não informada',
-          tipo: associacao.veiculo_principal_tipo || 'Tipo não informado'
+          placa: row.vp_placa || 'Placa não informada',
+          modelo: row.vp_modelo || 'Modelo não informado',
+          marca: row.vp_marca || 'Marca não informada',
+          tipo: row.vp_tipo || 'Tipo não informado'
         },
-        veiculo_reboque1: associacao.veiculo_reboque1_placa ? {
-          placa: associacao.veiculo_reboque1_placa,
-          modelo: associacao.veiculo_reboque1_modelo || 'Modelo não informado',
-          marca: associacao.veiculo_reboque1_marca || 'Marca não informada',
-          tipo: associacao.veiculo_reboque1_tipo || 'Tipo não informado'
+        veiculo_reboque1: row.vr1_placa ? {
+          placa: row.vr1_placa,
+          modelo: row.vr1_modelo || 'Modelo não informado',
+          marca: row.vr1_marca || 'Marca não informada',
+          tipo: row.vr1_tipo || 'Tipo não informado'
         } : null,
-        veiculo_reboque2: associacao.veiculo_reboque2_placa ? {
-          placa: associacao.veiculo_reboque2_placa,
-          modelo: associacao.veiculo_reboque2_modelo || 'Modelo não informado',
-          marca: associacao.veiculo_reboque2_marca || 'Marca não informada',
-          tipo: associacao.veiculo_reboque2_tipo || 'Tipo não informado'
+        veiculo_reboque2: row.vr2_placa ? {
+          placa: row.vr2_placa,
+          modelo: row.vr2_modelo || 'Modelo não informado',
+          marca: row.vr2_marca || 'Marca não informada',
+          tipo: row.vr2_tipo || 'Tipo não informado'
         } : null,
-        veiculo_implemento: associacao.veiculo_implemento_placa ? {
-          placa: associacao.veiculo_implemento_placa,
-          modelo: associacao.veiculo_implemento_modelo || 'Modelo não informado',
-          marca: associacao.veiculo_implemento_marca || 'Marca não informada',
-          tipo: associacao.veiculo_implemento_tipo || 'Tipo não informado'
+        veiculo_implemento: row.vi_placa ? {
+          placa: row.vi_placa,
+          modelo: row.vi_modelo || 'Modelo não informado',
+          marca: row.vi_marca || 'Marca não informada',
+          tipo: row.vi_tipo || 'Tipo não informado'
         } : null
       }
     })
