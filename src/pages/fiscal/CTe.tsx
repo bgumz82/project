@@ -234,7 +234,10 @@ export default function CTe() {
     // Usar setTimeout para aguardar o DOM ser renderizado
     setTimeout(() => {
       const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
-      if (!rntrcInput) return
+      if (!rntrcInput) {
+        console.log('❌ Input RNTRC não encontrado')
+        return
+      }
 
       if (selectedDocumento && empresas) {
         const empresa = empresas.find(emp => emp.id === selectedDocumento.empresa_id)
@@ -245,7 +248,7 @@ export default function CTe() {
       } else if (!selectedDocumento) {
         rntrcInput.value = 'Selecione uma empresa para exibir o RNTRC'
       }
-    }, 100)
+    }, 200) // Aumentar timeout para garantir renderização
   }, [selectedDocumento, empresas, isModalOpen])
 
   // Função para calcular impostos e valores totais
@@ -303,7 +306,7 @@ export default function CTe() {
       return
     }
 
-    // Definir placa do veículo principal
+    // Definir placa do veículo principal - usar dados diretos da associação
     const placaPrincipal = associacao.veiculo_principal?.placa || 'Placa não informada'
     placaVeiculoInput.value = placaPrincipal
     console.log('🚛 Placa principal definida:', placaPrincipal)
@@ -321,7 +324,7 @@ export default function CTe() {
     placaReboqueInput.value = placaReboque || 'Nenhum reboque/implemento'
     console.log('🚛 Placa reboque/implemento definida:', placaReboque)
 
-    // Mostrar informações do motorista
+    // Mostrar informações do motorista - usar dados diretos da associação
     const nomeMotorista = associacao.funcionario?.nome || 'Nome não informado'
     const cnhMotorista = associacao.funcionario?.cnh || 'CNH não informada'
     const matriculaMotorista = associacao.funcionario?.matricula || 'Matrícula não informada'
