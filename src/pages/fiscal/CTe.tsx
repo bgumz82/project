@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format, parseISO } from 'date-fns'
 import toast from 'react-hot-toast'
@@ -142,7 +142,19 @@ export default function CTe() {
   // Query para buscar associações de frota ativas
   const { data: associacoesFrota } = useQuery({
     queryKey: ['associacoes-frota-ativas'],
-    queryFn: getAssociacoesAtivasParaCTe
+    queryFn: getAssociacoesAtivasParaCTe,
+    retry: 3,
+    staleTime: 1000 * 60 * 5,
+    onSuccess: (data) => {
+      console.log('📊 Associações de frota carregadas no frontend:', data)
+      console.log('📊 Total de associações:', data?.length || 0)
+      if (data && data.length > 0) {
+        console.log('📊 Primeira associação:', data[0])
+      }
+    },
+    onError: (error) => {
+      console.error('❌ Erro ao carregar associações de frota:', error)
+    }
   })
 
   // Query para buscar estados
@@ -211,6 +223,17 @@ export default function CTe() {
     setChaveErrors({})
   }
 
+  // useEffect para carregar RNTRC inicial
+  React.useEffect(() => {
+    if (selectedDocumento && empresas) {
+      const empresa = empresas.find(emp => emp.id === selectedDocumento.empresa_id)
+      const rntrcInput = document.getElementById('rntrc_display') as HTMLInputElement
+      if (rntrcInput && empresa) {
+        rntrcInput.value = empresa.rntrc || 'RNTRC não informado'
+      }
+    }
+  }, [selectedDocumento, empresas])
+
   // Função para calcular impostos e valores totais
   const calcularImpostos = () => {
     const valorPrestacaoInput = document.getElementById('valor_prestacao') as HTMLInputElement
@@ -235,6 +258,9 @@ export default function CTe() {
 
   // Função para atualizar placas baseado no motorista selecionado
   const handleMotoristaChange = (associacaoId: string) => {
+    console.log('🚚 Motorista selecionado:', associacaoId)
+    console.log('📋 Associações disponíveis:', associacoesFrota)
+    
     const placaVeiculoInput = document.getElementById('placa_veiculo') as HTMLInputElement
     const placaReboqueInput = document.getElementById('placa_reboque') as HTMLInputElement
     const infoMotorista = document.getElementById('info-motorista')
@@ -243,7 +269,10 @@ export default function CTe() {
     const motoristaValidadeCnh = document.getElementById('motorista-validade-cnh')
     const motoristaMatricula = document.getElementById('motorista-matricula')
 
-    if (!placaVeiculoInput || !placaReboqueInput) return
+    if (!placaVeiculoInput || !placaReboqueInput) {
+      console.log('❌ Inputs de placa não encontrados')
+      return
+    }
 
     if (!associacaoId) {
       placaVeiculoInput.value = ''
@@ -253,10 +282,17 @@ export default function CTe() {
     }
 
     const associacao = associacoesFrota?.find(a => a.id === associacaoId)
-    if (!associacao) return
+    console.log('🔍 Associação encontrada:', associacao)
+    
+    if (!associacao) {
+      console.log('❌ Associação não encontrada para ID:', associacaoId)
+      return
+    }
 
     // Definir placa do veículo principal
-    placaVeiculoInput.value = associacao.veiculo_principal?.placa || ''
+    const placaPrincipal = associacao.veiculo_principal?.placa || 'Placa não informada'
+    placaVeiculoInput.value = placaPrincipal
+    console.log('🚛 Placa principal definida:', placaPrincipal)
 
     // Definir placa do reboque (combinando reboque1 e reboque2 se existirem, ou implemento)
     let placaReboque = ''
@@ -268,16 +304,29 @@ export default function CTe() {
       if (associacao.veiculo_reboque2?.placa) placas.push(associacao.veiculo_reboque2.placa)
       placaReboque = placas.join(' + ')
     }
-    placaReboqueInput.value = placaReboque
+    placaReboqueInput.value = placaReboque || 'Nenhum reboque/implemento'
+    console.log('🚛 Placa reboque/implemento definida:', placaReboque)
 
     // Mostrar informações do motorista
-    if (motoristaNome) motoristaNome.textContent = associacao.funcionario?.nome || ''
-    if (motoristaCnh) motoristaCnh.textContent = associacao.funcionario?.cnh || ''
+    const nomeMotorista = associacao.funcionario?.nome || 'Nome não informado'
+    const cnhMotorista = associacao.funcionario?.cnh || 'CNH não informada'
+    const matriculaMotorista = associacao.funcionario?.matricula || 'Matrícula não informada'
+    
+    if (motoristaNome) motoristaNome.textContent = nomeMotorista
+    if (motoristaCnh) motoristaCnh.textContent = cnhMotorista
+    if (motoristaMatricula) motoristaMatricula.textContent = matriculaMotorista
+    
     if (motoristaValidadeCnh) {
       const validadeCnh = associacao.funcionario?.validade_cnh
-      motoristaValidadeCnh.textContent = validadeCnh ? format(parseISO(validadeCnh), 'dd/MM/yyyy') : 'Não informado'
+      const validadeTexto = validadeCnh ? format(parseISO(validadeCnh), 'dd/MM/yyyy') : 'Não informado'
+      motoristaValidadeCnh.textContent = validadeTexto
     }
-    if (motoristaMatricula) motoristaMatricula.textContent = associacao.funcionario?.matricula || ''
+    
+    console.log('👨‍💼 Informações do motorista definidas:', {
+      nome: nomeMotorista,
+      cnh: cnhMotorista,
+      matricula: matriculaMotorista
+    })
     
     if (infoMotorista) infoMotorista.classList.remove('hidden')
   }
@@ -1638,7 +1687,7 @@ export default function CTe() {
                       <option value="">Selecione um motorista</option>
                       {associacoesFrota?.map((associacao) => (
                         <option key={associacao.id} value={associacao.id}>
-                          {associacao.funcionario?.nome} - CNH: {associacao.funcionario?.cnh} - {associacao.veiculo_principal?.placa}
+                          {associacao.funcionario?.nome || 'Nome não informado'} - CNH: {associacao.funcionario?.cnh || 'CNH não informada'} - {associacao.veiculo_principal?.placa || 'Placa não informada'}
                           {associacao.veiculo_implemento?.placa && ` + ${associacao.veiculo_implemento.placa}`}
                           {associacao.veiculo_reboque1?.placa && ` + ${associacao.veiculo_reboque1.placa}`}
                           {associacao.veiculo_reboque2?.placa && ` + ${associacao.veiculo_reboque2.placa}`}

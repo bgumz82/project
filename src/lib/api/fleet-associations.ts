@@ -683,14 +683,14 @@ export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> 
     const result = await query(`
       SELECT 
         af.*,
-        f.nome as funcionario_nome,
-        f.matricula as funcionario_matricula,
-        f.cnh as funcionario_cnh,
+        COALESCE(f.nome, 'Nome não informado') as funcionario_nome,
+        COALESCE(f.matricula, 'Matrícula não informada') as funcionario_matricula,
+        COALESCE(f.cnh, 'CNH não informada') as funcionario_cnh,
         f.validade_cnh as funcionario_validade_cnh,
-        vp.placa as veiculo_principal_placa,
-        vp.modelo as veiculo_principal_modelo,
-        vp.marca as veiculo_principal_marca,
-        vp.tipo as veiculo_principal_tipo,
+        COALESCE(vp.placa, 'Placa não informada') as veiculo_principal_placa,
+        COALESCE(vp.modelo, 'Modelo não informado') as veiculo_principal_modelo,
+        COALESCE(vp.marca, 'Marca não informada') as veiculo_principal_marca,
+        COALESCE(vp.tipo, 'Tipo não informado') as veiculo_principal_tipo,
         vr1.placa as veiculo_reboque1_placa,
         vr1.modelo as veiculo_reboque1_modelo,
         vr1.marca as veiculo_reboque1_marca,
@@ -704,55 +704,57 @@ export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> 
         vi.marca as veiculo_implemento_marca,
         vi.tipo as veiculo_implemento_tipo
       FROM associacoes_frota af
-      JOIN funcionarios f ON af.funcionario_id = f.id
-      JOIN veiculos vp ON af.veiculo_principal_id = vp.id
+      LEFT JOIN funcionarios f ON af.funcionario_id = f.id
+      LEFT JOIN veiculos vp ON af.veiculo_principal_id = vp.id
       LEFT JOIN veiculos vr1 ON af.veiculo_reboque1_id = vr1.id
       LEFT JOIN veiculos vr2 ON af.veiculo_reboque2_id = vr2.id
       LEFT JOIN veiculos vi ON af.veiculo_implemento_id = vi.id
       WHERE af.ativo = true 
         AND (af.data_fim IS NULL OR af.data_fim > CURRENT_DATE)
-        AND f.status = 'ativo'
-        AND f.cnh IS NOT NULL
-      ORDER BY f.nome, vp.placa
+        AND COALESCE(f.status, 'ativo') = 'ativo'
+        AND f.funcao = 'motorista'
+      ORDER BY COALESCE(f.nome, 'ZZZ'), COALESCE(vp.placa, 'ZZZ')
     `)
     
     console.log('✅ Associações ativas para CT-e encontradas:', result.length)
+    console.log('📊 Primeiro resultado:', result[0])
     
     return result.map(associacao => ({
       ...associacao,
       funcionario: {
-        nome: associacao.funcionario_nome,
-        matricula: associacao.funcionario_matricula,
-        cnh: associacao.funcionario_cnh,
+        nome: associacao.funcionario_nome || 'Nome não informado',
+        matricula: associacao.funcionario_matricula || 'Matrícula não informada',
+        cnh: associacao.funcionario_cnh || 'CNH não informada',
         validade_cnh: associacao.funcionario_validade_cnh
       },
       veiculo_principal: {
-        placa: associacao.veiculo_principal_placa,
-        modelo: associacao.veiculo_principal_modelo,
-        marca: associacao.veiculo_principal_marca,
-        tipo: associacao.veiculo_principal_tipo
+        placa: associacao.veiculo_principal_placa || 'Placa não informada',
+        modelo: associacao.veiculo_principal_modelo || 'Modelo não informado',
+        marca: associacao.veiculo_principal_marca || 'Marca não informada',
+        tipo: associacao.veiculo_principal_tipo || 'Tipo não informado'
       },
       veiculo_reboque1: associacao.veiculo_reboque1_placa ? {
         placa: associacao.veiculo_reboque1_placa,
-        modelo: associacao.veiculo_reboque1_modelo,
-        marca: associacao.veiculo_reboque1_marca,
-        tipo: associacao.veiculo_reboque1_tipo
+        modelo: associacao.veiculo_reboque1_modelo || 'Modelo não informado',
+        marca: associacao.veiculo_reboque1_marca || 'Marca não informada',
+        tipo: associacao.veiculo_reboque1_tipo || 'Tipo não informado'
       } : null,
       veiculo_reboque2: associacao.veiculo_reboque2_placa ? {
         placa: associacao.veiculo_reboque2_placa,
-        modelo: associacao.veiculo_reboque2_modelo,
-        marca: associacao.veiculo_reboque2_marca,
-        tipo: associacao.veiculo_reboque2_tipo
+        modelo: associacao.veiculo_reboque2_modelo || 'Modelo não informado',
+        marca: associacao.veiculo_reboque2_marca || 'Marca não informada',
+        tipo: associacao.veiculo_reboque2_tipo || 'Tipo não informado'
       } : null,
       veiculo_implemento: associacao.veiculo_implemento_placa ? {
         placa: associacao.veiculo_implemento_placa,
-        modelo: associacao.veiculo_implemento_modelo,
-        marca: associacao.veiculo_implemento_marca,
-        tipo: associacao.veiculo_implemento_tipo
+        modelo: associacao.veiculo_implemento_modelo || 'Modelo não informado',
+        marca: associacao.veiculo_implemento_marca || 'Marca não informada',
+        tipo: associacao.veiculo_implemento_tipo || 'Tipo não informado'
       } : null
     }))
   } catch (error) {
     console.error('❌ Erro ao buscar associações ativas para CT-e:', error)
-    throw error
+    console.error('❌ Detalhes do erro:', error)
+    return [] // Retorna array vazio em caso de erro para evitar quebrar a tela
   }
 }
