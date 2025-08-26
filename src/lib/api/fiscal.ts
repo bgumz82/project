@@ -741,25 +741,25 @@ export async function updateCTeDocumento(
   try {
     console.log("📝 Atualizando documento CT-e:", id, documento);
 
-    // Validação de chave de acesso (primeiros 43 dígitos)
-    if (
-      (documento.chave_acesso_1 !== undefined && documento.chave_acesso_1 !== null &&
-        documento.chave_acesso_1.length !== 43) ||
-      (documento.chave_acesso_2 !== undefined && documento.chave_acesso_2 !== null &&
-        documento.chave_acesso_2.length !== 43) ||
-      (documento.chave_acesso_3 !== undefined && documento.chave_acesso_3 !== null &&
-        documento.chave_acesso_3.length !== 43) ||
-      (documento.chave_acesso_4 !== undefined && documento.chave_acesso_4 !== null &&
-        documento.chave_acesso_4.length !== 43)
-    ) {
-      throw new Error("Cada campo de Chave de Acesso deve conter 43 dígitos.");
+    // Validação de chave de acesso (primeiros 43 dígitos) - apenas se há valor definido e não vazio
+    if (documento.chave_acesso_1 !== undefined && documento.chave_acesso_1 !== null && documento.chave_acesso_1.trim() !== '' && documento.chave_acesso_1.length !== 43) {
+      throw new Error("Chave de Acesso 1 deve conter 43 dígitos.");
+    }
+    if (documento.chave_acesso_2 !== undefined && documento.chave_acesso_2 !== null && documento.chave_acesso_2.trim() !== '' && documento.chave_acesso_2.length !== 43) {
+      throw new Error("Chave de Acesso 2 deve conter 43 dígitos.");
+    }
+    if (documento.chave_acesso_3 !== undefined && documento.chave_acesso_3 !== null && documento.chave_acesso_3.trim() !== '' && documento.chave_acesso_3.length !== 43) {
+      throw new Error("Chave de Acesso 3 deve conter 43 dígitos.");
+    }
+    if (documento.chave_acesso_4 !== undefined && documento.chave_acesso_4 !== null && documento.chave_acesso_4.trim() !== '' && documento.chave_acesso_4.length !== 43) {
+      throw new Error("Chave de Acesso 4 deve conter 43 dígitos.");
     }
 
-    // Combinar chaves de acesso se existirem (tratar null como string vazia)
-    const chave1 = documento.chave_acesso_1 || "";
-    const chave2 = documento.chave_acesso_2 || "";
-    const chave3 = documento.chave_acesso_3 || "";
-    const chave4 = documento.chave_acesso_4 || "";
+    // Combinar chaves de acesso se existirem (tratar null/undefined/string vazia como string vazia)
+    const chave1 = (documento.chave_acesso_1 && documento.chave_acesso_1 !== null && documento.chave_acesso_1 !== undefined) ? documento.chave_acesso_1.trim() : "";
+    const chave2 = (documento.chave_acesso_2 && documento.chave_acesso_2 !== null && documento.chave_acesso_2 !== undefined) ? documento.chave_acesso_2.trim() : "";
+    const chave3 = (documento.chave_acesso_3 && documento.chave_acesso_3 !== null && documento.chave_acesso_3 !== undefined) ? documento.chave_acesso_3.trim() : "";
+    const chave4 = (documento.chave_acesso_4 && documento.chave_acesso_4 !== null && documento.chave_acesso_4 !== undefined) ? documento.chave_acesso_4.trim() : "";
 
     const chaveAcessoCompleta = chave1 + chave2 + chave3 + chave4;
 
