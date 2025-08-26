@@ -116,6 +116,20 @@ export default function CTe() {
     destinatario_id: string
     produto_predominante_id: string
     data_emissao: string
+    valor_prestacao: string
+    valor_receber: string
+    valor_tributos: string
+    icms_situacao_tributaria: string
+    icms_bc_valor: string
+    icms_aliquota: string
+    icms_valor: string
+    valor_carga: string
+    quantidade_carga: string
+    chave_acesso_1: string
+    chave_acesso_2: string
+    chave_acesso_3: string
+    chave_acesso_4: string
+    observacoes: string
     [key: string]: any
   }>({
     tomador_id: '',
@@ -123,7 +137,21 @@ export default function CTe() {
     recebedor_id: '',
     destinatario_id: '',
     produto_predominante_id: '',
-    data_emissao: format(new Date(), 'yyyy-MM-dd')
+    data_emissao: format(new Date(), 'yyyy-MM-dd'),
+    valor_prestacao: '',
+    valor_receber: '',
+    valor_tributos: '',
+    icms_situacao_tributaria: '',
+    icms_bc_valor: '',
+    icms_aliquota: '',
+    icms_valor: '',
+    valor_carga: '',
+    quantidade_carga: '',
+    chave_acesso_1: '',
+    chave_acesso_2: '',
+    chave_acesso_3: '',
+    chave_acesso_4: '',
+    observacoes: ''
   })
 
   // Função para validar chave de acesso em tempo real
@@ -259,7 +287,21 @@ export default function CTe() {
       recebedor_id: '',
       destinatario_id: '',
       produto_predominante_id: '',
-      data_emissao: format(new Date(), 'yyyy-MM-dd')
+      data_emissao: format(new Date(), 'yyyy-MM-dd'),
+      valor_prestacao: '',
+      valor_receber: '',
+      valor_tributos: '',
+      icms_situacao_tributaria: '',
+      icms_bc_valor: '',
+      icms_aliquota: '',
+      icms_valor: '',
+      valor_carga: '',
+      quantidade_carga: '',
+      chave_acesso_1: '',
+      chave_acesso_2: '',
+      chave_acesso_3: '',
+      chave_acesso_4: '',
+      observacoes: ''
     })
   }
 
@@ -1060,7 +1102,7 @@ export default function CTe() {
                         type="date"
                         name="data_emissao"
                         id="data_emissao"
-                        value={formData.data_emissao}
+                        defaultValue={selectedDocumento?.data_emissao?.split('T')[0] || formData.data_emissao}
                         onChange={(e) => updateFormData('data_emissao', e.target.value)}
                         required
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -1430,7 +1472,7 @@ export default function CTe() {
                           step="0.01"
                           min="0"
                           placeholder="0,00"
-                          defaultValue={selectedDocumento?.valor_prestacao || ''}
+                          defaultValue={selectedDocumento?.valor_prestacao || formData.valor_prestacao || ''}
                           readOnly
                           className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
@@ -1455,7 +1497,7 @@ export default function CTe() {
                           step="0.01"
                           min="0"
                           placeholder="0,00"
-                          defaultValue={selectedDocumento?.valor_receber || ''}
+                          defaultValue={selectedDocumento?.valor_receber || formData.valor_receber || ''}
                           readOnly
                           className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
@@ -1480,7 +1522,7 @@ export default function CTe() {
                           step="0.01"
                           min="0"
                           placeholder="0,00"
-                          defaultValue={selectedDocumento?.valor_tributos || ''}
+                          defaultValue={selectedDocumento?.valor_tributos || formData.valor_tributos || ''}
                           readOnly
                           className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
@@ -1505,10 +1547,11 @@ export default function CTe() {
                       <select
                         name="icms_situacao_tributaria"
                         id="icms_situacao_tributaria"
-                        defaultValue={selectedDocumento?.icms_situacao_tributaria || ''}
+                        defaultValue={selectedDocumento?.icms_situacao_tributaria || formData.icms_situacao_tributaria || ''}
                         required
                         onChange={(e) => {
                           const situacao = e.target.value;
+                          updateFormData('icms_situacao_tributaria', situacao);
                           handleSituacaoTributariaChange(situacao);
                         }}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -1536,8 +1579,9 @@ export default function CTe() {
                             step="0.01"
                             min="0"
                             placeholder="0,00"
-                            defaultValue={selectedDocumento?.icms_bc_valor || ''}
+                            defaultValue={selectedDocumento?.icms_bc_valor || formData.icms_bc_valor || ''}
                             onBlur={recalcularICMS}
+                            onChange={(e) => updateFormData('icms_bc_valor', e.target.value)}
                             className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
                         </div>
@@ -1559,8 +1603,9 @@ export default function CTe() {
                             min="0"
                             max="100"
                             placeholder="0,00"
-                            defaultValue={selectedDocumento?.icms_aliquota || ''}
+                            defaultValue={selectedDocumento?.icms_aliquota || formData.icms_aliquota || ''}
                             onBlur={recalcularICMS}
+                            onChange={(e) => updateFormData('icms_aliquota', e.target.value)}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -1587,7 +1632,7 @@ export default function CTe() {
                             step="0.01"
                             min="0"
                             placeholder="0,00"
-                            defaultValue={selectedDocumento?.icms_valor || ''}
+                            defaultValue={selectedDocumento?.icms_valor || formData.icms_valor || ''}
                             readOnly
                             className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
@@ -1660,7 +1705,8 @@ export default function CTe() {
                             step="0.01"
                             min="0"
                             placeholder="0,00"
-                            defaultValue={selectedDocumento?.valor_carga || ''}
+                            defaultValue={selectedDocumento?.valor_carga || formData.valor_carga || ''}
+                            onChange={(e) => updateFormData('valor_carga', e.target.value)}
                             className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
                         </div>
@@ -1678,7 +1724,8 @@ export default function CTe() {
                             step="0.001"
                             min="0"
                             placeholder="0,000"
-                            defaultValue={selectedDocumento?.quantidade_carga || ''}
+                            defaultValue={selectedDocumento?.quantidade_carga || formData.quantidade_carga || ''}
+                            onChange={(e) => updateFormData('quantidade_carga', e.target.value)}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -1743,10 +1790,11 @@ export default function CTe() {
                           id="chave_acesso_1"
                           maxLength="44"
                           placeholder="Digite apenas números (44 dígitos)"
-                          defaultValue={selectedDocumento?.chave_acesso_1 || ''}
+                          defaultValue={selectedDocumento?.chave_acesso_1 || formData.chave_acesso_1 || ''}
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, '')
                             e.target.value = value
+                            updateFormData('chave_acesso_1', value)
                             validateChaveAcesso(value, 'chave_acesso_1')
                           }}
                           className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
@@ -1770,10 +1818,11 @@ export default function CTe() {
                           id="chave_acesso_2"
                           maxLength="44"
                           placeholder="Digite apenas números (44 dígitos)"
-                          defaultValue={selectedDocumento?.chave_acesso_2 || ''}
+                          defaultValue={selectedDocumento?.chave_acesso_2 || formData.chave_acesso_2 || ''}
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, '')
                             e.target.value = value
+                            updateFormData('chave_acesso_2', value)
                             validateChaveAcesso(value, 'chave_acesso_2')
                           }}
                           className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
@@ -1797,10 +1846,11 @@ export default function CTe() {
                           id="chave_acesso_3"
                           maxLength="44"
                           placeholder="Digite apenas números (44 dígitos)"
-                          defaultValue={selectedDocumento?.chave_acesso_3 || ''}
+                          defaultValue={selectedDocumento?.chave_acesso_3 || formData.chave_acesso_3 || ''}
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, '')
                             e.target.value = value
+                            updateFormData('chave_acesso_3', value)
                             validateChaveAcesso(value, 'chave_acesso_3')
                           }}
                           className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
@@ -1824,10 +1874,11 @@ export default function CTe() {
                           id="chave_acesso_4"
                           maxLength="44"
                           placeholder="Digite apenas números (44 dígitos)"
-                          defaultValue={selectedDocumento?.chave_acesso_4 || ''}
+                          defaultValue={selectedDocumento?.chave_acesso_4 || formData.chave_acesso_4 || ''}
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, '')
                             e.target.value = value
+                            updateFormData('chave_acesso_4', value)
                             validateChaveAcesso(value, 'chave_acesso_4')
                           }}
                           className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
@@ -2007,7 +2058,8 @@ export default function CTe() {
                       name="observacoes"
                       id="observacoes"
                       rows={6}
-                      defaultValue={selectedDocumento?.observacoes || ''}
+                      defaultValue={selectedDocumento?.observacoes || formData.observacoes || ''}
+                      onChange={(e) => updateFormData('observacoes', e.target.value)}
                       placeholder="Observações sobre o documento CT-e..."
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     />
