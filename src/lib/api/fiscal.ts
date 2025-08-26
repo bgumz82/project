@@ -82,6 +82,21 @@ export interface CTeDocumento {
   chave_acesso_2?: string | null;
   chave_acesso_3?: string | null;
   chave_acesso_4?: string | null;
+  // Campos CT-e adicionais
+  tipo_servico?: string | null;
+  finalidade_cte?: string | null;
+  cfop?: string | null;
+  cidade_inicio_ibge?: string | null;
+  cidade_termino_ibge?: string | null;
+  // Campos de transporte
+  rntrc?: string | null;
+  motorista_nome?: string | null;
+  motorista_cnh?: string | null;
+  motorista_matricula?: string | null;
+  motorista_validade_cnh?: string | null;
+  placa_veiculo?: string | null;
+  placa_reboque?: string | null;
+  associacao_frota_id?: string | null;
 }
 
 export interface CTeDocumentoCreate {
@@ -114,6 +129,21 @@ export interface CTeDocumentoCreate {
   chave_acesso_2?: string | null;
   chave_acesso_3?: string | null;
   chave_acesso_4?: string | null;
+  // Campos CT-e adicionais
+  tipo_servico?: string | null;
+  finalidade_cte?: string | null;
+  cfop?: string | null;
+  cidade_inicio_ibge?: string | null;
+  cidade_termino_ibge?: string | null;
+  // Campos de transporte
+  rntrc?: string | null;
+  motorista_nome?: string | null;
+  motorista_cnh?: string | null;
+  motorista_matricula?: string | null;
+  motorista_validade_cnh?: string | null;
+  placa_veiculo?: string | null;
+  placa_reboque?: string | null;
+  associacao_frota_id?: string | null;
 }
 
 // Tipos para MDF-e
@@ -609,9 +639,29 @@ export async function createCTeDocumento(
         remetente_id,
         recebedor_id,
         destinatario_id,
+        valor_prestacao,
+        valor_receber,
+        valor_tributos,
+        icms_situacao_tributaria,
+        icms_bc_valor,
+        icms_aliquota,
+        icms_valor,
+        tipo_servico,
+        finalidade_cte,
+        cfop,
+        cidade_inicio_ibge,
+        cidade_termino_ibge,
+        rntrc,
+        motorista_nome,
+        motorista_cnh,
+        motorista_matricula,
+        motorista_validade_cnh,
+        placa_veiculo,
+        placa_reboque,
+        associacao_frota_id,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, NOW(), NOW())
       RETURNING *
     `,
       [
@@ -635,6 +685,26 @@ export async function createCTeDocumento(
         documento.remetente_id,
         documento.recebedor_id,
         documento.destinatario_id,
+        documento.valor_prestacao,
+        documento.valor_receber,
+        documento.valor_tributos,
+        documento.icms_situacao_tributaria,
+        documento.icms_bc_valor,
+        documento.icms_aliquota,
+        documento.icms_valor,
+        documento.tipo_servico || '0',
+        documento.finalidade_cte || '0',
+        documento.cfop || '5352',
+        documento.cidade_inicio_ibge,
+        documento.cidade_termino_ibge,
+        documento.rntrc,
+        documento.motorista_nome,
+        documento.motorista_cnh,
+        documento.motorista_matricula,
+        documento.motorista_validade_cnh,
+        documento.placa_veiculo,
+        documento.placa_reboque,
+        documento.associacao_frota_id,
       ],
     );
 
@@ -813,6 +883,126 @@ export async function updateCTeDocumento(
     if (documento.destinatario_id !== undefined) {
       updates.push(`destinatario_id = $${paramIndex}`);
       values.push(documento.destinatario_id);
+      paramIndex++;
+    }
+
+    if (documento.valor_prestacao !== undefined) {
+      updates.push(`valor_prestacao = $${paramIndex}`);
+      values.push(documento.valor_prestacao);
+      paramIndex++;
+    }
+
+    if (documento.valor_receber !== undefined) {
+      updates.push(`valor_receber = $${paramIndex}`);
+      values.push(documento.valor_receber);
+      paramIndex++;
+    }
+
+    if (documento.valor_tributos !== undefined) {
+      updates.push(`valor_tributos = $${paramIndex}`);
+      values.push(documento.valor_tributos);
+      paramIndex++;
+    }
+
+    if (documento.icms_situacao_tributaria !== undefined) {
+      updates.push(`icms_situacao_tributaria = $${paramIndex}`);
+      values.push(documento.icms_situacao_tributaria);
+      paramIndex++;
+    }
+
+    if (documento.icms_bc_valor !== undefined) {
+      updates.push(`icms_bc_valor = $${paramIndex}`);
+      values.push(documento.icms_bc_valor);
+      paramIndex++;
+    }
+
+    if (documento.icms_aliquota !== undefined) {
+      updates.push(`icms_aliquota = $${paramIndex}`);
+      values.push(documento.icms_aliquota);
+      paramIndex++;
+    }
+
+    if (documento.icms_valor !== undefined) {
+      updates.push(`icms_valor = $${paramIndex}`);
+      values.push(documento.icms_valor);
+      paramIndex++;
+    }
+
+    if (documento.tipo_servico !== undefined) {
+      updates.push(`tipo_servico = $${paramIndex}`);
+      values.push(documento.tipo_servico);
+      paramIndex++;
+    }
+
+    if (documento.finalidade_cte !== undefined) {
+      updates.push(`finalidade_cte = $${paramIndex}`);
+      values.push(documento.finalidade_cte);
+      paramIndex++;
+    }
+
+    if (documento.cfop !== undefined) {
+      updates.push(`cfop = $${paramIndex}`);
+      values.push(documento.cfop);
+      paramIndex++;
+    }
+
+    if (documento.cidade_inicio_ibge !== undefined) {
+      updates.push(`cidade_inicio_ibge = $${paramIndex}`);
+      values.push(documento.cidade_inicio_ibge);
+      paramIndex++;
+    }
+
+    if (documento.cidade_termino_ibge !== undefined) {
+      updates.push(`cidade_termino_ibge = $${paramIndex}`);
+      values.push(documento.cidade_termino_ibge);
+      paramIndex++;
+    }
+
+    if (documento.rntrc !== undefined) {
+      updates.push(`rntrc = $${paramIndex}`);
+      values.push(documento.rntrc);
+      paramIndex++;
+    }
+
+    if (documento.motorista_nome !== undefined) {
+      updates.push(`motorista_nome = $${paramIndex}`);
+      values.push(documento.motorista_nome);
+      paramIndex++;
+    }
+
+    if (documento.motorista_cnh !== undefined) {
+      updates.push(`motorista_cnh = $${paramIndex}`);
+      values.push(documento.motorista_cnh);
+      paramIndex++;
+    }
+
+    if (documento.motorista_matricula !== undefined) {
+      updates.push(`motorista_matricula = $${paramIndex}`);
+      values.push(documento.motorista_matricula);
+      paramIndex++;
+    }
+
+    if (documento.motorista_validade_cnh !== undefined) {
+      updates.push(`motorista_validade_cnh = $${paramIndex}`);
+      values.push(documento.motorista_validade_cnh);
+      paramIndex++;
+    }
+
+    if (documento.placa_veiculo !== undefined) {
+      updates.push(`placa_veiculo = $${paramIndex}`);
+      values.push(documento.placa_veiculo);
+      paramIndex++;
+    }
+
+    if (documento.placa_reboque !== undefined) {
+      updates.push(`placa_reboque = $${paramIndex}`);
+      values.push(documento.placa_reboque);
+      paramIndex++;
+    }
+
+    if (documento.associacao_frota_id !== undefined) {
+      updates.push(`associacao_frota_id = $${paramIndex}`);
+      values.push(documento.associacao_frota_id);
       paramIndex++;
     }
 

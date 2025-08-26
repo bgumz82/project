@@ -248,13 +248,42 @@ export default function CTe() {
       // Carregar dados do documento em edição
       const empresa = empresas.find(emp => emp.id === selectedDocumento.empresa_id)
       setSelectedEmpresaId(selectedDocumento.empresa_id)
-      
+
       if (empresa?.rntrc) {
         setRntrcValue(empresa.rntrc)
         console.log('✅ RNTRC carregado para edição:', empresa.rntrc)
       } else {
         setRntrcValue('RNTRC não informado para esta empresa')
       }
+
+      // Preencher campos com dados do documento selecionado
+      if (selectedDocumento.icms_situacao_tributaria) {
+        handleSituacaoTributariaChange(selectedDocumento.icms_situacao_tributaria);
+      }
+
+      // Definir o local de início e término se existirem
+      if (selectedDocumento.cidade_inicio_ibge && estados) {
+        const estadoInicio = estados.find(e => e.uf === selectedDocumento.uf_inicio);
+        setSelectedInicio({
+          codigo: selectedDocumento.cidade_inicio_ibge,
+          nome: selectedDocumento.cidade_inicio_nome || '',
+          uf: selectedDocumento.uf_inicio || ''
+        });
+      }
+      if (selectedDocumento.cidade_termino_ibge && estados) {
+        const estadoTermino = estados.find(e => e.uf === selectedDocumento.uf_termino);
+        setSelectedTermino({
+          codigo: selectedDocumento.cidade_termino_ibge,
+          nome: selectedDocumento.cidade_termino_nome || '',
+          uf: selectedDocumento.uf_termino || ''
+        });
+      }
+
+      // Preencher dados de transporte
+      if (selectedDocumento.associacao_frota_id) {
+        handleMotoristaChange(selectedDocumento.associacao_frota_id);
+      }
+
     } else {
       // Reset para novo documento
       setSelectedEmpresaId('')
@@ -264,7 +293,7 @@ export default function CTe() {
       setPlacaReboque('')
       setMotoristaInfo(null)
     }
-  }, [selectedDocumento, empresas, isModalOpen, queryClient])
+  }, [selectedDocumento, empresas, isModalOpen, queryClient, estados])
 
   // Função para calcular impostos e valores totais
   const calcularImpostos = () => {
@@ -292,11 +321,11 @@ export default function CTe() {
   const handleEmpresaChange = (empresaId: string) => {
     console.log('🏢 Empresa selecionada:', empresaId)
     setSelectedEmpresaId(empresaId)
-    
+
     if (empresaId && empresas) {
       const empresa = empresas.find(emp => emp.id === empresaId)
       console.log('🏢 Empresa encontrada:', empresa)
-      
+
       if (empresa?.rntrc) {
         setRntrcValue(empresa.rntrc)
         console.log('✅ RNTRC atualizado:', empresa.rntrc)
@@ -314,7 +343,7 @@ export default function CTe() {
   const handleMotoristaChange = (associacaoId: string) => {
     console.log('🚚 Motorista selecionado:', associacaoId)
     setSelectedMotoristaId(associacaoId)
-    
+
     if (!associacaoId) {
       setPlacaVeiculo('')
       setPlacaReboque('')
@@ -325,7 +354,7 @@ export default function CTe() {
 
     const associacao = associacoesFrota?.find(a => a.id === associacaoId)
     console.log('🔍 Associação encontrada completa:', associacao)
-    
+
     if (!associacao) {
       console.log('❌ Associação não encontrada para ID:', associacaoId)
       setPlacaVeiculo('')
@@ -368,8 +397,8 @@ export default function CTe() {
     console.log('👨‍💼 Nome do funcionário:', associacao.funcionario?.nome)
     console.log('👨‍💼 CNH do funcionário:', associacao.funcionario?.cnh)
     console.log('👨‍💼 Matrícula do funcionário:', associacao.funcionario?.matricula)
-    
-    const validadeCnh = associacao.funcionario?.validade_cnh 
+
+    const validadeCnh = associacao.funcionario?.validade_cnh
       ? format(parseISO(associacao.funcionario.validade_cnh), 'dd/MM/yyyy')
       : 'Não informado'
 
@@ -379,7 +408,7 @@ export default function CTe() {
       matricula: associacao.funcionario?.matricula || 'Matrícula não informada',
       validadeCnh
     }
-    
+
     setMotoristaInfo(info)
     console.log('✅ Informações do motorista definidas:', info)
   }
@@ -519,10 +548,15 @@ export default function CTe() {
 
     const documentoData: CTeDocumentoCreate = {
       empresa_id: formData.get('empresa_id') as string,
-      numero_cte: formData.get('numero_cte') as string,
-      serie: formData.get('serie') as string,
+      numero_cte: formData.get('numero_cte') === 'AUTO' || !formData.get('numero_cte') ? null : formData.get('numero_cte') as string,
+      serie: formData.get('serie') as string || null,
       data_emissao: formData.get('data_emissao') as string,
-      codigo_uf: formData.get('codigo_uf') as string,
+      cidade_inicio_ibge: selectedInicio?.codigo || null,
+      cidade_termino_ibge: selectedTermino?.codigo || null,
+      uf_inicio: selectedInicio?.uf || null,
+      uf_termino: selectedTermino?.uf || null,
+      cidade_inicio_nome: selectedInicio?.nome || null,
+      cidade_termino_nome: selectedTermino?.nome || null,
       forma_emissao: parseInt(formData.get('forma_emissao') as string) || 1,
       status: formData.get('status') as 'pendente' | 'emitido' | 'cancelado',
       observacoes: formData.get('observacoes') as string || null,
@@ -545,7 +579,18 @@ export default function CTe() {
       chave_acesso_1: formData.get('chave_acesso_1') as string || null,
       chave_acesso_2: formData.get('chave_acesso_2') as string || null,
       chave_acesso_3: formData.get('chave_acesso_3') as string || null,
-      chave_acesso_4: formData.get('chave_acesso_4') as string || null
+      chave_acesso_4: formData.get('chave_acesso_4') as string || null,
+      // Campos de transporte
+      associacao_frota_id: formData.get('associacao_frota_id') as string || null,
+      cfop: formData.get('cfop') as string || null,
+      finalidade_cte: formData.get('finalidade_cte') as string || null,
+      tipo_servico: formData.get('tipo_servico') as string || null
+    }
+
+    // Verifica se há erros de validação de chave de acesso antes de submeter
+    if (Object.keys(chaveErrors).length > 0) {
+      toast.error('Por favor, corrija os erros nas chaves de acesso antes de prosseguir.')
+      return
     }
 
     if (selectedDocumento) {
@@ -869,7 +914,7 @@ export default function CTe() {
                         type="text"
                         name="numero_cte"
                         id="numero_cte"
-                        defaultValue={selectedDocumento?.numero_cte}
+                        defaultValue={selectedDocumento?.numero_cte || ''}
                         placeholder="AUTO"
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       />
@@ -886,7 +931,7 @@ export default function CTe() {
                         type="text"
                         name="serie"
                         id="serie"
-                        defaultValue={selectedDocumento?.serie}
+                        defaultValue={selectedDocumento?.serie || ''}
                         placeholder="Série padrão"
                         maxLength={3}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -935,7 +980,7 @@ export default function CTe() {
                         type="time"
                         name="hora_emissao"
                         id="hora_emissao"
-                        defaultValue="12:00"
+                        defaultValue={selectedDocumento?.hora_emissao || "12:00"}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       />
                     </div>
@@ -949,7 +994,7 @@ export default function CTe() {
                       <select
                         name="tipo_servico"
                         id="tipo_servico"
-                        defaultValue="0"
+                        defaultValue={selectedDocumento?.tipo_servico || "0"}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       >
                         {TIPO_SERVICO_OPTIONS.map(option => (
@@ -967,7 +1012,7 @@ export default function CTe() {
                       <select
                         name="finalidade_cte"
                         id="finalidade_cte"
-                        defaultValue="0"
+                        defaultValue={selectedDocumento?.finalidade_cte || "0"}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       >
                         {FINALIDADE_OPTIONS.map(option => (
@@ -985,7 +1030,7 @@ export default function CTe() {
                       <select
                         name="cfop"
                         id="cfop"
-                        defaultValue="5352"
+                        defaultValue={selectedDocumento?.cfop || "5352"}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       >
                         {CFOP_OPTIONS.map(option => (
@@ -1286,6 +1331,7 @@ export default function CTe() {
                           step="0.01"
                           min="0"
                           placeholder="0,00"
+                          defaultValue={selectedDocumento?.valor_prestacao || ''}
                           readOnly
                           className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
@@ -1310,6 +1356,7 @@ export default function CTe() {
                           step="0.01"
                           min="0"
                           placeholder="0,00"
+                          defaultValue={selectedDocumento?.valor_receber || ''}
                           readOnly
                           className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
@@ -1334,6 +1381,7 @@ export default function CTe() {
                           step="0.01"
                           min="0"
                           placeholder="0,00"
+                          defaultValue={selectedDocumento?.valor_tributos || ''}
                           readOnly
                           className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
@@ -1358,6 +1406,7 @@ export default function CTe() {
                       <select
                         name="icms_situacao_tributaria"
                         id="icms_situacao_tributaria"
+                        defaultValue={selectedDocumento?.icms_situacao_tributaria || ''}
                         required
                         onChange={(e) => {
                           const situacao = e.target.value;
@@ -1388,6 +1437,7 @@ export default function CTe() {
                             step="0.01"
                             min="0"
                             placeholder="0,00"
+                            defaultValue={selectedDocumento?.icms_bc_valor || ''}
                             onBlur={recalcularICMS}
                             className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
@@ -1410,6 +1460,7 @@ export default function CTe() {
                             min="0"
                             max="100"
                             placeholder="0,00"
+                            defaultValue={selectedDocumento?.icms_aliquota || ''}
                             onBlur={recalcularICMS}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
@@ -1437,6 +1488,7 @@ export default function CTe() {
                             step="0.01"
                             min="0"
                             placeholder="0,00"
+                            defaultValue={selectedDocumento?.icms_valor || ''}
                             readOnly
                             className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
@@ -1509,6 +1561,7 @@ export default function CTe() {
                             step="0.01"
                             min="0"
                             placeholder="0,00"
+                            defaultValue={selectedDocumento?.valor_carga || ''}
                             className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
                         </div>
@@ -1526,6 +1579,7 @@ export default function CTe() {
                             step="0.001"
                             min="0"
                             placeholder="0,000"
+                            defaultValue={selectedDocumento?.quantidade_carga || ''}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -1542,6 +1596,7 @@ export default function CTe() {
                       <select
                         name="produto_predominante_id"
                         id="produto_predominante_id"
+                        defaultValue={selectedDocumento?.produto_predominante_id || ''}
                         required
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       >
@@ -1588,6 +1643,7 @@ export default function CTe() {
                           id="chave_acesso_1"
                           maxLength="44"
                           placeholder="Digite apenas números (44 dígitos)"
+                          defaultValue={selectedDocumento?.chave_acesso_1 || ''}
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, '')
                             e.target.value = value
@@ -1614,6 +1670,7 @@ export default function CTe() {
                           id="chave_acesso_2"
                           maxLength="44"
                           placeholder="Digite apenas números (44 dígitos)"
+                          defaultValue={selectedDocumento?.chave_acesso_2 || ''}
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, '')
                             e.target.value = value
@@ -1640,6 +1697,7 @@ export default function CTe() {
                           id="chave_acesso_3"
                           maxLength="44"
                           placeholder="Digite apenas números (44 dígitos)"
+                          defaultValue={selectedDocumento?.chave_acesso_3 || ''}
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, '')
                             e.target.value = value
@@ -1666,6 +1724,7 @@ export default function CTe() {
                           id="chave_acesso_4"
                           maxLength="44"
                           placeholder="Digite apenas números (44 dígitos)"
+                          defaultValue={selectedDocumento?.chave_acesso_4 || ''}
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, '')
                             e.target.value = value
