@@ -549,16 +549,31 @@ export async function createCTeDocumento(
   try {
     console.log("📝 Criando novo documento CT-e:", documento);
 
+    // Validar campos obrigatórios
+    if (!documento.empresa_id || documento.empresa_id.trim() === '') {
+      throw new Error("Campo empresa_id é obrigatório");
+    }
+
     // Verificar se empresa existe e buscar dados
+    console.log("🔍 Verificando empresa_id:", documento.empresa_id);
+    
     const empresa = await queryOne(
       `
-      SELECT id, serie_padrao_cte, codigo_uf FROM empresas_fiscais WHERE id = $1
+      SELECT id, serie_padrao_cte, codigo_uf, status FROM empresas_fiscais WHERE id = $1
     `,
       [documento.empresa_id],
     );
 
+    console.log("🏢 Empresa encontrada:", empresa);
+
     if (!empresa) {
+      console.error("❌ Empresa não encontrada para ID:", documento.empresa_id);
       throw new Error("Empresa fiscal não encontrada");
+    }
+
+    if (empresa.status !== 'ativo') {
+      console.error("❌ Empresa não está ativa:", empresa.status);
+      throw new Error("Empresa fiscal não está ativa");
     }
 
     // Obter próximo número automaticamente se não fornecido
