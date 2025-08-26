@@ -88,6 +88,10 @@ export interface CTeDocumento {
   cfop?: string | null;
   cidade_inicio_ibge?: string | null;
   cidade_termino_ibge?: string | null;
+  uf_inicio?: string | null;
+  uf_termino?: string | null;
+  cidade_inicio_nome?: string | null;
+  cidade_termino_nome?: string | null;
   // Campos de transporte
   rntrc?: string | null;
   motorista_nome?: string | null;
@@ -135,6 +139,10 @@ export interface CTeDocumentoCreate {
   cfop?: string | null;
   cidade_inicio_ibge?: string | null;
   cidade_termino_ibge?: string | null;
+  uf_inicio?: string | null;
+  uf_termino?: string | null;
+  cidade_inicio_nome?: string | null;
+  cidade_termino_nome?: string | null;
   // Campos de transporte
   rntrc?: string | null;
   motorista_nome?: string | null;
@@ -651,6 +659,10 @@ export async function createCTeDocumento(
         cfop,
         cidade_inicio_ibge,
         cidade_termino_ibge,
+        uf_inicio,
+        uf_termino,
+        cidade_inicio_nome,
+        cidade_termino_nome,
         rntrc,
         motorista_nome,
         motorista_cnh,
@@ -697,6 +709,10 @@ export async function createCTeDocumento(
         documento.cfop || '5352',
         documento.cidade_inicio_ibge,
         documento.cidade_termino_ibge,
+        documento.uf_inicio,
+        documento.uf_termino,
+        documento.cidade_inicio_nome,
+        documento.cidade_termino_nome,
         documento.rntrc,
         documento.motorista_nome,
         documento.motorista_cnh,
@@ -955,6 +971,30 @@ export async function updateCTeDocumento(
     if (documento.cidade_termino_ibge !== undefined) {
       updates.push(`cidade_termino_ibge = $${paramIndex}`);
       values.push(documento.cidade_termino_ibge);
+      paramIndex++;
+    }
+
+    if (documento.uf_inicio !== undefined) {
+      updates.push(`uf_inicio = $${paramIndex}`);
+      values.push(documento.uf_inicio);
+      paramIndex++;
+    }
+
+    if (documento.uf_termino !== undefined) {
+      updates.push(`uf_termino = $${paramIndex}`);
+      values.push(documento.uf_termino);
+      paramIndex++;
+    }
+
+    if (documento.cidade_inicio_nome !== undefined) {
+      updates.push(`cidade_inicio_nome = $${paramIndex}`);
+      values.push(documento.cidade_inicio_nome);
+      paramIndex++;
+    }
+
+    if (documento.cidade_termino_nome !== undefined) {
+      updates.push(`cidade_termino_nome = $${paramIndex}`);
+      values.push(documento.cidade_termino_nome);
       paramIndex++;
     }
 
@@ -2131,7 +2171,7 @@ export function validarChaveAcesso(chave: string): boolean {
   try {
     // Remove caracteres não numéricos
     const chaveNumerica = chave.replace(/\D/g, '');
-    
+
     // Deve ter exatamente 44 dígitos
     if (chaveNumerica.length !== 44) {
       return false;
@@ -2140,20 +2180,20 @@ export function validarChaveAcesso(chave: string): boolean {
     // Calcula o dígito verificador
     const chaveBase = chaveNumerica.substring(0, 43);
     const dv = chaveNumerica.substring(43, 44);
-    
+
     let soma = 0;
     let peso = 2;
-    
+
     // Cálculo do DV (algoritmo módulo 11)
     for (let i = chaveBase.length - 1; i >= 0; i--) {
       soma += parseInt(chaveBase[i]) * peso;
       peso++;
       if (peso > 9) peso = 2;
     }
-    
+
     const resto = soma % 11;
     const dvCalculado = resto < 2 ? 0 : 11 - resto;
-    
+
     return parseInt(dv) === dvCalculado;
   } catch (error) {
     console.error("❌ Erro ao validar chave de acesso:", error);

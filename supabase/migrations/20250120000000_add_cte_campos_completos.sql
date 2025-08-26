@@ -101,6 +101,38 @@ BEGIN
     RAISE NOTICE 'Coluna cidade_termino_ibge adicionada';
   END IF;
 
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'cte_documentos' AND column_name = 'uf_inicio'
+  ) THEN
+    ALTER TABLE cte_documentos ADD COLUMN uf_inicio text;
+    RAISE NOTICE 'Coluna uf_inicio adicionada';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'cte_documentos' AND column_name = 'uf_termino'
+  ) THEN
+    ALTER TABLE cte_documentos ADD COLUMN uf_termino text;
+    RAISE NOTICE 'Coluna uf_termino adicionada';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'cte_documentos' AND column_name = 'cidade_inicio_nome'
+  ) THEN
+    ALTER TABLE cte_documentos ADD COLUMN cidade_inicio_nome text;
+    RAISE NOTICE 'Coluna cidade_inicio_nome adicionada';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'cte_documentos' AND column_name = 'cidade_termino_nome'
+  ) THEN
+    ALTER TABLE cte_documentos ADD COLUMN cidade_termino_nome text;
+    RAISE NOTICE 'Coluna cidade_termino_nome adicionada';
+  END IF;
+
   -- Campos de transporte
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns
@@ -201,6 +233,10 @@ COMMENT ON COLUMN cte_documentos.finalidade_cte IS 'Finalidade do CT-e (0=Normal
 COMMENT ON COLUMN cte_documentos.cfop IS 'Código Fiscal de Operações e Prestações';
 COMMENT ON COLUMN cte_documentos.cidade_inicio_ibge IS 'Código IBGE da cidade de início da prestação';
 COMMENT ON COLUMN cte_documentos.cidade_termino_ibge IS 'Código IBGE da cidade de término da prestação';
+COMMENT ON COLUMN cte_documentos.uf_inicio IS 'UF da cidade de início da prestação';
+COMMENT ON COLUMN cte_documentos.uf_termino IS 'UF da cidade de término da prestação';
+COMMENT ON COLUMN cte_documentos.cidade_inicio_nome IS 'Nome da cidade de início da prestação';
+COMMENT ON COLUMN cte_documentos.cidade_termino_nome IS 'Nome da cidade de término da prestação';
 COMMENT ON COLUMN cte_documentos.rntrc IS 'Registro Nacional de Transportadores Rodoviários de Carga';
 COMMENT ON COLUMN cte_documentos.motorista_nome IS 'Nome do motorista responsável';
 COMMENT ON COLUMN cte_documentos.motorista_cnh IS 'Número da CNH do motorista';
