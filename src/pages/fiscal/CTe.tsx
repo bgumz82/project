@@ -546,8 +546,16 @@ export default function CTe() {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
 
+    const empresaIdValue = formData.get('empresa_id') as string || selectedEmpresaId
+
+    // Validação adicional do empresa_id
+    if (!empresaIdValue || empresaIdValue.trim() === '') {
+      toast.error('Por favor, selecione uma empresa antes de prosseguir.')
+      return
+    }
+
     const documentoData: CTeDocumentoCreate = {
-      empresa_id: formData.get('empresa_id') as string,
+      empresa_id: empresaIdValue,
       numero_cte: formData.get('numero_cte') === 'AUTO' || !formData.get('numero_cte') ? null : formData.get('numero_cte') as string,
       serie: formData.get('serie') as string || null,
       data_emissao: formData.get('data_emissao') as string,
@@ -891,7 +899,7 @@ export default function CTe() {
                     <select
                       name="empresa_id"
                       id="empresa_id"
-                      value={selectedEmpresaId}
+                      defaultValue={selectedDocumento?.empresa_id || selectedEmpresaId}
                       required
                       onChange={(e) => handleEmpresaChange(e.target.value)}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
