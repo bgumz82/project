@@ -614,14 +614,11 @@ export async function createCTeDocumento(
       (documento.chave_acesso_4 || "");
 
     // Se alguma chave foi preenchida, validar o dígito verificador
-    if (chaveAcessoCompleta.length > 0) {
+    if (chaveAcessoCompleta && chaveAcessoCompleta.length > 0) {
       if (chaveAcessoCompleta.length !== 44) {
         throw new Error("A combinação das chaves de acesso deve ter 44 dígitos.");
       }
-      // Validação do dígito verificador (assumindo que a função existe)
-      // if (!validarDigitoVerificadorChaveAcesso(chaveAcessoCompleta)) {
-      //   throw new Error("Dígito verificador da chave de acesso é inválido.");
-      // }
+      // Validação do dígito verificador pode ser implementada aqui se necessário
     }
 
     const result = await queryOne(
@@ -765,14 +762,11 @@ export async function updateCTeDocumento(
       (documento.chave_acesso_4 || "");
 
     // Se alguma chave foi preenchida, validar o dígito verificador
-    if (chaveAcessoCompleta.length > 0) {
+    if (chaveAcessoCompleta && chaveAcessoCompleta.length > 0) {
       if (chaveAcessoCompleta.length !== 44) {
         throw new Error("A combinação das chaves de acesso deve ter 44 dígitos.");
       }
-      // Validação do dígito verificador (assumindo que a função existe)
-      // if (!validarDigitoVerificadorChaveAcesso(chaveAcessoCompleta)) {
-      //   throw new Error("Dígito verificador da chave de acesso é inválido.");
-      // }
+      // Validação do dígito verificador pode ser implementada aqui se necessário
     }
 
     // Construir query dinamicamente
