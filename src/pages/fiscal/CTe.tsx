@@ -555,31 +555,36 @@ export default function CTe() {
     }
 
     // Validar data de emissão
-    if (!documento.data_emissao) {
+    const dataEmissao = formData.get('data_emissao') as string
+    if (!dataEmissao) {
       toast.error('Por favor, informe a data de emissão.')
       return
     }
 
     // Validar tomador
-    if (!documento.tomador_id) {
+    const tomadorId = formData.get('tomador_id') as string
+    if (!tomadorId) {
       toast.error('Por favor, selecione o tomador do serviço.')
       return
     }
 
     // Validar remetente
-    if (!documento.remetente_id) {
+    const remetenteId = formData.get('remetente_id') as string
+    if (!remetenteId) {
       toast.error('Por favor, selecione o remetente.')
       return
     }
 
     // Validar destinatário
-    if (!documento.destinatario_id) {
+    const destinatarioId = formData.get('destinatario_id') as string
+    if (!destinatarioId) {
       toast.error('Por favor, selecione o destinatário.')
       return
     }
 
     // Validar produto predominante
-    if (!documento.produto_predominante_id) {
+    const produtoPredominanteId = formData.get('produto_predominante_id') as string
+    if (!produtoPredominanteId) {
       toast.error('Por favor, selecione o produto predominante.')
       return
     }
