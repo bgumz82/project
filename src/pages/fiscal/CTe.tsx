@@ -554,6 +554,47 @@ export default function CTe() {
       return
     }
 
+    // Validar data de emissão
+    if (!documento.data_emissao) {
+      toast.error('Por favor, informe a data de emissão.')
+      return
+    }
+
+    // Validar tomador
+    if (!documento.tomador_id) {
+      toast.error('Por favor, selecione o tomador do serviço.')
+      return
+    }
+
+    // Validar remetente
+    if (!documento.remetente_id) {
+      toast.error('Por favor, selecione o remetente.')
+      return
+    }
+
+    // Validar destinatário
+    if (!documento.destinatario_id) {
+      toast.error('Por favor, selecione o destinatário.')
+      return
+    }
+
+    // Validar produto predominante
+    if (!documento.produto_predominante_id) {
+      toast.error('Por favor, selecione o produto predominante.')
+      return
+    }
+
+    // Validar locais de início e término
+    if (!selectedInicio) {
+      toast.error('Por favor, selecione o local de início da prestação.')
+      return
+    }
+
+    if (!selectedTermino) {
+      toast.error('Por favor, selecione o local de término da prestação.')
+      return
+    }
+
     const documentoData: CTeDocumentoCreate = {
       empresa_id: empresaIdValue,
       numero_cte: formData.get('numero_cte') === 'AUTO' || !formData.get('numero_cte') ? null : formData.get('numero_cte') as string,
@@ -1976,7 +2017,7 @@ export default function CTe() {
                     </button>
                   )}
 
-                  {activeTab !== 'observacoes' ? (
+                  {activeTab !== 'observacoes' && (
                     <button
                       type="button"
                       onClick={() => {
@@ -1989,7 +2030,9 @@ export default function CTe() {
                     >
                       Próximo
                     </button>
-                  ) : (
+                  )}
+
+                  {activeTab === 'observacoes' && (
                     <button
                       type="submit"
                       disabled={createMutation.isPending || updateMutation.isPending}

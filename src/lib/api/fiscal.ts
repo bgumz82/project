@@ -563,7 +563,7 @@ export async function createCTeDocumento(
 
     // Verificar se empresa existe e buscar dados
     console.log("🔍 Verificando empresa_id:", documento.empresa_id);
-    
+
     const empresa = await queryOne(
       `
       SELECT id, serie_padrao_cte, codigo_uf, status FROM empresas_fiscais WHERE id = $1
@@ -700,7 +700,7 @@ export async function createCTeDocumento(
         documento.empresa_id,
         numeroFinal,
         serieFinal,
-        documento.data_emissao,
+        documento.data_emissao || new Date().toISOString().split('T')[0],
         chaveAcessoCompleta.length === 44 ? chaveAcessoCompleta : null,
         codigoUFFinal,
         documento.forma_emissao || 1,
