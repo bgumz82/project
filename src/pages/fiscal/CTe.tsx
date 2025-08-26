@@ -108,6 +108,24 @@ export default function CTe() {
     validadeCnh: string
   } | null>(null)
 
+  // Estados para persistir dados do formulário entre abas
+  const [formData, setFormData] = useState<{
+    tomador_id: string
+    remetente_id: string
+    recebedor_id: string
+    destinatario_id: string
+    produto_predominante_id: string
+    data_emissao: string
+    [key: string]: any
+  }>({
+    tomador_id: '',
+    remetente_id: '',
+    recebedor_id: '',
+    destinatario_id: '',
+    produto_predominante_id: '',
+    data_emissao: format(new Date(), 'yyyy-MM-dd')
+  })
+
   // Função para validar chave de acesso em tempo real
   const validateChaveAcesso = (value: string, fieldName: string) => {
     const chaveNumerica = value.replace(/\D/g, '')
@@ -235,6 +253,22 @@ export default function CTe() {
     setShowInicioResults(false)
     setShowTerminoResults(false)
     setChaveErrors({})
+    setFormData({
+      tomador_id: '',
+      remetente_id: '',
+      recebedor_id: '',
+      destinatario_id: '',
+      produto_predominante_id: '',
+      data_emissao: format(new Date(), 'yyyy-MM-dd')
+    })
+  }
+
+  // Função para atualizar dados do formulário
+  const updateFormData = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
   }
 
   // useEffect para carregar dados quando modal abre ou documento selecionado muda
@@ -260,6 +294,16 @@ export default function CTe() {
       if (selectedDocumento.icms_situacao_tributaria) {
         handleSituacaoTributariaChange(selectedDocumento.icms_situacao_tributaria);
       }
+
+      // Carregar dados do documento nos estados do formulário
+      setFormData({
+        tomador_id: selectedDocumento.tomador_id || '',
+        remetente_id: selectedDocumento.remetente_id || '',
+        recebedor_id: selectedDocumento.recebedor_id || '',
+        destinatario_id: selectedDocumento.destinatario_id || '',
+        produto_predominante_id: selectedDocumento.produto_predominante_id || '',
+        data_emissao: selectedDocumento.data_emissao.split('T')[0] || format(new Date(), 'yyyy-MM-dd')
+      })
 
       // Definir o local de início e término se existirem
       if (selectedDocumento.cidade_inicio_ibge && estados) {
@@ -556,35 +600,31 @@ export default function CTe() {
 
     // Validar data de emissão
     const dataEmissao = formData.get('data_emissao') as string
-    if (!dataEmissao) {
+    if (!dataEmissao || dataEmissao.trim() === '') {
       toast.error('Por favor, informe a data de emissão.')
       return
     }
 
-    // Validar tomador
-    const tomadorId = formData.get('tomador_id') as string
-    if (!tomadorId) {
+    // Validar tomador usando estado controlado
+    if (!formData.tomador_id || formData.tomador_id.trim() === '') {
       toast.error('Por favor, selecione o tomador do serviço.')
       return
     }
 
-    // Validar remetente
-    const remetenteId = formData.get('remetente_id') as string
-    if (!remetenteId) {
+    // Validar remetente usando estado controlado
+    if (!formData.remetente_id || formData.remetente_id.trim() === '') {
       toast.error('Por favor, selecione o remetente.')
       return
     }
 
-    // Validar destinatário
-    const destinatarioId = formData.get('destinatario_id') as string
-    if (!destinatarioId) {
+    // Validar destinatário usando estado controlado
+    if (!formData.destinatario_id || formData.destinatario_id.trim() === '') {
       toast.error('Por favor, selecione o destinatário.')
       return
     }
 
-    // Validar produto predominante
-    const produtoPredominanteId = formData.get('produto_predominante_id') as string
-    if (!produtoPredominanteId) {
+    // Validar produto predominante usando estado controlado
+    if (!formData.produto_predominante_id || formData.produto_predominante_id.trim() === '') {
       toast.error('Por favor, selecione o produto predominante.')
       return
     }
@@ -945,7 +985,7 @@ export default function CTe() {
                     <select
                       name="empresa_id"
                       id="empresa_id"
-                      defaultValue={selectedDocumento?.empresa_id || selectedEmpresaId}
+                      value={selectedDocumento?.empresa_id || selectedEmpresaId}
                       required
                       onChange={(e) => handleEmpresaChange(e.target.value)}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -1020,7 +1060,8 @@ export default function CTe() {
                         type="date"
                         name="data_emissao"
                         id="data_emissao"
-                        defaultValue={selectedDocumento?.data_emissao.split('T')[0] || format(new Date(), 'yyyy-MM-dd')}
+                        value={formData.data_emissao}
+                        onChange={(e) => updateFormData('data_emissao', e.target.value)}
                         required
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       />
@@ -1236,7 +1277,8 @@ export default function CTe() {
                     <select
                       name="tomador_id"
                       id="tomador_id"
-                      defaultValue={selectedDocumento?.tomador_id || ''}
+                      value={formData.tomador_id}
+                      onChange={(e) => updateFormData('tomador_id', e.target.value)}
                       required
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
@@ -1271,7 +1313,8 @@ export default function CTe() {
                     <select
                       name="remetente_id"
                       id="remetente_id"
-                      defaultValue={selectedDocumento?.remetente_id || ''}
+                      value={formData.remetente_id}
+                      onChange={(e) => updateFormData('remetente_id', e.target.value)}
                       required
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
@@ -1303,7 +1346,8 @@ export default function CTe() {
                     <select
                       name="recebedor_id"
                       id="recebedor_id"
-                      defaultValue={selectedDocumento?.recebedor_id || ''}
+                      value={formData.recebedor_id}
+                      onChange={(e) => updateFormData('recebedor_id', e.target.value)}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
                       <option value="">❌ Sem Recebedor</option>
@@ -1336,7 +1380,8 @@ export default function CTe() {
                     <select
                       name="destinatario_id"
                       id="destinatario_id"
-                      defaultValue={selectedDocumento?.destinatario_id || ''}
+                      value={formData.destinatario_id}
+                      onChange={(e) => updateFormData('destinatario_id', e.target.value)}
                       required
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
@@ -1650,7 +1695,8 @@ export default function CTe() {
                       <select
                         name="produto_predominante_id"
                         id="produto_predominante_id"
-                        defaultValue={selectedDocumento?.produto_predominante_id || ''}
+                        value={formData.produto_predominante_id}
+                        onChange={(e) => updateFormData('produto_predominante_id', e.target.value)}
                         required
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       >
