@@ -548,9 +548,16 @@ export async function createCTeDocumento(
 ): Promise<CTeDocumento> {
   try {
     console.log("📝 Criando novo documento CT-e:", documento);
+    console.log("🔍 Validando empresa_id:", {
+      valor: documento.empresa_id,
+      tipo: typeof documento.empresa_id,
+      existe: !!documento.empresa_id,
+      temConteudo: documento.empresa_id && documento.empresa_id.toString().trim() !== ''
+    });
 
     // Validar campos obrigatórios
-    if (!documento.empresa_id || documento.empresa_id.trim() === '') {
+    if (!documento.empresa_id || typeof documento.empresa_id !== 'string' || documento.empresa_id.trim() === '') {
+      console.error("❌ empresa_id inválido:", documento.empresa_id);
       throw new Error("Campo empresa_id é obrigatório");
     }
 
