@@ -741,6 +741,28 @@ export async function updateCTeDocumento(
   try {
     console.log("📝 Atualizando documento CT-e:", id, documento);
 
+    // Verificar se o CT-e existe
+    const cteExistente = await queryOne(
+      `SELECT empresa_id FROM cte_documentos WHERE id = $1`,
+      [id]
+    );
+
+    if (!cteExistente) {
+      throw new Error("Documento CT-e não encontrado");
+    }
+
+    // Se empresa_id está sendo alterado, verificar se a nova empresa existe
+    if (documento.empresa_id) {
+      const empresa = await queryOne(
+        `SELECT id FROM empresas_fiscais WHERE id = $1`,
+        [documento.empresa_id]
+      );
+
+      if (!empresa) {
+        throw new Error("Empresa fiscal não encontrada");
+      }
+    }
+
     // Validação de chave de acesso (primeiros 43 dígitos) - apenas se há valor definido e não vazio
     if (documento.chave_acesso_1 !== undefined && documento.chave_acesso_1 !== null && documento.chave_acesso_1.trim() !== '' && documento.chave_acesso_1.length !== 43) {
       throw new Error("Chave de Acesso 1 deve conter 43 dígitos.");
