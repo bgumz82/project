@@ -614,18 +614,23 @@ export async function createCTeDocumento(
       throw new Error("Número CT-e e série já existem para esta empresa");
     }
 
-    // Validação de chave de acesso (primeiros 43 dígitos) - apenas se há valor definido
-    if (documento.chave_acesso_1 && documento.chave_acesso_1 !== null && documento.chave_acesso_1 !== undefined && documento.chave_acesso_1.trim() !== '' && documento.chave_acesso_1.length !== 43) {
-      throw new Error("Chave de Acesso 1 deve conter 43 dígitos.");
+    // Validação obrigatória da Chave de Acesso 1
+    if (!documento.chave_acesso_1 || documento.chave_acesso_1.trim() === '') {
+      throw new Error("Chave de Acesso 1 é obrigatória.");
     }
-    if (documento.chave_acesso_2 && documento.chave_acesso_2 !== null && documento.chave_acesso_2 !== undefined && documento.chave_acesso_2.trim() !== '' && documento.chave_acesso_2.length !== 43) {
-      throw new Error("Chave de Acesso 2 deve conter 43 dígitos.");
+    
+    // Validação das chaves de acesso (44 dígitos completos incluindo DV)
+    if (documento.chave_acesso_1.length !== 44) {
+      throw new Error("Chave de Acesso 1 deve conter 44 dígitos.");
     }
-    if (documento.chave_acesso_3 && documento.chave_acesso_3 !== null && documento.chave_acesso_3 !== undefined && documento.chave_acesso_3.trim() !== '' && documento.chave_acesso_3.length !== 43) {
-      throw new Error("Chave de Acesso 3 deve conter 43 dígitos.");
+    if (documento.chave_acesso_2 && documento.chave_acesso_2 !== null && documento.chave_acesso_2 !== undefined && documento.chave_acesso_2.trim() !== '' && documento.chave_acesso_2.length !== 44) {
+      throw new Error("Chave de Acesso 2 deve conter 44 dígitos.");
     }
-    if (documento.chave_acesso_4 && documento.chave_acesso_4 !== null && documento.chave_acesso_4 !== undefined && documento.chave_acesso_4.trim() !== '' && documento.chave_acesso_4.length !== 43) {
-      throw new Error("Chave de Acesso 4 deve conter 43 dígitos.");
+    if (documento.chave_acesso_3 && documento.chave_acesso_3 !== null && documento.chave_acesso_3 !== undefined && documento.chave_acesso_3.trim() !== '' && documento.chave_acesso_3.length !== 44) {
+      throw new Error("Chave de Acesso 3 deve conter 44 dígitos.");
+    }
+    if (documento.chave_acesso_4 && documento.chave_acesso_4 !== null && documento.chave_acesso_4 !== undefined && documento.chave_acesso_4.trim() !== '' && documento.chave_acesso_4.length !== 44) {
+      throw new Error("Chave de Acesso 4 deve conter 44 dígitos.");
     }
 
     // Combinar chaves de acesso se existirem (tratar null/undefined como string vazia)
@@ -785,18 +790,18 @@ export async function updateCTeDocumento(
       }
     }
 
-    // Validação de chave de acesso (primeiros 43 dígitos) - apenas se há valor definido e não vazio
-    if (documento.chave_acesso_1 !== undefined && documento.chave_acesso_1 !== null && documento.chave_acesso_1.trim() !== '' && documento.chave_acesso_1.length !== 43) {
-      throw new Error("Chave de Acesso 1 deve conter 43 dígitos.");
+    // Validação das chaves de acesso (44 dígitos completos incluindo DV)
+    if (documento.chave_acesso_1 !== undefined && documento.chave_acesso_1 !== null && documento.chave_acesso_1.trim() !== '' && documento.chave_acesso_1.length !== 44) {
+      throw new Error("Chave de Acesso 1 deve conter 44 dígitos.");
     }
-    if (documento.chave_acesso_2 !== undefined && documento.chave_acesso_2 !== null && documento.chave_acesso_2.trim() !== '' && documento.chave_acesso_2.length !== 43) {
-      throw new Error("Chave de Acesso 2 deve conter 43 dígitos.");
+    if (documento.chave_acesso_2 !== undefined && documento.chave_acesso_2 !== null && documento.chave_acesso_2.trim() !== '' && documento.chave_acesso_2.length !== 44) {
+      throw new Error("Chave de Acesso 2 deve conter 44 dígitos.");
     }
-    if (documento.chave_acesso_3 !== undefined && documento.chave_acesso_3 !== null && documento.chave_acesso_3.trim() !== '' && documento.chave_acesso_3.length !== 43) {
-      throw new Error("Chave de Acesso 3 deve conter 43 dígitos.");
+    if (documento.chave_acesso_3 !== undefined && documento.chave_acesso_3 !== null && documento.chave_acesso_3.trim() !== '' && documento.chave_acesso_3.length !== 44) {
+      throw new Error("Chave de Acesso 3 deve conter 44 dígitos.");
     }
-    if (documento.chave_acesso_4 !== undefined && documento.chave_acesso_4 !== null && documento.chave_acesso_4.trim() !== '' && documento.chave_acesso_4.length !== 43) {
-      throw new Error("Chave de Acesso 4 deve conter 43 dígitos.");
+    if (documento.chave_acesso_4 !== undefined && documento.chave_acesso_4 !== null && documento.chave_acesso_4.trim() !== '' && documento.chave_acesso_4.length !== 44) {
+      throw new Error("Chave de Acesso 4 deve conter 44 dígitos.");
     }
 
     // Combinar chaves de acesso se existirem (tratar null/undefined/string vazia como string vazia)

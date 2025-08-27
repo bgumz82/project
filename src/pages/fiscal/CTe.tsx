@@ -685,6 +685,12 @@ export default function CTe() {
       return
     }
 
+    // Validar chave de acesso 1 obrigatória
+    if (!formData.chave_acesso_1 || formData.chave_acesso_1.trim() === '') {
+      toast.error('Por favor, informe pelo menos a Chave de Acesso 1.')
+      return
+    }
+
     // Validar locais de início e término
     if (!selectedInicio) {
       toast.error('Por favor, selecione o local de início da prestação.')
@@ -1800,15 +1806,16 @@ export default function CTe() {
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                       <div>
                         <label htmlFor="chave_acesso_1" className="block text-sm font-medium text-gray-700">
-                          Chave de Acesso 1
+                          Chave de Acesso 1 *
                         </label>
                         <input
                           type="text"
                           name="chave_acesso_1"
                           id="chave_acesso_1"
                           maxLength="44"
-                          placeholder="Digite apenas números (44 dígitos)"
+                          placeholder="Digite apenas números (44 dígitos) - OBRIGATÓRIO"
                           defaultValue={selectedDocumento?.chave_acesso_1 || formData.chave_acesso_1 || ''}
+                          required
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, '')
                             e.target.value = value
@@ -1913,8 +1920,9 @@ export default function CTe() {
 
                     {/* Contador de caracteres para as chaves */}
                     <div className="text-xs text-gray-500 space-y-1">
-                      <p>💡 <strong>Dica:</strong> Cole as chaves completas de 44 dígitos. O sistema validará automaticamente.</p>
-                      <p>✅ Uma chave válida tem formato: 31200614200166000188550010000000012345678901</p>
+                      <p>💡 <strong>Dica:</strong> Cole as chaves completas de 44 dígitos. A Chave 1 é obrigatória.</p>
+                      <p>✅ Uma chave válida tem formato: 31200614200166000188550010000000012345678901 (44 dígitos)</p>
+                      <p>⚠️ <strong>Importante:</strong> Pelo menos a Chave de Acesso 1 deve estar preenchida.</p>
                     </div>
                   </div>
                 </div>
