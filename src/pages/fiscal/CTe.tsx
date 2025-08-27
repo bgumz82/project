@@ -655,33 +655,37 @@ export default function CTe() {
       return
     }
 
-    // Validar data de emissão usando estado controlado
-    const dataEmissaoValue = formData.data_emissao || (document.getElementById('data_emissao') as HTMLInputElement)?.value
+    // Validar data de emissão usando FormData
+    const dataEmissaoValue = formData.get('data_emissao') as string
     if (!dataEmissaoValue || dataEmissaoValue.trim() === '') {
       toast.error('Por favor, informe a data de emissão.')
       return
     }
 
-    // Validar tomador usando estado controlado
-    if (!formData.tomador_id || formData.tomador_id.trim() === '') {
+    // Validar tomador
+    const tomadorId = formData.get('tomador_id') as string
+    if (!tomadorId || tomadorId.trim() === '') {
       toast.error('Por favor, selecione o tomador do serviço.')
       return
     }
 
-    // Validar remetente usando estado controlado
-    if (!formData.remetente_id || formData.remetente_id.trim() === '') {
+    // Validar remetente
+    const remetenteId = formData.get('remetente_id') as string
+    if (!remetenteId || remetenteId.trim() === '') {
       toast.error('Por favor, selecione o remetente.')
       return
     }
 
-    // Validar destinatário usando estado controlado
-    if (!formData.destinatario_id || formData.destinatario_id.trim() === '') {
+    // Validar destinatário
+    const destinatarioId = formData.get('destinatario_id') as string
+    if (!destinatarioId || destinatarioId.trim() === '') {
       toast.error('Por favor, selecione o destinatário.')
       return
     }
 
-    // Validar produto predominante usando estado controlado
-    if (!formData.produto_predominante_id || formData.produto_predominante_id.trim() === '') {
+    // Validar produto predominante
+    const produtoPredominanteId = formData.get('produto_predominante_id') as string
+    if (!produtoPredominanteId || produtoPredominanteId.trim() === '') {
       toast.error('Por favor, selecione o produto predominante.')
       return
     }
@@ -1132,7 +1136,7 @@ export default function CTe() {
                         type="time"
                         name="hora_emissao"
                         id="hora_emissao"
-                        defaultValue={selectedDocumento?.hora_emissao || "12:00"}
+                        defaultValue={selectedDocumento?.hora_emissao || format(new Date(), 'HH:mm')}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       />
                     </div>
