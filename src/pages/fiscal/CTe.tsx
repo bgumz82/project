@@ -702,6 +702,14 @@ export default function CTe() {
       return
     }
 
+    // Buscar dados da associação de frota selecionada
+    const associacaoSelecionada = selectedMotoristaId && associacoesFrota 
+      ? associacoesFrota.find(a => a.id === selectedMotoristaId)
+      : null
+
+    // Buscar RNTRC da empresa selecionada
+    const empresaSelecionada = empresas?.find(e => e.id === empresaIdValue)
+
     const documentoData: CTeDocumentoCreate = {
       empresa_id: empresaIdValue,
       numero_cte: formDataElement.get('numero_cte') === 'AUTO' || !formDataElement.get('numero_cte') ? null : formDataElement.get('numero_cte') as string,
@@ -737,7 +745,14 @@ export default function CTe() {
       chave_acesso_3: formData.chave_acesso_3 || null,
       chave_acesso_4: formData.chave_acesso_4 || null,
       // Campos de transporte
-      associacao_frota_id: formDataElement.get('associacao_frota_id') as string || null,
+      associacao_frota_id: selectedMotoristaId || null,
+      rntrc: empresaSelecionada?.rntrc || null,
+      motorista_nome: associacaoSelecionada?.funcionario?.nome || null,
+      motorista_cnh: associacaoSelecionada?.funcionario?.cnh || null,
+      motorista_matricula: associacaoSelecionada?.funcionario?.matricula || null,
+      motorista_validade_cnh: associacaoSelecionada?.funcionario?.validade_cnh || null,
+      placa_veiculo: placaVeiculo || null,
+      placa_reboque: placaReboque || null,
       cfop: formDataElement.get('cfop') as string || null,
       finalidade_cte: formDataElement.get('finalidade_cte') as string || null,
       tipo_servico: formDataElement.get('tipo_servico') as string || null
