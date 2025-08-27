@@ -1269,11 +1269,13 @@ export default function CTe() {
                         onChange={(e) => {
                           const value = e.target.value
                           setInicioSearchTerm(value)
+                          setCidadeInicioNome(value) // Atualiza o nome da cidade em tempo real
                           if (selectedInicio) setSelectedInicio(null)
                           handleCidadeInicioSearch(value)
                           setShowInicioResults(true)
                         }}
                         onFocus={() => setShowInicioResults(true)}
+                        onBlur={() => setTimeout(() => setShowInicioResults(false), 150)}
                         placeholder="Digite o nome da cidade..."
                         required
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -1309,6 +1311,7 @@ export default function CTe() {
                                 setCidadeInicioNome(cidade.name)
                                 setInicioSearchTerm('')
                                 setShowInicioResults(false)
+                                setCidadeInicioResults([]) // Limpa os resultados
                               }}
                               className="cursor-pointer hover:bg-gray-100 px-4 py-2 flex justify-between items-center"
                             >
@@ -1336,11 +1339,13 @@ export default function CTe() {
                         onChange={(e) => {
                           const value = e.target.value
                           setTerminoSearchTerm(value)
+                          setCidadeTerminoNome(value) // Atualiza o nome da cidade em tempo real
                           if (selectedTermino) setSelectedTermino(null)
                           handleCidadeTerminoSearch(value)
                           setShowTerminoResults(true)
                         }}
                         onFocus={() => setShowTerminoResults(true)}
+                        onBlur={() => setTimeout(() => setShowTerminoResults(false), 150)}
                         placeholder="Digite o nome da cidade..."
                         required
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -1376,6 +1381,7 @@ export default function CTe() {
                                 setCidadeTerminoNome(cidade.name)
                                 setTerminoSearchTerm('')
                                 setShowTerminoResults(false)
+                                setCidadeTerminoResults([]) // Limpa os resultados
                               }}
                               className="cursor-pointer hover:bg-gray-100 px-4 py-2 flex justify-between items-center"
                             >
