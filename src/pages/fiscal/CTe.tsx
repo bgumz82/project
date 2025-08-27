@@ -1265,14 +1265,12 @@ export default function CTe() {
                       <input
                         type="text"
                         id="local_inicio"
-                        value={selectedInicio ? selectedInicio.nome : (cidadeInicioNome || inicioSearchTerm)}
+                        value={cidadeInicioNome}
                         onChange={(e) => {
                           const value = e.target.value
+                          setCidadeInicioNome(value)
                           setInicioSearchTerm(value)
-                          if (selectedInicio) {
-                            setSelectedInicio(null)
-                            setCidadeInicioNome('')
-                          }
+                          setSelectedInicio(null)
                           handleCidadeInicioSearch(value)
                           setShowInicioResults(true)
                         }}
@@ -1312,7 +1310,7 @@ export default function CTe() {
                                   uf_inicio: cidade.uf
                                 }))
                                 setCidadeInicioNome(cidade.name)
-                                setInicioSearchTerm('')
+                                setInicioSearchTerm(cidade.name)
                                 setShowInicioResults(false)
                                 setCidadeInicioResults([])
                               }}
@@ -1338,14 +1336,12 @@ export default function CTe() {
                       <input
                         type="text"
                         id="local_termino"
-                        value={selectedTermino ? selectedTermino.nome : (cidadeTerminoNome || terminoSearchTerm)}
+                        value={cidadeTerminoNome}
                         onChange={(e) => {
                           const value = e.target.value
+                          setCidadeTerminoNome(value)
                           setTerminoSearchTerm(value)
-                          if (selectedTermino) {
-                            setSelectedTermino(null)
-                            setCidadeTerminoNome('')
-                          }
+                          setSelectedTermino(null)
                           handleCidadeTerminoSearch(value)
                           setShowTerminoResults(true)
                         }}
@@ -1385,7 +1381,7 @@ export default function CTe() {
                                   uf_termino: cidade.uf
                                 }))
                                 setCidadeTerminoNome(cidade.name)
-                                setTerminoSearchTerm('')
+                                setTerminoSearchTerm(cidade.name)
                                 setShowTerminoResults(false)
                                 setCidadeTerminoResults([])
                               }}
