@@ -717,7 +717,7 @@ export async function createCTeDocumento(
         numeroFinal,
         serieFinal,
         documento.data_emissao || new Date().toISOString().split('T')[0],
-        null, // chave_acesso do CT-e será gerada automaticamente
+        null, // chave_acesso do CT-e será gerada automaticamente pelo trigger
         documento.chave_acesso_1,
         documento.chave_acesso_2,
         documento.chave_acesso_3,
@@ -768,6 +768,27 @@ export async function createCTeDocumento(
         null, // pdf_gerado_em
       ],
     );
+
+    // Verificar se a chave de acesso foi gerada e forçar regeneração se necessário
+    if (!result.chave_acesso) {
+      console.log("⚠️ Chave de acesso não gerada, forçando regeneração...");
+      
+      const updatedResult = await queryOne(
+        `
+        UPDATE cte_documentos 
+        SET chave_acesso = NULL,
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+        `,
+        [result.id]
+      );
+      
+      if (updatedResult) {
+        console.log("✅ Chave de acesso regenerada:", updatedResult.chave_acesso);
+        return updatedResult;
+      }
+    }
 
     if (!result) {
       throw new Error("Erro ao criar documento CT-e");
