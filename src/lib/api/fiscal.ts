@@ -61,7 +61,7 @@ export interface CTeDocumento {
     razao_social: string;
     cnpj: string;
   };
-  // Campos para participantes
+  // Campos para participantes (podem ser UUIDs de clientes ou valores especiais)
   tomador_id?: string | null;
   remetente_id?: string | null;
   recebedor_id?: string | null;
@@ -112,7 +112,7 @@ export interface CTeDocumentoCreate {
   forma_emissao?: number;
   status?: "pendente" | "emitido" | "cancelado";
   observacoes?: string | null;
-  // Campos para participantes
+  // Campos para participantes (podem ser UUIDs de clientes ou valores especiais)
   tomador_id?: string | null;
   remetente_id?: string | null;
   recebedor_id?: string | null;
@@ -618,7 +618,7 @@ export async function createCTeDocumento(
     if (!documento.chave_acesso_1 || documento.chave_acesso_1.trim() === '') {
       throw new Error("Chave de Acesso 1 é obrigatória.");
     }
-    
+
     // Validação das chaves de acesso (44 dígitos completos incluindo DV)
     if (documento.chave_acesso_1.length !== 44) {
       throw new Error("Chave de Acesso 1 deve conter 44 dígitos.");
