@@ -655,37 +655,32 @@ export default function CTe() {
       return
     }
 
-    // Validar data de emissão usando FormData
-    const dataEmissaoValue = formData.get('data_emissao') as string
-    if (!dataEmissaoValue || dataEmissaoValue.trim() === '') {
+    // Validar data de emissão usando estado controlado
+    if (!formData.data_emissao || formData.data_emissao.trim() === '') {
       toast.error('Por favor, informe a data de emissão.')
       return
     }
 
     // Validar tomador
-    const tomadorId = formData.get('tomador_id') as string
-    if (!tomadorId || tomadorId.trim() === '') {
+    if (!formData.tomador_id || formData.tomador_id.trim() === '') {
       toast.error('Por favor, selecione o tomador do serviço.')
       return
     }
 
     // Validar remetente
-    const remetenteId = formData.get('remetente_id') as string
-    if (!remetenteId || remetenteId.trim() === '') {
+    if (!formData.remetente_id || formData.remetente_id.trim() === '') {
       toast.error('Por favor, selecione o remetente.')
       return
     }
 
     // Validar destinatário
-    const destinatarioId = formData.get('destinatario_id') as string
-    if (!destinatarioId || destinatarioId.trim() === '') {
+    if (!formData.destinatario_id || formData.destinatario_id.trim() === '') {
       toast.error('Por favor, selecione o destinatário.')
       return
     }
 
     // Validar produto predominante
-    const produtoPredominanteId = formData.get('produto_predominante_id') as string
-    if (!produtoPredominanteId || produtoPredominanteId.trim() === '') {
+    if (!formData.produto_predominante_id || formData.produto_predominante_id.trim() === '') {
       toast.error('Por favor, selecione o produto predominante.')
       return
     }
@@ -705,7 +700,7 @@ export default function CTe() {
       empresa_id: empresaIdValue,
       numero_cte: formData.get('numero_cte') === 'AUTO' || !formData.get('numero_cte') ? null : formData.get('numero_cte') as string,
       serie: formData.get('serie') as string || null,
-      data_emissao: formData.get('data_emissao') as string,
+      data_emissao: formData.data_emissao,
       cidade_inicio_ibge: selectedInicio?.codigo || null,
       cidade_termino_ibge: selectedTermino?.codigo || null,
       uf_inicio: selectedInicio?.uf || null,
@@ -714,27 +709,27 @@ export default function CTe() {
       cidade_termino_nome: selectedTermino?.nome || null,
       forma_emissao: parseInt(formData.get('forma_emissao') as string) || 1,
       status: formData.get('status') as 'pendente' | 'emitido' | 'cancelado',
-      observacoes: formData.get('observacoes') as string || null,
-      tomador_id: formData.get('tomador_id') as string || null,
-      remetente_id: formData.get('remetente_id') as string || null,
-      recebedor_id: formData.get('recebedor_id') as string || null,
-      destinatario_id: formData.get('destinatario_id') as string || null,
+      observacoes: formData.observacoes || null,
+      tomador_id: formData.tomador_id || null,
+      remetente_id: formData.remetente_id || null,
+      recebedor_id: formData.recebedor_id || null,
+      destinatario_id: formData.destinatario_id || null,
       // Campos de serviços e impostos
-      valor_prestacao: parseFloat(formData.get('valor_prestacao') as string) || null,
-      valor_receber: parseFloat(formData.get('valor_receber') as string) || null,
-      valor_tributos: parseFloat(formData.get('valor_tributos') as string) || null,
-      icms_situacao_tributaria: formData.get('icms_situacao_tributaria') as string || null,
-      icms_bc_valor: parseFloat(formData.get('icms_bc_valor') as string) || null,
-      icms_aliquota: parseFloat(formData.get('icms_aliquota') as string) || null,
-      icms_valor: parseFloat(formData.get('icms_valor') as string) || null,
+      valor_prestacao: parseFloat(formData.valor_prestacao) || null,
+      valor_receber: parseFloat(formData.valor_receber) || null,
+      valor_tributos: parseFloat(formData.valor_tributos) || null,
+      icms_situacao_tributaria: formData.icms_situacao_tributaria || null,
+      icms_bc_valor: parseFloat(formData.icms_bc_valor) || null,
+      icms_aliquota: parseFloat(formData.icms_aliquota) || null,
+      icms_valor: parseFloat(formData.icms_valor) || null,
       // Campos de dados fiscais
-      valor_carga: parseFloat(formData.get('valor_carga') as string) || null,
-      quantidade_carga: parseFloat(formData.get('quantidade_carga') as string) || null,
-      produto_predominante_id: formData.get('produto_predominante_id') as string || null,
-      chave_acesso_1: formData.get('chave_acesso_1') as string || null,
-      chave_acesso_2: formData.get('chave_acesso_2') as string || null,
-      chave_acesso_3: formData.get('chave_acesso_3') as string || null,
-      chave_acesso_4: formData.get('chave_acesso_4') as string || null,
+      valor_carga: parseFloat(formData.valor_carga) || null,
+      quantidade_carga: parseFloat(formData.quantidade_carga) || null,
+      produto_predominante_id: formData.produto_predominante_id || null,
+      chave_acesso_1: formData.chave_acesso_1 || null,
+      chave_acesso_2: formData.chave_acesso_2 || null,
+      chave_acesso_3: formData.chave_acesso_3 || null,
+      chave_acesso_4: formData.chave_acesso_4 || null,
       // Campos de transporte
       associacao_frota_id: formData.get('associacao_frota_id') as string || null,
       cfop: formData.get('cfop') as string || null,
