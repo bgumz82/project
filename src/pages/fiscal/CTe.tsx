@@ -1265,12 +1265,14 @@ export default function CTe() {
                       <input
                         type="text"
                         id="local_inicio"
-                        value={cidadeInicioNome || inicioSearchTerm}
+                        value={selectedInicio ? selectedInicio.nome : (cidadeInicioNome || inicioSearchTerm)}
                         onChange={(e) => {
                           const value = e.target.value
                           setInicioSearchTerm(value)
-                          setCidadeInicioNome(value) // Atualiza o nome da cidade em tempo real
-                          if (selectedInicio) setSelectedInicio(null)
+                          if (selectedInicio) {
+                            setSelectedInicio(null)
+                            setCidadeInicioNome('')
+                          }
                           handleCidadeInicioSearch(value)
                           setShowInicioResults(true)
                         }}
@@ -1297,11 +1299,12 @@ export default function CTe() {
                             <div
                               key={cidade.cod_city}
                               onClick={() => {
-                                setSelectedInicio({
+                                const cidadeSelecionada = {
                                   codigo: cidade.cod_city,
                                   nome: cidade.name,
                                   uf: cidade.uf || ''
-                                })
+                                }
+                                setSelectedInicio(cidadeSelecionada)
                                 setFormData(prev => ({
                                   ...prev,
                                   cidade_inicio_ibge: cidade.cod_city,
@@ -1311,7 +1314,7 @@ export default function CTe() {
                                 setCidadeInicioNome(cidade.name)
                                 setInicioSearchTerm('')
                                 setShowInicioResults(false)
-                                setCidadeInicioResults([]) // Limpa os resultados
+                                setCidadeInicioResults([])
                               }}
                               className="cursor-pointer hover:bg-gray-100 px-4 py-2 flex justify-between items-center"
                             >
@@ -1335,12 +1338,14 @@ export default function CTe() {
                       <input
                         type="text"
                         id="local_termino"
-                        value={cidadeTerminoNome || terminoSearchTerm}
+                        value={selectedTermino ? selectedTermino.nome : (cidadeTerminoNome || terminoSearchTerm)}
                         onChange={(e) => {
                           const value = e.target.value
                           setTerminoSearchTerm(value)
-                          setCidadeTerminoNome(value) // Atualiza o nome da cidade em tempo real
-                          if (selectedTermino) setSelectedTermino(null)
+                          if (selectedTermino) {
+                            setSelectedTermino(null)
+                            setCidadeTerminoNome('')
+                          }
                           handleCidadeTerminoSearch(value)
                           setShowTerminoResults(true)
                         }}
@@ -1367,11 +1372,12 @@ export default function CTe() {
                             <div
                               key={cidade.cod_city}
                               onClick={() => {
-                                setSelectedTermino({
+                                const cidadeSelecionada = {
                                   codigo: cidade.cod_city,
                                   nome: cidade.name,
                                   uf: cidade.uf || ''
-                                })
+                                }
+                                setSelectedTermino(cidadeSelecionada)
                                 setFormData(prev => ({
                                   ...prev,
                                   cidade_termino_ibge: cidade.cod_city,
@@ -1381,7 +1387,7 @@ export default function CTe() {
                                 setCidadeTerminoNome(cidade.name)
                                 setTerminoSearchTerm('')
                                 setShowTerminoResults(false)
-                                setCidadeTerminoResults([]) // Limpa os resultados
+                                setCidadeTerminoResults([])
                               }}
                               className="cursor-pointer hover:bg-gray-100 px-4 py-2 flex justify-between items-center"
                             >
