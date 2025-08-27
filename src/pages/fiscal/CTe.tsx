@@ -338,14 +338,29 @@ export default function CTe() {
       }
 
       // Carregar dados do documento nos estados do formulário
-      setFormData({
+      setFormData(prev => ({
+        ...prev,
         tomador_id: selectedDocumento.tomador_id || '',
         remetente_id: selectedDocumento.remetente_id || '',
         recebedor_id: selectedDocumento.recebedor_id || '',
         destinatario_id: selectedDocumento.destinatario_id || '',
         produto_predominante_id: selectedDocumento.produto_predominante_id || '',
-        data_emissao: selectedDocumento.data_emissao.split('T')[0] || format(new Date(), 'yyyy-MM-dd')
-      })
+        data_emissao: selectedDocumento.data_emissao.split('T')[0] || format(new Date(), 'yyyy-MM-dd'),
+        valor_prestacao: selectedDocumento.valor_prestacao?.toString() || '',
+        valor_receber: selectedDocumento.valor_receber?.toString() || '',
+        valor_tributos: selectedDocumento.valor_tributos?.toString() || '',
+        icms_situacao_tributaria: selectedDocumento.icms_situacao_tributaria || '',
+        icms_bc_valor: selectedDocumento.icms_bc_valor?.toString() || '',
+        icms_aliquota: selectedDocumento.icms_aliquota?.toString() || '',
+        icms_valor: selectedDocumento.icms_valor?.toString() || '',
+        valor_carga: selectedDocumento.valor_carga?.toString() || '',
+        quantidade_carga: selectedDocumento.quantidade_carga?.toString() || '',
+        chave_acesso_1: selectedDocumento.chave_acesso_1 || '',
+        chave_acesso_2: selectedDocumento.chave_acesso_2 || '',
+        chave_acesso_3: selectedDocumento.chave_acesso_3 || '',
+        chave_acesso_4: selectedDocumento.chave_acesso_4 || '',
+        observacoes: selectedDocumento.observacoes || ''
+      }))
 
       // Definir o local de início e término se existirem
       if (selectedDocumento.cidade_inicio_ibge && estados) {
@@ -640,9 +655,9 @@ export default function CTe() {
       return
     }
 
-    // Validar data de emissão
-    const dataEmissao = formData.get('data_emissao') as string
-    if (!dataEmissao || dataEmissao.trim() === '') {
+    // Validar data de emissão usando estado controlado
+    const dataEmissaoValue = formData.data_emissao || (document.getElementById('data_emissao') as HTMLInputElement)?.value
+    if (!dataEmissaoValue || dataEmissaoValue.trim() === '') {
       toast.error('Por favor, informe a data de emissão.')
       return
     }
@@ -1102,7 +1117,7 @@ export default function CTe() {
                         type="date"
                         name="data_emissao"
                         id="data_emissao"
-                        defaultValue={selectedDocumento?.data_emissao?.split('T')[0] || formData.data_emissao}
+                        value={formData.data_emissao}
                         onChange={(e) => updateFormData('data_emissao', e.target.value)}
                         required
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -1472,7 +1487,8 @@ export default function CTe() {
                           step="0.01"
                           min="0"
                           placeholder="0,00"
-                          defaultValue={selectedDocumento?.valor_prestacao || formData.valor_prestacao || ''}
+                          value={formData.valor_prestacao || ''}
+                          onChange={(e) => updateFormData('valor_prestacao', e.target.value)}
                           readOnly
                           className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
@@ -1497,7 +1513,8 @@ export default function CTe() {
                           step="0.01"
                           min="0"
                           placeholder="0,00"
-                          defaultValue={selectedDocumento?.valor_receber || formData.valor_receber || ''}
+                          value={formData.valor_receber || ''}
+                          onChange={(e) => updateFormData('valor_receber', e.target.value)}
                           readOnly
                           className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
@@ -1522,7 +1539,8 @@ export default function CTe() {
                           step="0.01"
                           min="0"
                           placeholder="0,00"
-                          defaultValue={selectedDocumento?.valor_tributos || formData.valor_tributos || ''}
+                          value={formData.valor_tributos || ''}
+                          onChange={(e) => updateFormData('valor_tributos', e.target.value)}
                           readOnly
                           className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
@@ -1547,7 +1565,7 @@ export default function CTe() {
                       <select
                         name="icms_situacao_tributaria"
                         id="icms_situacao_tributaria"
-                        defaultValue={selectedDocumento?.icms_situacao_tributaria || formData.icms_situacao_tributaria || ''}
+                        value={formData.icms_situacao_tributaria || ''}
                         required
                         onChange={(e) => {
                           const situacao = e.target.value;
@@ -1579,7 +1597,7 @@ export default function CTe() {
                             step="0.01"
                             min="0"
                             placeholder="0,00"
-                            defaultValue={selectedDocumento?.icms_bc_valor || formData.icms_bc_valor || ''}
+                            value={formData.icms_bc_valor || ''}
                             onBlur={recalcularICMS}
                             onChange={(e) => updateFormData('icms_bc_valor', e.target.value)}
                             className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -1603,7 +1621,7 @@ export default function CTe() {
                             min="0"
                             max="100"
                             placeholder="0,00"
-                            defaultValue={selectedDocumento?.icms_aliquota || formData.icms_aliquota || ''}
+                            value={formData.icms_aliquota || ''}
                             onBlur={recalcularICMS}
                             onChange={(e) => updateFormData('icms_aliquota', e.target.value)}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -1632,7 +1650,8 @@ export default function CTe() {
                             step="0.01"
                             min="0"
                             placeholder="0,00"
-                            defaultValue={selectedDocumento?.icms_valor || formData.icms_valor || ''}
+                            value={formData.icms_valor || ''}
+                            onChange={(e) => updateFormData('icms_valor', e.target.value)}
                             readOnly
                             className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
