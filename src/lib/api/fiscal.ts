@@ -696,9 +696,16 @@ export async function createCTeDocumento(
         placa_veiculo,
         placa_reboque,
         associacao_frota_id,
+        xml_proc_path,
+        xml_path,
+        pdf_path,
+        xml_gerado,
+        pdf_gerado,
+        xml_gerado_em,
+        pdf_gerado_em,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, NOW(), NOW())
       RETURNING *
     `,
       [
@@ -746,6 +753,13 @@ export async function createCTeDocumento(
         documento.placa_veiculo,
         documento.placa_reboque,
         documento.associacao_frota_id,
+        null, // xml_proc_path - será gerado pelo trigger
+        null, // xml_path - será gerado pelo trigger
+        null, // pdf_path - será gerado pelo trigger
+        false, // xml_gerado
+        false, // pdf_gerado
+        null, // xml_gerado_em
+        null, // pdf_gerado_em
       ],
     );
 
