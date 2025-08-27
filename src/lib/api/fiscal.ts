@@ -633,21 +633,21 @@ export async function createCTeDocumento(
       throw new Error("Chave de Acesso 4 deve conter 44 dígitos.");
     }
 
-    // Combinar chaves de acesso se existirem (tratar null/undefined como string vazia)
-    const chave1 = (documento.chave_acesso_1 && documento.chave_acesso_1 !== null && documento.chave_acesso_1 !== undefined) ? documento.chave_acesso_1.trim() : "";
-    const chave2 = (documento.chave_acesso_2 && documento.chave_acesso_2 !== null && documento.chave_acesso_2 !== undefined) ? documento.chave_acesso_2.trim() : "";
-    const chave3 = (documento.chave_acesso_3 && documento.chave_acesso_3 !== null && documento.chave_acesso_3 !== undefined) ? documento.chave_acesso_3.trim() : "";
-    const chave4 = (documento.chave_acesso_4 && documento.chave_acesso_4 !== null && documento.chave_acesso_4 !== undefined) ? documento.chave_acesso_4.trim() : "";
-
-    const chaveAcessoCompleta = chave1 + chave2 + chave3 + chave4;
-
-    // Se alguma chave foi preenchida, validar o dígito verificador
-    if (chaveAcessoCompleta && chaveAcessoCompleta.length > 0) {
-      if (chaveAcessoCompleta.length !== 44) {
-        throw new Error("A combinação das chaves de acesso deve ter 44 dígitos.");
+    // ATENÇÃO: chave_acesso_1, 2, 3, 4 são chaves das NF-es referenciadas (não do CT-e)
+    // A chave_acesso principal será gerada automaticamente pelo sistema para o CT-e
+    
+    // Validar chaves das NF-es referenciadas (se fornecidas)
+    const chavesNFe = [documento.chave_acesso_1, documento.chave_acesso_2, documento.chave_acesso_3, documento.chave_acesso_4]
+      .filter(chave => chave && chave.trim() !== '');
+    
+    // Validar cada chave de NF-e fornecida
+    chavesNFe.forEach((chave, index) => {
+      if (chave && chave.length !== 44) {
+        throw new Error(`Chave de Acesso ${index + 1} (NF-e) deve conter 44 dígitos.`);
       }
-      // Validação do dígito verificador pode ser implementada aqui se necessário
-    }
+    });
+
+    // A chave de acesso do CT-e será gerada automaticamente pelo trigger do banco
 
     const result = await queryOne(
       `
@@ -717,7 +717,7 @@ export async function createCTeDocumento(
         numeroFinal,
         serieFinal,
         documento.data_emissao || new Date().toISOString().split('T')[0],
-        chaveAcessoCompleta.length === 44 ? chaveAcessoCompleta : null,
+        null, // chave_acesso do CT-e será gerada automaticamente
         documento.chave_acesso_1,
         documento.chave_acesso_2,
         documento.chave_acesso_3,
@@ -824,20 +824,19 @@ export async function updateCTeDocumento(
       throw new Error("Chave de Acesso 4 deve conter 44 dígitos.");
     }
 
-    // Combinar chaves de acesso se existirem (tratar null/undefined/string vazia como string vazia)
-    const chave1 = (documento.chave_acesso_1 && documento.chave_acesso_1 !== null && documento.chave_acesso_1 !== undefined) ? documento.chave_acesso_1.trim() : "";
-    const chave2 = (documento.chave_acesso_2 && documento.chave_acesso_2 !== null && documento.chave_acesso_2 !== undefined) ? documento.chave_acesso_2.trim() : "";
-    const chave3 = (documento.chave_acesso_3 && documento.chave_acesso_3 !== null && documento.chave_acesso_3 !== undefined) ? documento.chave_acesso_3.trim() : "";
-    const chave4 = (documento.chave_acesso_4 && documento.chave_acesso_4 !== null && documento.chave_acesso_4 !== undefined) ? documento.chave_acesso_4.trim() : "";
-
-    const chaveAcessoCompleta = chave1 + chave2 + chave3 + chave4;
-
-    // Se alguma chave foi preenchida, validar o dígito verificador
-    if (chaveAcessoCompleta && chaveAcessoCompleta.length > 0) {
-      if (chaveAcessoCompleta.length !== 44) {
-        throw new Error("A combinação das chaves de acesso deve ter 44 dígitos.");
-      }
-      // Validação do dígito verificador pode ser implementada aqui se necessário
+    // ATENÇÃO: chave_acesso_1, 2, 3, 4 são chaves das NF-es referenciadas (não do CT-e)
+    // Validar apenas as chaves das NF-es individualmente se fornecidas
+    if (documento.chave_acesso_1 && documento.chave_acesso_1.trim() !== '' && documento.chave_acesso_1.length !== 44) {
+      throw new Error("Chave de Acesso 1 (NF-e) deve conter 44 dígitos.");
+    }
+    if (documento.chave_acesso_2 && documento.chave_acesso_2.trim() !== '' && documento.chave_acesso_2.length !== 44) {
+      throw new Error("Chave de Acesso 2 (NF-e) deve conter 44 dígitos.");
+    }
+    if (documento.chave_acesso_3 && documento.chave_acesso_3.trim() !== '' && documento.chave_acesso_3.length !== 44) {
+      throw new Error("Chave de Acesso 3 (NF-e) deve conter 44 dígitos.");
+    }
+    if (documento.chave_acesso_4 && documento.chave_acesso_4.trim() !== '' && documento.chave_acesso_4.length !== 44) {
+      throw new Error("Chave de Acesso 4 (NF-e) deve conter 44 dígitos.");
     }
 
     // Construir query dinamicamente
@@ -935,13 +934,8 @@ export async function updateCTeDocumento(
       paramIndex++;
     }
 
-    if (chaveAcessoCompleta.length > 0) {
-      updates.push(`chave_acesso = $${paramIndex}`);
-      values.push(chaveAcessoCompleta);
-      paramIndex++;
-    } else if (chaveAcessoCompleta.length === 0) {
-      updates.push(`chave_acesso = NULL`);
-    }
+    // A chave de acesso do CT-e não deve ser alterada manualmente
+    // Ela é gerada automaticamente pelo sistema
 
     if (documento.tomador_id !== undefined) {
       updates.push(`tomador_id = $${paramIndex}`);

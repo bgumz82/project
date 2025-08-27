@@ -314,27 +314,31 @@ CREATE OR REPLACE FUNCTION generate_cte_document_paths()
 RETURNS TRIGGER AS $$
 DECLARE
   empresa_path text;
-  base_filename text;
+  chave_cte text;
 BEGIN
   -- Buscar path base da empresa
   SELECT COALESCE(path_arquivos, '/uploads/fiscal/' || id::text) INTO empresa_path
   FROM empresas_fiscais
   WHERE id = NEW.empresa_id;
   
-  -- Gerar nome base do arquivo
-  base_filename := 'CTe_' || LPAD(NEW.numero_cte, 9, '0') || '_serie_' || NEW.serie;
+  -- Usar chave de acesso do CT-e se disponível, senão usar número e série
+  IF NEW.chave_acesso IS NOT NULL AND LENGTH(NEW.chave_acesso) = 44 THEN
+    chave_cte := NEW.chave_acesso;
+  ELSE
+    chave_cte := 'CTe_' || LPAD(NEW.numero_cte, 9, '0') || '_serie_' || NEW.serie;
+  END IF;
   
-  -- Gerar paths se não existirem
+  -- Gerar paths se não existirem usando novo formato
   IF NEW.xml_path IS NULL THEN
-    NEW.xml_path := empresa_path || '/cte/' || base_filename || '.xml';
+    NEW.xml_path := empresa_path || '/cte/' || chave_cte || '-cte.xml';
   END IF;
   
   IF NEW.pdf_path IS NULL THEN
-    NEW.pdf_path := empresa_path || '/cte/' || base_filename || '.pdf';
+    NEW.pdf_path := empresa_path || '/cte/' || chave_cte || '-dacte.pdf';
   END IF;
   
   IF NEW.xml_proc_path IS NULL THEN
-    NEW.xml_proc_path := empresa_path || '/cte/' || base_filename || '_proc.xml';
+    NEW.xml_proc_path := empresa_path || '/cte/' || chave_cte || '-procCTe.xml';
   END IF;
   
   RETURN NEW;

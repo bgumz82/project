@@ -91,6 +91,11 @@ export default function CTe() {
   const [selectedTermino, setSelectedTermino] = useState<{codigo: string, nome: string, uf: string} | null>(null)
   const [showInicioResults, setShowInicioResults] = useState(false)
   const [showTerminoResults, setShowTerminoResults] = useState(false)
+  const [cidadeInicioNome, setCidadeInicioNome] = useState('')
+  const [cidadeTerminoNome, setCidadeTerminoNome] = useState('')
+  const [cidadeInicioResults, setCidadeInicioResults] = useState<Cidade[]>([])
+  const [cidadeTerminoResults, setCidadeTerminoResults] = useState<Cidade[]>([])
+
 
   // Estados para validação de chaves de acesso
   const [chaveErrors, setChaveErrors] = useState<{[key: string]: string}>({})
@@ -130,6 +135,12 @@ export default function CTe() {
     chave_acesso_3: string
     chave_acesso_4: string
     observacoes: string
+    cidade_inicio_ibge: string
+    cidade_termino_ibge: string
+    uf_inicio: string
+    uf_termino: string
+    cidade_inicio_nome: string
+    cidade_termino_nome: string
     [key: string]: any
   }>({
     tomador_id: '',
@@ -151,7 +162,13 @@ export default function CTe() {
     chave_acesso_2: '',
     chave_acesso_3: '',
     chave_acesso_4: '',
-    observacoes: ''
+    observacoes: '',
+    cidade_inicio_ibge: '',
+    cidade_termino_ibge: '',
+    uf_inicio: '',
+    uf_termino: '',
+    cidade_inicio_nome: '',
+    cidade_termino_nome: ''
   })
 
   // Função para validar chave de acesso em tempo real
@@ -280,6 +297,10 @@ export default function CTe() {
     setSelectedTermino(null)
     setShowInicioResults(false)
     setShowTerminoResults(false)
+    setCidadeInicioNome('')
+    setCidadeTerminoNome('')
+    setCidadeInicioResults([])
+    setCidadeTerminoResults([])
     setChaveErrors({})
     setFormData({
       tomador_id: '',
@@ -301,7 +322,13 @@ export default function CTe() {
       chave_acesso_2: '',
       chave_acesso_3: '',
       chave_acesso_4: '',
-      observacoes: ''
+      observacoes: '',
+      cidade_inicio_ibge: '',
+      cidade_termino_ibge: '',
+      uf_inicio: '',
+      uf_termino: '',
+      cidade_inicio_nome: '',
+      cidade_termino_nome: ''
     })
   }
 
@@ -359,7 +386,13 @@ export default function CTe() {
         chave_acesso_2: selectedDocumento.chave_acesso_2 || '',
         chave_acesso_3: selectedDocumento.chave_acesso_3 || '',
         chave_acesso_4: selectedDocumento.chave_acesso_4 || '',
-        observacoes: selectedDocumento.observacoes || ''
+        observacoes: selectedDocumento.observacoes || '',
+        cidade_inicio_ibge: selectedDocumento.cidade_inicio_ibge || '',
+        cidade_termino_ibge: selectedDocumento.cidade_termino_ibge || '',
+        uf_inicio: selectedDocumento.uf_inicio || '',
+        uf_termino: selectedDocumento.uf_termino || '',
+        cidade_inicio_nome: selectedDocumento.cidade_inicio_nome || '',
+        cidade_termino_nome: selectedDocumento.cidade_termino_nome || ''
       }))
 
       // Definir o local de início e término se existirem
@@ -370,6 +403,7 @@ export default function CTe() {
           nome: selectedDocumento.cidade_inicio_nome || '',
           uf: selectedDocumento.uf_inicio || ''
         });
+        setCidadeInicioNome(selectedDocumento.cidade_inicio_nome || '');
       }
       if (selectedDocumento.cidade_termino_ibge && estados) {
         const estadoTermino = estados.find(e => e.uf === selectedDocumento.uf_termino);
@@ -378,6 +412,7 @@ export default function CTe() {
           nome: selectedDocumento.cidade_termino_nome || '',
           uf: selectedDocumento.uf_termino || ''
         });
+        setCidadeTerminoNome(selectedDocumento.cidade_termino_nome || '');
       }
 
       // Preencher dados de transporte
@@ -612,34 +647,34 @@ export default function CTe() {
   }
 
   // Buscar cidades para início da prestação
-  const searchInicioCity = async (term: string) => {
+  const handleCidadeInicioSearch = async (term: string) => {
     if (term.length < 2) {
-      setInicioResults([])
+      setCidadeInicioResults([])
       return
     }
 
     try {
       const cities = await getCidadesPorNome(term)
-      setInicioResults(cities)
+      setCidadeInicioResults(cities)
     } catch (error) {
       console.error('Erro ao buscar cidades:', error)
-      setInicioResults([])
+      setCidadeInicioResults([])
     }
   }
 
   // Buscar cidades para término da prestação
-  const searchTerminoCity = async (term: string) => {
+  const handleCidadeTerminoSearch = async (term: string) => {
     if (term.length < 2) {
-      setTerminoResults([])
+      setCidadeTerminoResults([])
       return
     }
 
     try {
       const cities = await getCidadesPorNome(term)
-      setTerminoResults(cities)
+      setCidadeTerminoResults(cities)
     } catch (error) {
       console.error('Erro ao buscar cidades:', error)
-      setTerminoResults([])
+      setCidadeTerminoResults([])
     }
   }
 
@@ -692,18 +727,18 @@ export default function CTe() {
     }
 
     // Validar locais de início e término
-    if (!selectedInicio) {
-      toast.error('Por favor, selecione o local de início da prestação.')
+    if (!selectedInicio && !formData.cidade_inicio_nome) {
+      toast.error('Por favor, informe o local de início da prestação.')
       return
     }
 
-    if (!selectedTermino) {
+    if (!selectedTermino && !formData.cidade_termino_nome) {
       toast.error('Por favor, selecione o local de término da prestação.')
       return
     }
 
     // Buscar dados da associação de frota selecionada
-    const associacaoSelecionada = selectedMotoristaId && associacoesFrota 
+    const associacaoSelecionada = selectedMotoristaId && associacoesFrota
       ? associacoesFrota.find(a => a.id === selectedMotoristaId)
       : null
 
@@ -715,12 +750,12 @@ export default function CTe() {
       numero_cte: formDataElement.get('numero_cte') === 'AUTO' || !formDataElement.get('numero_cte') ? null : formDataElement.get('numero_cte') as string,
       serie: formDataElement.get('serie') as string || null,
       data_emissao: formData.data_emissao,
-      cidade_inicio_ibge: selectedInicio?.codigo || null,
-      cidade_termino_ibge: selectedTermino?.codigo || null,
-      uf_inicio: selectedInicio?.uf || null,
-      uf_termino: selectedTermino?.uf || null,
-      cidade_inicio_nome: selectedInicio?.nome || null,
-      cidade_termino_nome: selectedTermino?.nome || null,
+      cidade_inicio_ibge: selectedInicio?.codigo || formData.cidade_inicio_ibge || null,
+      cidade_termino_ibge: selectedTermino?.codigo || formData.cidade_termino_ibge || null,
+      uf_inicio: selectedInicio?.uf || formData.uf_inicio || null,
+      uf_termino: selectedTermino?.uf || formData.uf_termino || null,
+      cidade_inicio_nome: selectedInicio?.nome || formData.cidade_inicio_nome || null,
+      cidade_termino_nome: selectedTermino?.nome || formData.cidade_termino_nome || null,
       forma_emissao: parseInt(formDataElement.get('forma_emissao') as string) || 1,
       status: formDataElement.get('status') as 'pendente' | 'emitido' | 'cancelado',
       observacoes: formData.observacoes || null,
@@ -772,9 +807,16 @@ export default function CTe() {
   }
 
   const handleEdit = (documento: CTeDocumento) => {
-    setSelectedDocumento(documento)
-    setIsModalOpen(true)
-  }
+    console.log('✅ RNTRC carregado para edição:', documento.rntrc)
+    setSelectedDocumento(documento); // Define o documento selecionado para edição
+
+    // Preenche os campos de busca de cidade para exibição
+    setCidadeInicioNome(documento.cidade_inicio_nome || '');
+    setCidadeTerminoNome(documento.cidade_termino_nome || '');
+
+    setIsModalOpen(true);
+  };
+
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este documento CT-e?')) {
@@ -1222,14 +1264,13 @@ export default function CTe() {
                     <div className="relative">
                       <input
                         type="text"
-                        name="local_inicio"
                         id="local_inicio"
-                        value={selectedInicio ? `${selectedInicio.nome}/${selectedInicio.uf}` : inicioSearchTerm}
+                        value={cidadeInicioNome || inicioSearchTerm}
                         onChange={(e) => {
                           const value = e.target.value
                           setInicioSearchTerm(value)
                           if (selectedInicio) setSelectedInicio(null)
-                          searchInicioCity(value)
+                          handleCidadeInicioSearch(value)
                           setShowInicioResults(true)
                         }}
                         onFocus={() => setShowInicioResults(true)}
@@ -1240,12 +1281,17 @@ export default function CTe() {
                       <input
                         type="hidden"
                         name="cidade_inicio_ibge"
-                        value={selectedInicio?.codigo || ''}
+                        value={selectedInicio?.codigo || formData.cidade_inicio_ibge || ''}
+                      />
+                       <input
+                        type="hidden"
+                        name="uf_inicio"
+                        value={selectedInicio?.uf || formData.uf_inicio || ''}
                       />
 
-                      {showInicioResults && inicioResults.length > 0 && (
+                      {showInicioResults && cidadeInicioResults.length > 0 && (
                         <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto">
-                          {inicioResults.map((cidade) => (
+                          {cidadeInicioResults.map((cidade) => (
                             <div
                               key={cidade.cod_city}
                               onClick={() => {
@@ -1254,6 +1300,12 @@ export default function CTe() {
                                   nome: cidade.name,
                                   uf: cidade.uf || ''
                                 })
+                                setFormData(prev => ({
+                                  ...prev,
+                                  cidade_inicio_ibge: cidade.cod_city,
+                                  cidade_inicio_nome: cidade.name,
+                                  uf_inicio: cidade.uf
+                                }))
                                 setInicioSearchTerm('')
                                 setShowInicioResults(false)
                               }}
@@ -1278,14 +1330,13 @@ export default function CTe() {
                     <div className="relative">
                       <input
                         type="text"
-                        name="local_termino"
                         id="local_termino"
-                        value={selectedTermino ? `${selectedTermino.nome}/${selectedTermino.uf}` : terminoSearchTerm}
+                        value={cidadeTerminoNome || terminoSearchTerm}
                         onChange={(e) => {
                           const value = e.target.value
                           setTerminoSearchTerm(value)
                           if (selectedTermino) setSelectedTermino(null)
-                          searchTerminoCity(value)
+                          handleCidadeTerminoSearch(value)
                           setShowTerminoResults(true)
                         }}
                         onFocus={() => setShowTerminoResults(true)}
@@ -1296,12 +1347,17 @@ export default function CTe() {
                       <input
                         type="hidden"
                         name="cidade_termino_ibge"
-                        value={selectedTermino?.codigo || ''}
+                        value={selectedTermino?.codigo || formData.cidade_termino_ibge || ''}
+                      />
+                       <input
+                        type="hidden"
+                        name="uf_termino"
+                        value={selectedTermino?.uf || formData.uf_termino || ''}
                       />
 
-                      {showTerminoResults && terminoResults.length > 0 && (
+                      {showTerminoResults && cidadeTerminoResults.length > 0 && (
                         <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto">
-                          {terminoResults.map((cidade) => (
+                          {cidadeTerminoResults.map((cidade) => (
                             <div
                               key={cidade.cod_city}
                               onClick={() => {
@@ -1310,6 +1366,12 @@ export default function CTe() {
                                   nome: cidade.name,
                                   uf: cidade.uf || ''
                                 })
+                                setFormData(prev => ({
+                                  ...prev,
+                                  cidade_termino_ibge: cidade.cod_city,
+                                  cidade_termino_nome: cidade.name,
+                                  uf_termino: cidade.uf
+                                }))
                                 setTerminoSearchTerm('')
                                 setShowTerminoResults(false)
                               }}
