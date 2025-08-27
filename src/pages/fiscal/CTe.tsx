@@ -56,10 +56,9 @@ const CFOP_OPTIONS = [
 ]
 
 const FINALIDADE_OPTIONS = [
-  { value: '0', label: '0 - CT-e de Complemento de Valores' },
-  { value: '1', label: '1 - CT-e de Complemento de Valores' },
-  { value: '2', label: '2 - CT-e de Anulação' },
-  { value: '3', label: '3 - CT-e Substituto' }
+  { value: '0', label: '0 - CT-e Normal' },
+  { value: '1', label: '1 - CT-e Complemento de Valores' },
+  { value: '3', label: '3 - CT-e Substituição' }
 ]
 
 const TIPO_SERVICO_OPTIONS = [

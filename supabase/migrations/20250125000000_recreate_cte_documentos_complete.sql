@@ -321,24 +321,22 @@ BEGIN
   FROM empresas_fiscais
   WHERE id = NEW.empresa_id;
   
-  -- Usar chave de acesso do CT-e se disponível, senão usar número e série
+  -- SEMPRE usar a chave de acesso do CT-e (nunca usar número e série)
   IF NEW.chave_acesso IS NOT NULL AND LENGTH(NEW.chave_acesso) = 44 THEN
     chave_cte := NEW.chave_acesso;
-  ELSE
-    chave_cte := 'CTe_' || LPAD(NEW.numero_cte, 9, '0') || '_serie_' || NEW.serie;
-  END IF;
-  
-  -- Gerar paths se não existirem usando novo formato
-  IF NEW.xml_path IS NULL THEN
-    NEW.xml_path := empresa_path || '/cte/' || chave_cte || '-cte.xml';
-  END IF;
-  
-  IF NEW.pdf_path IS NULL THEN
-    NEW.pdf_path := empresa_path || '/cte/' || chave_cte || '-dacte.pdf';
-  END IF;
-  
-  IF NEW.xml_proc_path IS NULL THEN
-    NEW.xml_proc_path := empresa_path || '/cte/' || chave_cte || '-procCTe.xml';
+    
+    -- Gerar paths usando formato correto com chave de acesso do CT-e
+    IF NEW.xml_path IS NULL THEN
+      NEW.xml_path := empresa_path || '/cte/' || chave_cte || '-cte.xml';
+    END IF;
+    
+    IF NEW.pdf_path IS NULL THEN
+      NEW.pdf_path := empresa_path || '/cte/' || chave_cte || '-dacte.pdf';
+    END IF;
+    
+    IF NEW.xml_proc_path IS NULL THEN
+      NEW.xml_proc_path := empresa_path || '/cte/' || chave_cte || '-procCTe.xml';
+    END IF;
   END IF;
   
   RETURN NEW;
