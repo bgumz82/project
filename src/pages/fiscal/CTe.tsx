@@ -645,9 +645,9 @@ export default function CTe() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const formData = new FormData(e.currentTarget)
+    const formDataElement = new FormData(e.currentTarget)
 
-    const empresaIdValue = formData.get('empresa_id') as string || selectedEmpresaId
+    const empresaIdValue = formDataElement.get('empresa_id') as string || selectedEmpresaId
 
     // Validação adicional do empresa_id
     if (!empresaIdValue || empresaIdValue.trim() === '') {
@@ -698,8 +698,8 @@ export default function CTe() {
 
     const documentoData: CTeDocumentoCreate = {
       empresa_id: empresaIdValue,
-      numero_cte: formData.get('numero_cte') === 'AUTO' || !formData.get('numero_cte') ? null : formData.get('numero_cte') as string,
-      serie: formData.get('serie') as string || null,
+      numero_cte: formDataElement.get('numero_cte') === 'AUTO' || !formDataElement.get('numero_cte') ? null : formDataElement.get('numero_cte') as string,
+      serie: formDataElement.get('serie') as string || null,
       data_emissao: formData.data_emissao,
       cidade_inicio_ibge: selectedInicio?.codigo || null,
       cidade_termino_ibge: selectedTermino?.codigo || null,
@@ -707,8 +707,8 @@ export default function CTe() {
       uf_termino: selectedTermino?.uf || null,
       cidade_inicio_nome: selectedInicio?.nome || null,
       cidade_termino_nome: selectedTermino?.nome || null,
-      forma_emissao: parseInt(formData.get('forma_emissao') as string) || 1,
-      status: formData.get('status') as 'pendente' | 'emitido' | 'cancelado',
+      forma_emissao: parseInt(formDataElement.get('forma_emissao') as string) || 1,
+      status: formDataElement.get('status') as 'pendente' | 'emitido' | 'cancelado',
       observacoes: formData.observacoes || null,
       tomador_id: formData.tomador_id || null,
       remetente_id: formData.remetente_id || null,
@@ -731,10 +731,10 @@ export default function CTe() {
       chave_acesso_3: formData.chave_acesso_3 || null,
       chave_acesso_4: formData.chave_acesso_4 || null,
       // Campos de transporte
-      associacao_frota_id: formData.get('associacao_frota_id') as string || null,
-      cfop: formData.get('cfop') as string || null,
-      finalidade_cte: formData.get('finalidade_cte') as string || null,
-      tipo_servico: formData.get('tipo_servico') as string || null
+      associacao_frota_id: formDataElement.get('associacao_frota_id') as string || null,
+      cfop: formDataElement.get('cfop') as string || null,
+      finalidade_cte: formDataElement.get('finalidade_cte') as string || null,
+      tipo_servico: formDataElement.get('tipo_servico') as string || null
     }
 
     // Verifica se há erros de validação de chave de acesso antes de submeter
