@@ -1306,6 +1306,7 @@ export default function CTe() {
                                   cidade_inicio_nome: cidade.name,
                                   uf_inicio: cidade.uf
                                 }))
+                                setCidadeInicioNome(cidade.name)
                                 setInicioSearchTerm('')
                                 setShowInicioResults(false)
                               }}
@@ -1372,6 +1373,7 @@ export default function CTe() {
                                   cidade_termino_nome: cidade.name,
                                   uf_termino: cidade.uf
                                 }))
+                                setCidadeTerminoNome(cidade.name)
                                 setTerminoSearchTerm('')
                                 setShowTerminoResults(false)
                               }}
