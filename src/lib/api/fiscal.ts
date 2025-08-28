@@ -832,21 +832,6 @@ export async function updateCTeDocumento(
     }
 
     // Validação das chaves de acesso (44 dígitos completos incluindo DV)
-    if (documento.chave_acesso_1 !== undefined && documento.chave_acesso_1 !== null && documento.chave_acesso_1.trim() !== '' && documento.chave_acesso_1.length !== 44) {
-      throw new Error("Chave de Acesso 1 deve conter 44 dígitos.");
-    }
-    if (documento.chave_acesso_2 !== undefined && documento.chave_acesso_2 !== null && documento.chave_acesso_2.trim() !== '' && documento.chave_acesso_2.length !== 44) {
-      throw new Error("Chave de Acesso 2 deve conter 44 dígitos.");
-    }
-    if (documento.chave_acesso_3 !== undefined && documento.chave_acesso_3 !== null && documento.chave_acesso_3.trim() !== '' && documento.chave_acesso_3.length !== 44) {
-      throw new Error("Chave de Acesso 3 deve conter 44 dígitos.");
-    }
-    if (documento.chave_acesso_4 !== undefined && documento.chave_acesso_4 !== null && documento.chave_acesso_4.trim() !== '' && documento.chave_acesso_4.length !== 44) {
-      throw new Error("Chave de Acesso 4 deve conter 44 dígitos.");
-    }
-
-    // ATENÇÃO: chave_acesso_1, 2, 3, 4 são chaves das NF-es referenciadas (não do CT-e)
-    // Validar apenas as chaves das NF-es individualmente se fornecidas
     if (documento.chave_acesso_1 && documento.chave_acesso_1.trim() !== '' && documento.chave_acesso_1.length !== 44) {
       throw new Error("Chave de Acesso 1 (NF-e) deve conter 44 dígitos.");
     }
@@ -860,50 +845,40 @@ export async function updateCTeDocumento(
       throw new Error("Chave de Acesso 4 (NF-e) deve conter 44 dígitos.");
     }
 
-    // Construir query dinamicamente
+    // Construir query dinamicamente apenas com campos que têm valores válidos
     const updates: string[] = [];
     const values: any[] = [];
     let paramIndex = 1;
 
-    if (documento.empresa_id !== undefined) {
+    // Campos obrigatórios - sempre incluir se fornecidos
+    if (documento.empresa_id) {
       updates.push(`empresa_id = $${paramIndex}`);
       values.push(documento.empresa_id);
       paramIndex++;
     }
 
-    if (documento.numero_cte !== undefined) {
-      updates.push(`numero_cte = $${paramIndex}`);
-      values.push(documento.numero_cte);
-      paramIndex++;
-    }
-
-    if (documento.serie !== undefined) {
-      updates.push(`serie = $${paramIndex}`);
-      values.push(documento.serie);
-      paramIndex++;
-    }
-
-    if (documento.data_emissao !== undefined) {
+    if (documento.data_emissao) {
       updates.push(`data_emissao = $${paramIndex}`);
       values.push(documento.data_emissao);
       paramIndex++;
     }
 
-    if (documento.codigo_uf !== undefined) {
-      updates.push(`codigo_uf = $${paramIndex}`);
-      values.push(documento.codigo_uf);
+    // Campos opcionais - só incluir se não forem null/undefined/empty
+    if (documento.numero_cte) {
+      updates.push(`numero_cte = $${paramIndex}`);
+      values.push(documento.numero_cte);
       paramIndex++;
     }
 
-    if (documento.forma_emissao !== undefined) {
+    if (documento.serie) {
+      updates.push(`serie = $${paramIndex}`);
+      values.push(documento.serie);
+      paramIndex++;
+    }
+
+    if (documento.forma_emissao !== undefined && documento.forma_emissao !== null) {
       updates.push(`forma_emissao = $${paramIndex}`);
       values.push(documento.forma_emissao);
-      paramIndex++;
-    }
-
-    if (documento.status !== undefined) {
-      updates.push(`status = $${paramIndex}`);
-      values.push(documento.status);
       paramIndex++;
     }
 
@@ -913,214 +888,198 @@ export async function updateCTeDocumento(
       paramIndex++;
     }
 
-    if (documento.valor_carga !== undefined) {
+    if (documento.valor_carga !== undefined && documento.valor_carga !== null) {
       updates.push(`valor_carga = $${paramIndex}`);
       values.push(documento.valor_carga);
       paramIndex++;
     }
 
-    if (documento.quantidade_carga !== undefined) {
+    if (documento.quantidade_carga !== undefined && documento.quantidade_carga !== null) {
       updates.push(`quantidade_carga = $${paramIndex}`);
       values.push(documento.quantidade_carga);
       paramIndex++;
     }
 
-    if (documento.produto_predominante_id !== undefined) {
+    if (documento.produto_predominante_id) {
       updates.push(`produto_predominante_id = $${paramIndex}`);
       values.push(documento.produto_predominante_id);
       paramIndex++;
     }
 
-    if (documento.chave_acesso_1 !== undefined) {
+    if (documento.chave_acesso_1) {
       updates.push(`chave_acesso_1 = $${paramIndex}`);
       values.push(documento.chave_acesso_1);
       paramIndex++;
     }
 
-    if (documento.chave_acesso_2 !== undefined) {
+    if (documento.chave_acesso_2) {
       updates.push(`chave_acesso_2 = $${paramIndex}`);
       values.push(documento.chave_acesso_2);
       paramIndex++;
     }
 
-    if (documento.chave_acesso_3 !== undefined) {
+    if (documento.chave_acesso_3) {
       updates.push(`chave_acesso_3 = $${paramIndex}`);
       values.push(documento.chave_acesso_3);
       paramIndex++;
     }
 
-    if (documento.chave_acesso_4 !== undefined) {
+    if (documento.chave_acesso_4) {
       updates.push(`chave_acesso_4 = $${paramIndex}`);
       values.push(documento.chave_acesso_4);
       paramIndex++;
     }
 
-    // A chave de acesso do CT-e não deve ser alterada manualmente
-    // Ela é gerada automaticamente pelo sistema
-
-    if (documento.tomador_id !== undefined) {
+    // Participantes
+    if (documento.tomador_id) {
       updates.push(`tomador_id = $${paramIndex}`);
       values.push(documento.tomador_id);
       paramIndex++;
     }
 
-    if (documento.remetente_id !== undefined) {
+    if (documento.remetente_id) {
       updates.push(`remetente_id = $${paramIndex}`);
       values.push(documento.remetente_id);
       paramIndex++;
     }
 
-    if (documento.recebedor_id !== undefined) {
+    if (documento.recebedor_id) {
       updates.push(`recebedor_id = $${paramIndex}`);
       values.push(documento.recebedor_id);
       paramIndex++;
     }
 
-    if (documento.destinatario_id !== undefined) {
+    if (documento.destinatario_id) {
       updates.push(`destinatario_id = $${paramIndex}`);
       values.push(documento.destinatario_id);
       paramIndex++;
     }
 
-    if (documento.valor_prestacao !== undefined) {
+    // Valores financeiros
+    if (documento.valor_prestacao !== undefined && documento.valor_prestacao !== null) {
       updates.push(`valor_prestacao = $${paramIndex}`);
       values.push(documento.valor_prestacao);
       paramIndex++;
     }
 
-    if (documento.valor_receber !== undefined) {
+    if (documento.valor_receber !== undefined && documento.valor_receber !== null) {
       updates.push(`valor_receber = $${paramIndex}`);
       values.push(documento.valor_receber);
       paramIndex++;
     }
 
-    if (documento.valor_tributos !== undefined) {
+    if (documento.valor_tributos !== undefined && documento.valor_tributos !== null) {
       updates.push(`valor_tributos = $${paramIndex}`);
       values.push(documento.valor_tributos);
       paramIndex++;
     }
 
-    if (documento.icms_situacao_tributaria !== undefined) {
+    // ICMS
+    if (documento.icms_situacao_tributaria) {
       updates.push(`icms_situacao_tributaria = $${paramIndex}`);
       values.push(documento.icms_situacao_tributaria);
       paramIndex++;
     }
 
-    if (documento.icms_bc_valor !== undefined) {
+    if (documento.icms_bc_valor !== undefined && documento.icms_bc_valor !== null) {
       updates.push(`icms_bc_valor = $${paramIndex}`);
       values.push(documento.icms_bc_valor);
       paramIndex++;
     }
 
-    if (documento.icms_aliquota !== undefined) {
+    if (documento.icms_aliquota !== undefined && documento.icms_aliquota !== null) {
       updates.push(`icms_aliquota = $${paramIndex}`);
       values.push(documento.icms_aliquota);
       paramIndex++;
     }
 
-    if (documento.icms_valor !== undefined) {
+    if (documento.icms_valor !== undefined && documento.icms_valor !== null) {
       updates.push(`icms_valor = $${paramIndex}`);
       values.push(documento.icms_valor);
       paramIndex++;
     }
 
-    if (documento.tipo_servico !== undefined) {
-      updates.push(`tipo_servico = $${paramIndex}`);
-      values.push(documento.tipo_servico);
-      paramIndex++;
-    }
-
-    if (documento.finalidade_cte !== undefined) {
-      updates.push(`finalidade_cte = $${paramIndex}`);
-      values.push(documento.finalidade_cte);
-      paramIndex++;
-    }
-
-    if (documento.cfop !== undefined) {
-      updates.push(`cfop = $${paramIndex}`);
-      values.push(documento.cfop);
-      paramIndex++;
-    }
-
-    if (documento.cidade_inicio_ibge !== undefined) {
+    // Localização
+    if (documento.cidade_inicio_ibge) {
       updates.push(`cidade_inicio_ibge = $${paramIndex}`);
       values.push(documento.cidade_inicio_ibge);
       paramIndex++;
     }
 
-    if (documento.cidade_termino_ibge !== undefined) {
+    if (documento.cidade_termino_ibge) {
       updates.push(`cidade_termino_ibge = $${paramIndex}`);
       values.push(documento.cidade_termino_ibge);
       paramIndex++;
     }
 
-    if (documento.uf_inicio !== undefined) {
+    if (documento.uf_inicio) {
       updates.push(`uf_inicio = $${paramIndex}`);
       values.push(documento.uf_inicio);
       paramIndex++;
     }
 
-    if (documento.uf_termino !== undefined) {
+    if (documento.uf_termino) {
       updates.push(`uf_termino = $${paramIndex}`);
       values.push(documento.uf_termino);
       paramIndex++;
     }
 
-    if (documento.cidade_inicio_nome !== undefined) {
+    if (documento.cidade_inicio_nome) {
       updates.push(`cidade_inicio_nome = $${paramIndex}`);
       values.push(documento.cidade_inicio_nome);
       paramIndex++;
     }
 
-    if (documento.cidade_termino_nome !== undefined) {
+    if (documento.cidade_termino_nome) {
       updates.push(`cidade_termino_nome = $${paramIndex}`);
       values.push(documento.cidade_termino_nome);
       paramIndex++;
     }
 
-    if (documento.rntrc !== undefined) {
+    // Transporte
+    if (documento.rntrc) {
       updates.push(`rntrc = $${paramIndex}`);
       values.push(documento.rntrc);
       paramIndex++;
     }
 
-    if (documento.motorista_nome !== undefined) {
+    if (documento.motorista_nome) {
       updates.push(`motorista_nome = $${paramIndex}`);
       values.push(documento.motorista_nome);
       paramIndex++;
     }
 
-    if (documento.motorista_cnh !== undefined) {
+    if (documento.motorista_cnh) {
       updates.push(`motorista_cnh = $${paramIndex}`);
       values.push(documento.motorista_cnh);
       paramIndex++;
     }
 
-    if (documento.motorista_matricula !== undefined) {
+    if (documento.motorista_matricula) {
       updates.push(`motorista_matricula = $${paramIndex}`);
       values.push(documento.motorista_matricula);
       paramIndex++;
     }
 
-    if (documento.motorista_validade_cnh !== undefined) {
+    if (documento.motorista_validade_cnh) {
       updates.push(`motorista_validade_cnh = $${paramIndex}`);
       values.push(documento.motorista_validade_cnh);
       paramIndex++;
     }
 
-    if (documento.placa_veiculo !== undefined) {
+    if (documento.placa_veiculo) {
       updates.push(`placa_veiculo = $${paramIndex}`);
       values.push(documento.placa_veiculo);
       paramIndex++;
     }
 
-    if (documento.placa_reboque !== undefined) {
+    if (documento.placa_reboque) {
       updates.push(`placa_reboque = $${paramIndex}`);
       values.push(documento.placa_reboque);
       paramIndex++;
     }
 
-    if (documento.associacao_frota_id !== undefined) {
+    if (documento.associacao_frota_id) {
       updates.push(`associacao_frota_id = $${paramIndex}`);
       values.push(documento.associacao_frota_id);
       paramIndex++;
@@ -1136,6 +1095,9 @@ export async function updateCTeDocumento(
 
     // Adicionar ID como último parâmetro
     values.push(id);
+
+    console.log("🔍 Query de UPDATE:", updates);
+    console.log("📋 Valores para UPDATE:", values);
 
     const result = await queryOne(
       `
