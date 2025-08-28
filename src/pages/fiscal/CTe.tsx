@@ -446,10 +446,22 @@ export default function CTe() {
     // Valor Total da Prestação = Valor total já calculado com ICMS
     const valorTotalPrestacao = valorTotalComICMS
 
-    // Atualizar campos
-    valorPrestacaoInput.value = valorTotalPrestacao.toFixed(2)
-    valorTributosInput.value = valorICMS.toFixed(2)
-    valorReceberInput.value = valorTotalPrestacao.toFixed(2) // Valor a receber = valor total
+    // Atualizar campos e estado
+    const valorPrestacaoFormatado = valorTotalPrestacao.toFixed(2)
+    const valorTributosFormatado = valorICMS.toFixed(2)
+    const valorReceberFormatado = valorTotalPrestacao.toFixed(2)
+
+    valorPrestacaoInput.value = valorPrestacaoFormatado
+    valorTributosInput.value = valorTributosFormatado
+    valorReceberInput.value = valorReceberFormatado
+
+    // Sincronizar com o estado formData
+    setFormData(prev => ({
+      ...prev,
+      valor_prestacao: valorPrestacaoFormatado,
+      valor_tributos: valorTributosFormatado,
+      valor_receber: valorReceberFormatado
+    }))
   }
 
   // Função para atualizar dados baseado na empresa selecionada
@@ -633,12 +645,24 @@ export default function CTe() {
       const valorICMS = valorTotalComICMS - valorBase
 
       // Atualizar o valor do ICMS
-      icmsValorInput.value = valorICMS.toFixed(2)
+      const valorICMSFormatado = valorICMS.toFixed(2)
+      const valorTotalFormatado = valorTotalComICMS.toFixed(2)
 
-      // Atualizar a base de cálculo para o valor total com ICMS
-      icmsBcInput.value = valorTotalComICMS.toFixed(2)
+      icmsValorInput.value = valorICMSFormatado
+      icmsBcInput.value = valorTotalFormatado
+
+      // Sincronizar com o estado formData
+      setFormData(prev => ({
+        ...prev,
+        icms_valor: valorICMSFormatado,
+        icms_bc_valor: valorTotalFormatado
+      }))
     } else {
       icmsValorInput.value = '0.00'
+      setFormData(prev => ({
+        ...prev,
+        icms_valor: '0.00'
+      }))
     }
 
     // Recalcular valores totais após atualizar o ICMS
@@ -763,13 +787,13 @@ export default function CTe() {
       recebedor_id: formData.recebedor_id || null,
       destinatario_id: formData.destinatario_id || null,
       // Campos de serviços e impostos
-      valor_prestacao: parseFloat(formData.valor_prestacao) || null,
-      valor_receber: parseFloat(formData.valor_receber) || null,
-      valor_tributos: parseFloat(formData.valor_tributos) || null,
+      valor_prestacao: formData.valor_prestacao ? parseFloat(formData.valor_prestacao) : null,
+      valor_receber: formData.valor_receber ? parseFloat(formData.valor_receber) : null,
+      valor_tributos: formData.valor_tributos ? parseFloat(formData.valor_tributos) : null,
       icms_situacao_tributaria: formData.icms_situacao_tributaria || null,
-      icms_bc_valor: parseFloat(formData.icms_bc_valor) || null,
-      icms_aliquota: parseFloat(formData.icms_aliquota) || null,
-      icms_valor: parseFloat(formData.icms_valor) || null,
+      icms_bc_valor: formData.icms_bc_valor ? parseFloat(formData.icms_bc_valor) : null,
+      icms_aliquota: formData.icms_aliquota ? parseFloat(formData.icms_aliquota) : null,
+      icms_valor: formData.icms_valor ? parseFloat(formData.icms_valor) : null,
       // Campos de dados fiscais
       valor_carga: parseFloat(formData.valor_carga) || null,
       quantidade_carga: parseFloat(formData.quantidade_carga) || null,
