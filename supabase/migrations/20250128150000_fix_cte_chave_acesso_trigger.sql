@@ -35,7 +35,7 @@ BEGIN
     TO_CHAR(NEW.data_emissao, 'YYMM') ||                    -- AAMM (4 dígitos)
     empresa_cnpj ||                                         -- CNPJ (14 dígitos)
     '57' ||                                                 -- Modelo CT-e (2 dígitos)
-    LPAD(NEW.serie, 3, '0') ||                             -- Série (3 dígitos)
+    LPAD(NEW.serie, 1, '0') ||                             -- Série (1 dígito)
     LPAD(NEW.numero_cte, 9, '0') ||                        -- Número (9 dígitos)
     NEW.forma_emissao::text ||                             -- Forma emissão (1 dígito)
     NEW.codigo_numerico;                                   -- Código numérico (8 dígitos)

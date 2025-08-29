@@ -1,4 +1,3 @@
-
 import { CTeDocumento } from './fiscal'
 
 // Função para remover acentuação
@@ -46,10 +45,10 @@ export async function generateCTeXML(
   recebedor: ClienteInfo | null,
   produto: ProdutoInfo
 ): Promise<string> {
-  
+
   const dataEmissao = new Date(documento.data_emissao)
   const dataEmissaoFormatada = dataEmissao.toISOString().slice(0, 19) + '-03:00'
-  
+
   // Determinar quem é o tomador
   let tomadorFinal = tomador
   if (documento.tomador_id === 'remetente') {
@@ -227,9 +226,9 @@ function parseEndereco(enderecoCompleto: string | undefined | null, cidade?: str
       cep: (cep || '00000000').replace(/\D/g, '')
     }
   }
-  
+
   const partes = enderecoCompleto.split(',').map(parte => parte.trim())
-  
+
   return {
     logradouro: partes[0] || 'NAO INFORMADO',
     numero: partes[1] || 'SN',
@@ -245,7 +244,7 @@ async function getCityCode(cityName: string, uf: string): Promise<string> {
   try {
     // Importar a função query
     const { query } = await import('@/lib/db')
-    
+
     const result = await query(`
       SELECT cod_city 
       FROM cities 
@@ -253,11 +252,11 @@ async function getCityCode(cityName: string, uf: string): Promise<string> {
       AND UPPER(uf) = UPPER($2)
       LIMIT 1
     `, [cityName, uf])
-    
+
     if (result && result.length > 0) {
       return result[0].cod_city
     }
-    
+
     // Fallback: retornar código genérico baseado na UF
     const ufMap: { [key: string]: string } = {
       "AC": "1200000", "AL": "2700000", "AP": "1600000", "AM": "1300000", 
@@ -268,7 +267,7 @@ async function getCityCode(cityName: string, uf: string): Promise<string> {
       "RS": "4300000", "RO": "1100000", "RR": "1400000", "SC": "4200000",
       "SP": "3500000", "SE": "2800000", "TO": "1700000"
     }
-    
+
     return ufMap[uf.toUpperCase()] || '3550308' // Default para São Paulo
   } catch (error) {
     console.error('Erro ao buscar código da cidade:', error)
@@ -281,18 +280,18 @@ async function getUFFromCityCode(cityCode: string): Promise<string> {
   try {
     // Importar a função query
     const { query } = await import('@/lib/db')
-    
+
     const result = await query(`
       SELECT uf 
       FROM cities 
       WHERE cod_city = $1
       LIMIT 1
     `, [cityCode])
-    
+
     if (result && result.length > 0) {
       return result[0].uf.toUpperCase()
     }
-    
+
     // Fallback: usar função existente com base nos primeiros 2 dígitos
     return getUFFromCode(cityCode?.substring(0, 2) || '35')
   } catch (error) {
