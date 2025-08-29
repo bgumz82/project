@@ -82,6 +82,80 @@ app.post('/api/auth/signup', async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+
+
+// Endpoint para upload de arquivos XML
+app.post('/api/upload-xml', async (req, res) => {
+  try {
+    const { content, path, filename } = req.body;
+    
+    if (!content || !path || !filename) {
+      return res.status(400).json({ error: 'Dados incompletos' });
+    }
+    
+    console.log("📁 Recebendo arquivo XML para salvar:", path);
+    
+    // Criar diretório se não existir
+    const fs = require('fs').promises;
+    const pathLib = require('path');
+    
+    const fullPath = pathLib.join(__dirname, path);
+    const directory = pathLib.dirname(fullPath);
+    
+    // Criar diretórios recursivamente
+    await fs.mkdir(directory, { recursive: true });
+    
+    // Salvar arquivo
+    await fs.writeFile(fullPath, content, 'utf8');
+    
+    console.log("✅ Arquivo XML salvo com sucesso:", fullPath);
+    
+    res.json({ 
+      success: true, 
+      path: path,
+      size: content.length 
+    });
+    
+  } catch (error) {
+    console.error("❌ Erro ao salvar arquivo XML:", error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: error.message 
+    });
+
+
+// Servir arquivos XML estáticos
+app.get('/uploads/*', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  
+  const filePath = path.join(__dirname, req.path);
+  
+  // Verificar se o arquivo existe
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Arquivo não encontrado' });
+  }
+  
+  // Definir tipo de conteúdo baseado na extensão
+  const ext = path.extname(filePath).toLowerCase();
+  let contentType = 'application/octet-stream';
+  
+  if (ext === '.xml') {
+    contentType = 'application/xml';
+  } else if (ext === '.pdf') {
+    contentType = 'application/pdf';
+  }
+  
+  res.setHeader('Content-Type', contentType);
+  res.setHeader('Content-Disposition', `inline; filename="${path.basename(filePath)}"`);
+  
+  // Enviar arquivo
+  res.sendFile(filePath);
+});
+
+  }
+});
+
     // Create user
     const result = await pool.query(
       `INSERT INTO auth.users (email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_user_meta_data)

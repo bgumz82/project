@@ -1050,6 +1050,25 @@ export default function CTe() {
                               {format(parseISO(documento.xml_gerado_em), 'dd/MM HH:mm')}
                             </div>
                           )}
+                          {documento.xml_gerado && documento.xml_path && (
+                            <div className="flex space-x-1 mt-1">
+                              <a
+                                href={`/${documento.xml_path}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:text-blue-800 underline"
+                              >
+                                Ver XML
+                              </a>
+                              <a
+                                href={`/${documento.xml_path}`}
+                                download={`${documento.numero_cte}-cte.xml`}
+                                className="text-xs text-green-600 hover:text-green-800 underline"
+                              >
+                                Baixar
+                              </a>
+                            </div>
+                          )}
                         </td>
                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                           {documento.pdf_gerado && documento.pdf_path && (

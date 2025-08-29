@@ -1742,29 +1742,40 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
       xmlProcPath
     });
 
-    // Salvar o arquivo usando uma abordagem compatível com o ambiente Replit
+    // Salvar o arquivo usando fetch para o servidor
     try {
-      console.log("💾 Tentando salvar arquivo XML...");
+      console.log("💾 Tentando salvar arquivo XML fisicamente...");
       
-      // Construir caminhos sem usar process.cwd()
-      const fullDirPath = `./${basePath}/cte`;
-      const fullXmlPath = `./${basePath}/cte/${documento.chave_acesso}-cte.xml`;
+      const fileName = `${documento.chave_acesso}-cte.xml`;
+      const fullXmlPath = `${basePath}/cte/${fileName}`;
       
-      console.log("📁 Diretório destino:", fullDirPath);
-      console.log("💾 Caminho do arquivo:", fullXmlPath);
-      
-      // Tentar usar fetch para salvar o arquivo (método compatível com Replit)
-      const formData = new FormData();
-      const xmlBlob = new Blob([xmlContent], { type: 'application/xml' });
-      formData.append('file', xmlBlob, `${documento.chave_acesso}-cte.xml`);
-      
-      // Como alternativa, pelo menos registrar que o XML foi gerado
-      console.log("✅ XML gerado com sucesso!");
+      console.log("📁 Salvando arquivo em:", fullXmlPath);
       console.log("📄 Tamanho do conteúdo XML:", xmlContent.length, "caracteres");
+      
+      // Fazer upload do arquivo para o servidor
+      const response = await fetch('/api/upload-xml', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: xmlContent,
+          path: fullXmlPath,
+          filename: fileName
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("✅ Arquivo XML salvo fisicamente:", result.path);
+      } else {
+        console.log("⚠️ Erro no upload, mas XML foi gerado:", await response.text());
+      }
+      
       console.log("📄 Preview do XML:", xmlContent.substring(0, 300) + "...");
       
     } catch (writeError) {
-      console.error("❌ Erro ao processar arquivo XML:", writeError);
+      console.error("❌ Erro ao salvar arquivo XML:", writeError);
       console.log("📄 Conteúdo XML gerado:", xmlContent.substring(0, 200) + "...");
       
       // Mesmo com erro de salvamento, continue o processo
