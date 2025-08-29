@@ -95,9 +95,9 @@ ${documento.observacoes ? `<compl>
 <IE>${empresa.ie || 'ISENTO'}</IE>
 <xNome>${empresa.razao_social || 'NAO INFORMADO'}</xNome>
 <enderEmit>
-<xLgr>${parseEndereco(empresa.endereco_completo).logradouro}</xLgr>
+<xLgr>${removeAccents(parseEndereco(empresa.endereco_completo).logradouro)}</xLgr>
 <nro>${parseEndereco(empresa.endereco_completo).numero}</nro>
-<xBairro>${parseEndereco(empresa.endereco_completo).bairro}</xBairro>
+<xBairro>${removeAccents(parseEndereco(empresa.endereco_completo).bairro)}</xBairro>
 <cMun>${empresa.codigo_uf}99999</cMun>
 <xMun>NAO INFORMADO</xMun>
 <CEP>00000000</CEP>
@@ -110,13 +110,13 @@ ${documento.observacoes ? `<compl>
 ${remetente.ie ? `<IE>${remetente.ie}</IE>` : '<IE>ISENTO</IE>'}
 <xNome>${remetente.razao_social || 'NAO INFORMADO'}</xNome>
 <enderReme>
-<xLgr>${parseEndereco(remetente.endereco_completo || remetente.endereco).logradouro}</xLgr>
+<xLgr>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco).logradouro)}</xLgr>
 <nro>${parseEndereco(remetente.endereco_completo || remetente.endereco).numero}</nro>
-<xBairro>${parseEndereco(remetente.endereco_completo || remetente.endereco).bairro}</xBairro>
+<xBairro>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco).bairro)}</xBairro>
 <cMun>${remetente.codigo_ibge || '9999999'}</cMun>
-<xMun>${remetente.cidade || 'NAO INFORMADO'}</xMun>
+<xMun>${removeAccents(remetente.cidade || 'NAO INFORMADO')}</xMun>
 <CEP>${(remetente.cep || '00000000').replace(/\D/g, '')}</CEP>
-<UF>${remetente.estado || 'SP'}</UF>
+<UF>${remetente.estado?.toUpperCase() || 'SP'}</UF>
 <cPais>1058</cPais>
 <xPais>BRASIL</xPais>
 </enderReme>
@@ -126,13 +126,13 @@ ${remetente.ie ? `<IE>${remetente.ie}</IE>` : '<IE>ISENTO</IE>'}
 ${destinatario.ie ? `<IE>${destinatario.ie}</IE>` : '<IE>ISENTO</IE>'}
 <xNome>${destinatario.razao_social || 'NAO INFORMADO'}</xNome>
 <enderDest>
-<xLgr>${parseEndereco(destinatario.endereco_completo || destinatario.endereco).logradouro}</xLgr>
+<xLgr>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco).logradouro)}</xLgr>
 <nro>${parseEndereco(destinatario.endereco_completo || destinatario.endereco).numero}</nro>
-<xBairro>${parseEndereco(destinatario.endereco_completo || destinatario.endereco).bairro}</xBairro>
+<xBairro>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco).bairro)}</xBairro>
 <cMun>${destinatario.codigo_ibge || '9999999'}</cMun>
-<xMun>${destinatario.cidade || 'NAO INFORMADO'}</xMun>
+<xMun>${removeAccents(destinatario.cidade || 'NAO INFORMADO')}</xMun>
 <CEP>${(destinatario.cep || '00000000').replace(/\D/g, '')}</CEP>
-<UF>${destinatario.estado || 'SP'}</UF>
+<UF>${destinatario.estado?.toUpperCase() || 'SP'}</UF>
 <cPais>1058</cPais>
 <xPais>BRASIL</xPais>
 </enderDest>
