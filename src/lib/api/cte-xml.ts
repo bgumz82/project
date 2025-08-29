@@ -138,24 +138,24 @@ ${destinatario.ie ? `<IE>${destinatario.ie}</IE>` : '<IE>ISENTO</IE>'}
 </enderDest>
 </dest>
 <vPrest>
-<vTPrest>${documento.valor_prestacao?.toFixed(2) || '0.00'}</vTPrest>
-<vRec>${documento.valor_receber?.toFixed(2) || '0.00'}</vRec>
+<vTPrest>${(parseFloat(documento.valor_prestacao as any) || 0).toFixed(2)}</vTPrest>
+<vRec>${(parseFloat(documento.valor_receber as any) || 0).toFixed(2)}</vRec>
 <Comp>
 <xNome>FRETE</xNome>
-<vComp>${((documento.valor_prestacao || 0) - (documento.icms_valor || 0)).toFixed(2)}</vComp>
+<vComp>${((parseFloat(documento.valor_prestacao as any) || 0) - (parseFloat(documento.icms_valor as any) || 0)).toFixed(2)}</vComp>
 </Comp>
-${documento.icms_valor && documento.icms_valor > 0 ? `<Comp>
+${documento.icms_valor && parseFloat(documento.icms_valor as any) > 0 ? `<Comp>
 <xNome>ICMS</xNome>
-<vComp>${documento.icms_valor.toFixed(2)}</vComp>
+<vComp>${(parseFloat(documento.icms_valor as any) || 0).toFixed(2)}</vComp>
 </Comp>` : ''}
 </vPrest>
 <imp>
 <ICMS>
 ${documento.icms_situacao_tributaria === '00' ? `<ICMS00>
 <CST>00</CST>
-<vBC>${documento.icms_bc_valor?.toFixed(2) || '0.00'}</vBC>
-<pICMS>${documento.icms_aliquota?.toFixed(2) || '0.00'}</pICMS>
-<vICMS>${documento.icms_valor?.toFixed(2) || '0.00'}</vICMS>
+<vBC>${(parseFloat(documento.icms_bc_valor as any) || 0).toFixed(2)}</vBC>
+<pICMS>${(parseFloat(documento.icms_aliquota as any) || 0).toFixed(2)}</pICMS>
+<vICMS>${(parseFloat(documento.icms_valor as any) || 0).toFixed(2)}</vICMS>
 </ICMS00>` : documento.icms_situacao_tributaria === '40' ? `<ICMS45>
 <CST>40</CST>
 </ICMS45>` : `<ICMSSN>
@@ -163,20 +163,20 @@ ${documento.icms_situacao_tributaria === '00' ? `<ICMS00>
 <indSN>1</indSN>
 </ICMSSN>`}
 </ICMS>
-<vTotTrib>${documento.valor_tributos?.toFixed(2) || '0.00'}</vTotTrib>
-${documento.valor_tributos && documento.valor_tributos > 0 ? `<infAdFisco>O valor aproximado de tributos incidentes sobre o preco deste servico e de R$: ${documento.valor_tributos.toFixed(2).replace('.', ',')}</infAdFisco>` : ''}
+<vTotTrib>${(parseFloat(documento.valor_tributos as any) || 0).toFixed(2)}</vTotTrib>
+${documento.valor_tributos && parseFloat(documento.valor_tributos as any) > 0 ? `<infAdFisco>O valor aproximado de tributos incidentes sobre o preco deste servico e de R$: ${(parseFloat(documento.valor_tributos as any) || 0).toFixed(2).replace('.', ',')}</infAdFisco>` : ''}
 </imp>
 <infCTeNorm>
 <infCarga>
-<vCarga>${documento.valor_carga?.toFixed(2) || '0.00'}</vCarga>
+<vCarga>${(parseFloat(documento.valor_carga as any) || 0).toFixed(2)}</vCarga>
 <proPred>${produto.descricao}</proPred>
 <xOutCat>LIQUIDO</xOutCat>
 <infQ>
 <cUnid>04</cUnid>
 <tpMed>LT</tpMed>
-<qCarga>${documento.quantidade_carga?.toFixed(4) || '0.0000'}</qCarga>
+<qCarga>${(parseFloat(documento.quantidade_carga as any) || 0).toFixed(4)}</qCarga>
 </infQ>
-<vCargaAverb>${documento.valor_carga?.toFixed(2) || '0.00'}</vCargaAverb>
+<vCargaAverb>${(parseFloat(documento.valor_carga as any) || 0).toFixed(2)}</vCargaAverb>
 </infCarga>
 <infDoc>
 ${documento.chave_acesso_1 ? `<infNFe>
