@@ -25,6 +25,9 @@ interface EmpresaInfo {
   cnpj: string
   ie: string
   endereco_completo: string
+  cidade?: string
+  estado?: string
+  cep?: string
   codigo_uf: string
   rntrc: string
 }
@@ -100,13 +103,13 @@ ${documento.observacoes ? `<compl>
 <IE>${empresa.ie || 'ISENTO'}</IE>
 <xNome>${empresa.razao_social || 'NAO INFORMADO'}</xNome>
 <enderEmit>
-<xLgr>${removeAccents(parseEndereco(empresa.endereco_completo).logradouro).toUpperCase()}</xLgr>
-<nro>${parseEndereco(empresa.endereco_completo).numero}</nro>
-<xBairro>${removeAccents(parseEndereco(empresa.endereco_completo).bairro).toUpperCase()}</xBairro>
-<cMun>${await getCityCode(parseEndereco(empresa.endereco_completo).cidade, parseEndereco(empresa.endereco_completo).uf)}</cMun>
-<xMun>${removeAccents(parseEndereco(empresa.endereco_completo).cidade).toUpperCase()}</xMun>
-<CEP>${parseEndereco(empresa.endereco_completo).cep}</CEP>
-<UF>${parseEndereco(empresa.endereco_completo).uf.toUpperCase()}</UF>
+<xLgr>${removeAccents(parseEndereco(empresa.endereco_completo, empresa.cidade, empresa.estado, empresa.cep).logradouro).toUpperCase()}</xLgr>
+<nro>${parseEndereco(empresa.endereco_completo, empresa.cidade, empresa.estado, empresa.cep).numero}</nro>
+<xBairro>${removeAccents(parseEndereco(empresa.endereco_completo, empresa.cidade, empresa.estado, empresa.cep).bairro).toUpperCase()}</xBairro>
+<cMun>${await getCityCode(parseEndereco(empresa.endereco_completo, empresa.cidade, empresa.estado, empresa.cep).cidade, parseEndereco(empresa.endereco_completo, empresa.cidade, empresa.estado, empresa.cep).uf)}</cMun>
+<xMun>${removeAccents(parseEndereco(empresa.endereco_completo, empresa.cidade, empresa.estado, empresa.cep).cidade).toUpperCase()}</xMun>
+<CEP>${parseEndereco(empresa.endereco_completo, empresa.cidade, empresa.estado, empresa.cep).cep}</CEP>
+<UF>${parseEndereco(empresa.endereco_completo, empresa.cidade, empresa.estado, empresa.cep).uf.toUpperCase()}</UF>
 </enderEmit>
 <CRT>3</CRT>
 </emit>
@@ -115,13 +118,13 @@ ${documento.observacoes ? `<compl>
 ${remetente.ie ? `<IE>${remetente.ie}</IE>` : '<IE>ISENTO</IE>'}
 <xNome>${remetente.razao_social || 'NAO INFORMADO'}</xNome>
 <enderReme>
-<xLgr>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco).logradouro).toUpperCase()}</xLgr>
-<nro>${parseEndereco(remetente.endereco_completo || remetente.endereco).numero}</nro>
-<xBairro>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco).bairro).toUpperCase()}</xBairro>
-<cMun>${remetente.codigo_ibge || await getCityCode(parseEndereco(remetente.endereco_completo || remetente.endereco).cidade, parseEndereco(remetente.endereco_completo || remetente.endereco).uf)}</cMun>
-<xMun>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco).cidade).toUpperCase()}</xMun>
-<CEP>${parseEndereco(remetente.endereco_completo || remetente.endereco).cep}</CEP>
-<UF>${parseEndereco(remetente.endereco_completo || remetente.endereco).uf.toUpperCase()}</UF>
+<xLgr>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).logradouro).toUpperCase()}</xLgr>
+<nro>${parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).numero}</nro>
+<xBairro>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).bairro).toUpperCase()}</xBairro>
+<cMun>${remetente.codigo_ibge || await getCityCode(remetente.cidade || 'NAO INFORMADO', remetente.estado || 'SP')}</cMun>
+<xMun>${removeAccents(remetente.cidade || 'NAO INFORMADO').toUpperCase()}</xMun>
+<CEP>${(remetente.cep || '00000000').replace(/\D/g, '')}</CEP>
+<UF>${(remetente.estado || 'SP').toUpperCase()}</UF>
 <cPais>1058</cPais>
 <xPais>BRASIL</xPais>
 </enderReme>
@@ -131,13 +134,13 @@ ${remetente.ie ? `<IE>${remetente.ie}</IE>` : '<IE>ISENTO</IE>'}
 ${destinatario.ie ? `<IE>${destinatario.ie}</IE>` : '<IE>ISENTO</IE>'}
 <xNome>${destinatario.razao_social || 'NAO INFORMADO'}</xNome>
 <enderDest>
-<xLgr>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco).logradouro).toUpperCase()}</xLgr>
-<nro>${parseEndereco(destinatario.endereco_completo || destinatario.endereco).numero}</nro>
-<xBairro>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco).bairro).toUpperCase()}</xBairro>
-<cMun>${destinatario.codigo_ibge || await getCityCode(parseEndereco(destinatario.endereco_completo || destinatario.endereco).cidade, parseEndereco(destinatario.endereco_completo || destinatario.endereco).uf)}</cMun>
-<xMun>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco).cidade).toUpperCase()}</xMun>
-<CEP>${parseEndereco(destinatario.endereco_completo || destinatario.endereco).cep}</CEP>
-<UF>${parseEndereco(destinatario.endereco_completo || destinatario.endereco).uf.toUpperCase()}</UF>
+<xLgr>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).logradouro).toUpperCase()}</xLgr>
+<nro>${parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).numero}</nro>
+<xBairro>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).bairro).toUpperCase()}</xBairro>
+<cMun>${destinatario.codigo_ibge || await getCityCode(destinatario.cidade || 'NAO INFORMADO', destinatario.estado || 'SP')}</cMun>
+<xMun>${removeAccents(destinatario.cidade || 'NAO INFORMADO').toUpperCase()}</xMun>
+<CEP>${(destinatario.cep || '00000000').replace(/\D/g, '')}</CEP>
+<UF>${(destinatario.estado || 'SP').toUpperCase()}</UF>
 <cPais>1058</cPais>
 <xPais>BRASIL</xPais>
 </enderDest>
@@ -212,16 +215,16 @@ ${documento.chave_acesso_4 ? `<infNFe>
   return xml
 }
 
-function parseEndereco(enderecoCompleto: string | undefined | null) {
-  // Parse do endereço no formato: "Rua Exemplo, 123, Centro, São Paulo, SP, 01234-567"
+function parseEndereco(enderecoCompleto: string | undefined | null, cidade?: string, estado?: string, cep?: string) {
+  // Parse do endereço no formato: "Rua Exemplo, 123, Centro" (somente logradouro, número e bairro)
   if (!enderecoCompleto) {
     return {
       logradouro: 'NAO INFORMADO',
       numero: 'SN',
       bairro: 'NAO INFORMADO',
-      cidade: 'NAO INFORMADO',
-      uf: 'SP',
-      cep: '00000000'
+      cidade: cidade || 'NAO INFORMADO',
+      uf: estado || 'SP',
+      cep: (cep || '00000000').replace(/\D/g, '')
     }
   }
   
@@ -231,9 +234,9 @@ function parseEndereco(enderecoCompleto: string | undefined | null) {
     logradouro: partes[0] || 'NAO INFORMADO',
     numero: partes[1] || 'SN',
     bairro: partes[2] || 'NAO INFORMADO',
-    cidade: partes[3] || 'NAO INFORMADO',
-    uf: partes[4] || 'SP',
-    cep: (partes[5] || '00000000').replace(/\D/g, '')
+    cidade: cidade || 'NAO INFORMADO',
+    uf: estado || 'SP',
+    cep: (cep || '00000000').replace(/\D/g, '')
   }
 }
 
