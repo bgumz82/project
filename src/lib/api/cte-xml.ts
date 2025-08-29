@@ -215,7 +215,6 @@ ${documento.chave_acesso_4 ? `<infNFe>
 }
 
 function parseEndereco(enderecoCompleto: string | undefined | null, cidade?: string, estado?: string, cep?: string) {
-  // Parse do endereço no formato: "Rua Exemplo, 123, Centro" (somente logradouro, número e bairro)
   if (!enderecoCompleto) {
     return {
       logradouro: 'NAO INFORMADO',
@@ -229,6 +228,31 @@ function parseEndereco(enderecoCompleto: string | undefined | null, cidade?: str
 
   const partes = enderecoCompleto.split(',').map(parte => parte.trim())
 
+  // Se tem 6 partes, é endereço completo: "Rua Exemplo, 123, Centro, Iraí de Minas, MG, 01234-567"
+  if (partes.length >= 6) {
+    return {
+      logradouro: partes[0] || 'NAO INFORMADO',
+      numero: partes[1] || 'SN',
+      bairro: partes[2] || 'NAO INFORMADO',
+      cidade: partes[3] || 'NAO INFORMADO',
+      uf: partes[4] || 'SP',
+      cep: (partes[5] || '00000000').replace(/\D/g, '')
+    }
+  }
+  
+  // Se tem 5 partes, pode ser: "Rua Exemplo, 123, Centro, Cidade, UF" (sem CEP)
+  if (partes.length === 5) {
+    return {
+      logradouro: partes[0] || 'NAO INFORMADO',
+      numero: partes[1] || 'SN',
+      bairro: partes[2] || 'NAO INFORMADO',
+      cidade: partes[3] || cidade || 'NAO INFORMADO',
+      uf: partes[4] || estado || 'SP',
+      cep: (cep || '00000000').replace(/\D/g, '')
+    }
+  }
+
+  // Se tem 3 partes ou menos, é endereço básico: "Rua Exemplo, 123, Centro"
   return {
     logradouro: partes[0] || 'NAO INFORMADO',
     numero: partes[1] || 'SN',
