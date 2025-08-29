@@ -1,4 +1,3 @@
-
 require('dotenv').config();
 
 const express = require('express');
@@ -64,34 +63,34 @@ app.get('/api/health', (req, res) => {
 app.post('/api/upload-xml', async (req, res) => {
   try {
     const { content, path, filename } = req.body;
-    
+
     if (!content || !path || !filename) {
       return res.status(400).json({ error: 'Dados incompletos' });
     }
-    
+
     console.log("📁 Recebendo arquivo XML para salvar:", path);
-    
+
     // Criar diretório se não existir
     const fs = require('fs').promises;
     const pathLib = require('path');
-    
+
     const fullPath = pathLib.join(__dirname, path);
     const directory = pathLib.dirname(fullPath);
-    
+
     // Criar diretórios recursivamente
     await fs.mkdir(directory, { recursive: true });
-    
+
     // Salvar arquivo
     await fs.writeFile(fullPath, content, 'utf8');
-    
+
     console.log("✅ Arquivo XML salvo com sucesso:", fullPath);
-    
+
     res.json({ 
       success: true, 
       path: path,
       size: content.length 
     });
-    
+
   } catch (error) {
     console.error("❌ Erro ao salvar arquivo XML:", error);
     res.status(500).json({ 
@@ -105,27 +104,27 @@ app.post('/api/upload-xml', async (req, res) => {
 app.get('/uploads/*', (req, res) => {
   const fs = require('fs');
   const path = require('path');
-  
+
   const filePath = path.join(__dirname, req.path);
-  
+
   // Verificar se o arquivo existe
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: 'Arquivo não encontrado' });
   }
-  
+
   // Definir tipo de conteúdo baseado na extensão
   const ext = path.extname(filePath).toLowerCase();
   let contentType = 'application/octet-stream';
-  
+
   if (ext === '.xml') {
     contentType = 'application/xml';
   } else if (ext === '.pdf') {
     contentType = 'application/pdf';
   }
-  
+
   res.setHeader('Content-Type', contentType);
   res.setHeader('Content-Disposition', `inline; filename="${path.basename(filePath)}"`);
-  
+
   // Enviar arquivo
   res.sendFile(filePath);
 });
@@ -211,10 +210,33 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const user = result.rows[0];
-    const userData = JSON.parse(user.raw_user_meta_data || '{}');
 
-    // Verify password
+    // Garantir que os dados do usuário sejam processados corretamente
+    let userData = {};
+    try {
+      if (user.raw_user_meta_data) {
+        userData = typeof user.raw_user_meta_data === 'string' 
+          ? JSON.parse(user.raw_user_meta_data)
+          : user.raw_user_meta_data;
+      }
+    } catch (parseError) {
+      console.error('Erro ao fazer parse dos metadados do usuário:', parseError);
+      userData = {};
+    }
+
+    // Verificar se temos uma senha válida para comparar
+    if (!user.encrypted_password || typeof user.encrypted_password !== 'string') {
+      return res.status(401).json({ error: 'Senha inválida no sistema' });
+    }
+
+    // Verificar se a senha fornecida é uma string válida
+    if (!password || typeof password !== 'string') {
+      return res.status(400).json({ error: 'Senha é obrigatória' });
+    }
+
+    // Verify password - ambos os parâmetros agora são garantidamente strings
     const isValidPassword = await bcrypt.compare(password, user.encrypted_password);
+
 
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Credenciais inválidas' });
@@ -281,7 +303,7 @@ const createCrudRoutes = (tableName, entityName) => {
     try {
       // Query específica para postos para garantir todos os campos
       let query = `SELECT * FROM ${tableName} ORDER BY created_at DESC`;
-      
+
       if (tableName === 'postos') {
         query = `
           SELECT 
@@ -300,15 +322,15 @@ const createCrudRoutes = (tableName, entityName) => {
           ORDER BY nome
         `;
       }
-      
+
       console.log(`Executando query para ${tableName}:`, query);
       const result = await pool.query(query);
       console.log(`Resultado para ${tableName}:`, result.rows.length, 'registros');
-      
+
       if (tableName === 'postos' && result.rows.length > 0) {
         console.log('Primeiro posto do backend:', result.rows[0]);
       }
-      
+
       res.json(result.rows);
     } catch (error) {
       console.error(`Get ${entityName} error:`, error);
@@ -321,11 +343,11 @@ const createCrudRoutes = (tableName, entityName) => {
     try {
       const { id } = req.params;
       const result = await pool.query(`SELECT * FROM ${tableName} WHERE id = $1`, [id]);
-      
+
       if (result.rows.length === 0) {
         return res.status(404).json({ error: `${entityName} não encontrado` });
       }
-      
+
       res.json(result.rows[0]);
     } catch (error) {
       console.error(`Get ${entityName} by ID error:`, error);
@@ -362,9 +384,9 @@ const createCrudRoutes = (tableName, entityName) => {
       const data = req.body;
       const columns = Object.keys(data);
       const values = Object.values(data);
-      
+
       const setClause = columns.map((col, index) => `${col} = $${index + 2}`).join(', ');
-      
+
       const query = `
         UPDATE ${tableName}
         SET ${setClause}, updated_at = NOW()
@@ -373,11 +395,11 @@ const createCrudRoutes = (tableName, entityName) => {
       `;
 
       const result = await pool.query(query, [id, ...values]);
-      
+
       if (result.rows.length === 0) {
         return res.status(404).json({ error: `${entityName} não encontrado` });
       }
-      
+
       res.json(result.rows[0]);
     } catch (error) {
       console.error(`Update ${entityName} error:`, error);
@@ -390,11 +412,11 @@ const createCrudRoutes = (tableName, entityName) => {
     try {
       const { id } = req.params;
       const result = await pool.query(`DELETE FROM ${tableName} WHERE id = $1 RETURNING *`, [id]);
-      
+
       if (result.rows.length === 0) {
         return res.status(404).json({ error: `${entityName} não encontrado` });
       }
-      
+
       res.json({ message: `${entityName} deletado com sucesso` });
     } catch (error) {
       console.error(`Delete ${entityName} error:`, error);
