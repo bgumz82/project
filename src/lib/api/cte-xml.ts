@@ -245,7 +245,10 @@ async function getCityCode(cityName: string, uf: string): Promise<string> {
     // Importar a função query
     const { query } = await import('@/lib/db')
 
-    const result = await query(`
+    console.log('🔍 Buscando código IBGE para cidade:', cityName, 'UF:', uf)
+
+    // Tentar buscar diretamente na tabela cities
+    let result = await query(`
       SELECT cod_city 
       FROM cities 
       WHERE UPPER(UNACCENT(name)) = UPPER(UNACCENT($1)) 
@@ -254,9 +257,40 @@ async function getCityCode(cityName: string, uf: string): Promise<string> {
     `, [cityName, uf])
 
     if (result && result.length > 0) {
+      console.log('✅ Código IBGE encontrado diretamente:', result[0].cod_city)
       return result[0].cod_city
     }
 
+    // Tentar busca com LIKE para cidades com nomes similares
+    result = await query(`
+      SELECT cod_city 
+      FROM cities 
+      WHERE UPPER(UNACCENT(name)) LIKE UPPER(UNACCENT($1)) 
+      AND UPPER(uf) = UPPER($2)
+      LIMIT 1
+    `, [`%${cityName}%`, uf])
+
+    if (result && result.length > 0) {
+      console.log('✅ Código IBGE encontrado com LIKE:', result[0].cod_city)
+      return result[0].cod_city
+    }
+
+    // Tentar busca com JOIN na tabela states (caso estrutura seja diferente)
+    result = await query(`
+      SELECT c.cod_city
+      FROM cities c
+      JOIN states s ON c.state_id = s.id
+      WHERE UPPER(UNACCENT(c.name)) = UPPER(UNACCENT($1)) 
+      AND UPPER(s.name) = UPPER($2)
+      LIMIT 1
+    `, [cityName, uf])
+
+    if (result && result.length > 0) {
+      console.log('✅ Código IBGE encontrado via JOIN:', result[0].cod_city)
+      return result[0].cod_city
+    }
+
+    console.log('⚠️ Cidade não encontrada, usando fallback para UF:', uf)
     // Fallback: retornar código genérico baseado na UF
     const ufMap: { [key: string]: string } = {
       "AC": "1200000", "AL": "2700000", "AP": "1600000", "AM": "1300000", 
@@ -268,9 +302,11 @@ async function getCityCode(cityName: string, uf: string): Promise<string> {
       "SP": "3500000", "SE": "2800000", "TO": "1700000"
     }
 
-    return ufMap[uf.toUpperCase()] || '3550308' // Default para São Paulo
+    const fallbackCode = ufMap[uf.toUpperCase()] || '3550308'
+    console.log('📍 Código fallback para', uf, ':', fallbackCode)
+    return fallbackCode
   } catch (error) {
-    console.error('Erro ao buscar código da cidade:', error)
+    console.error('❌ Erro ao buscar código da cidade:', error)
     return '3550308' // Default para São Paulo
   }
 }
@@ -281,21 +317,42 @@ async function getUFFromCityCode(cityCode: string): Promise<string> {
     // Importar a função query
     const { query } = await import('@/lib/db')
 
+    console.log('🔍 Buscando UF para código da cidade:', cityCode)
+
+    // Tentar buscar diretamente na tabela cities
     const result = await query(`
-      SELECT uf 
-      FROM cities 
-      WHERE cod_city = $1
+      SELECT c.uf
+      FROM cities c 
+      WHERE c.cod_city = $1
       LIMIT 1
     `, [cityCode])
 
-    if (result && result.length > 0) {
+    if (result && result.length > 0 && result[0].uf) {
+      console.log('✅ UF encontrada na tabela cities:', result[0].uf)
       return result[0].uf.toUpperCase()
     }
 
+    // Tentar buscar com JOIN na tabela states (caso a estrutura seja diferente)
+    const resultWithJoin = await query(`
+      SELECT s.name as uf
+      FROM cities c
+      JOIN states s ON c.state_id = s.id
+      WHERE c.cod_city = $1
+      LIMIT 1
+    `, [cityCode])
+
+    if (resultWithJoin && resultWithJoin.length > 0 && resultWithJoin[0].uf) {
+      console.log('✅ UF encontrada via JOIN com states:', resultWithJoin[0].uf)
+      return resultWithJoin[0].uf.toUpperCase()
+    }
+
+    console.log('⚠️ UF não encontrada na tabela, usando fallback para código:', cityCode)
     // Fallback: usar função existente com base nos primeiros 2 dígitos
-    return getUFFromCode(cityCode?.substring(0, 2) || '35')
+    const ufFromCode = getUFFromCode(cityCode?.substring(0, 2) || '35')
+    console.log('📍 UF do fallback:', ufFromCode)
+    return ufFromCode
   } catch (error) {
-    console.error('Erro ao buscar UF da cidade:', error)
+    console.error('❌ Erro ao buscar UF da cidade:', error)
     return 'SP' // Default para São Paulo
   }
 }
@@ -308,5 +365,8 @@ function getUFFromCode(codigo: string): string {
     "33": "RJ", "24": "RN", "43": "RS", "11": "RO", "14": "RR", "42": "SC",
     "35": "SP", "28": "SE", "17": "TO"
   }
-  return ufMap[codigo] || "SP"
+  
+  const uf = ufMap[codigo] || "SP"
+  console.log('🗺️ Mapeamento código para UF - Código:', codigo, '→ UF:', uf)
+  return uf
 }
