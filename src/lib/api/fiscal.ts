@@ -321,7 +321,7 @@ export async function createEmpresaFiscal(
         empresa.proximo_numero_mdfe || 1,
         empresa.serie_padrao_cte || "001",
         empresa.serie_padrao_mdfe || "001",
-        empresa.path_arquivos,
+        empresa.path_arquivos ? (empresa.path_arquivos.startsWith('./') ? empresa.path_arquivos.substring(2) : empresa.path_arquivos.startsWith('/') ? empresa.path_arquivos.substring(1) : empresa.path_arquivos) : empresa.path_arquivos,
       ],
     );
 
@@ -364,6 +364,23 @@ export async function updateEmpresaFiscal(
       if (existingEmpresa) {
         throw new Error("CNPJ já cadastrado em outra empresa");
       }
+    }
+
+    // Normalizar path_arquivos se fornecido
+    if (empresa.path_arquivos !== undefined && empresa.path_arquivos) {
+      let pathNormalizado = empresa.path_arquivos;
+      
+      // Remover "./" do início se existir
+      if (pathNormalizado.startsWith('./')) {
+        pathNormalizado = pathNormalizado.substring(2);
+      }
+      
+      // Garantir que não comece com "/"
+      if (pathNormalizado.startsWith('/')) {
+        pathNormalizado = pathNormalizado.substring(1);
+      }
+      
+      empresa.path_arquivos = pathNormalizado;
     }
 
     // Construir query dinamicamente
@@ -438,8 +455,23 @@ export async function updateEmpresaFiscal(
     }
 
     if (empresa.path_arquivos !== undefined) {
+      let pathFinal = empresa.path_arquivos;
+      
+      // Normalizar path se não for null
+      if (pathFinal) {
+        // Remover "./" do início se existir
+        if (pathFinal.startsWith('./')) {
+          pathFinal = pathFinal.substring(2);
+        }
+        
+        // Garantir que não comece com "/"
+        if (pathFinal.startsWith('/')) {
+          pathFinal = pathFinal.substring(1);
+        }
+      }
+      
       updates.push(`path_arquivos = $${paramIndex}`);
-      values.push(empresa.path_arquivos);
+      values.push(pathFinal);
       paramIndex++;
     }
 
@@ -1686,13 +1718,25 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
       produto
     );
 
-    // Preparar paths dos arquivos
-    const basePath = documento.empresa_path || `uploads/fiscal/${documento.empresa_cnpj}`;
+    // Normalizar basePath - sempre usar padrão sem "./" no início
+    let basePath = documento.empresa_path || `uploads/fiscal/${documento.empresa_cnpj}`;
+    
+    // Remover "./" do início se existir
+    if (basePath.startsWith('./')) {
+      basePath = basePath.substring(2);
+    }
+    
+    // Garantir que não comece com "/"
+    if (basePath.startsWith('/')) {
+      basePath = basePath.substring(1);
+    }
+
     const xmlPath = `${basePath}/cte/${documento.chave_acesso}-cte.xml`;
     const pdfPath = `${basePath}/cte/${documento.chave_acesso}-dacte.pdf`;
     const xmlProcPath = `${basePath}/cte/${documento.chave_acesso}-procCTe.xml`;
 
     console.log("📁 Paths gerados:", {
+      basePath,
       xmlPath,
       pdfPath,
       xmlProcPath
@@ -1704,24 +1748,30 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
       const fs = await import('fs');
       const path = await import('path');
       
-      // Construir caminho completo
+      // Construir caminho completo para o diretório
       const fullDirPath = path.join(process.cwd(), basePath, 'cte');
-      const fullXmlPath = path.join(process.cwd(), xmlPath);
+      const fullXmlPath = path.join(process.cwd(), basePath, 'cte', `${documento.chave_acesso}-cte.xml`);
       
       console.log("📁 Criando diretório:", fullDirPath);
+      console.log("💾 Caminho completo do arquivo:", fullXmlPath);
       
       // Criar diretórios recursivamente se não existirem
       await fs.promises.mkdir(fullDirPath, { recursive: true });
       
-      console.log("💾 Salvando arquivo XML em:", fullXmlPath);
+      console.log("💾 Salvando arquivo XML...");
       
       // Salvar arquivo XML
       await fs.promises.writeFile(fullXmlPath, xmlContent, 'utf8');
       
-      console.log("✅ Arquivo XML salvo com sucesso!");
+      console.log("✅ Arquivo XML salvo com sucesso em:", fullXmlPath);
       
     } catch (writeError) {
       console.error("❌ Erro ao salvar arquivo XML:", writeError);
+      console.log("🔍 Detalhes do erro:", {
+        message: writeError.message,
+        code: writeError.code,
+        path: writeError.path
+      });
       console.log("📄 Conteúdo XML gerado:", xmlContent.substring(0, 200) + "...");
       
       // Mesmo com erro de salvamento, continue o processo
