@@ -66,7 +66,7 @@ export async function generateCTeXML(
 <CFOP>${documento.cfop || '6352'}</CFOP>
 <natOp>PRESTACAO DE SERVICO DE TRANSPORTE</natOp>
 <mod>57</mod>
-<serie>${documento.serie}</serie>
+<serie>${parseInt(documento.serie || '1')}</serie>
 <nCT>${documento.numero_cte}</nCT>
 <dhEmi>${dataEmissaoFormatada}</dhEmi>
 <tpImp>1</tpImp>
