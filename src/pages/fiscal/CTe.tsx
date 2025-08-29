@@ -17,14 +17,12 @@ import {
   createCTeDocumento,
   updateCTeDocumento,
   deleteCTeDocumento,
+  generateCTeFiles,
   getEmpresasFiscais,
-  updateDocumentFiles,
-  formatCNPJ,
-  formatChaveAcesso,
-  getUFFromCode,
-  getCidadesPorNome,
   getClientesAtivos,
   getProdutosCTe,
+  getAssociacoesFrotaAtivas,
+  getCidadesPorNome,
   validarChaveAcesso,
   type CTeDocumento,
   type CTeDocumentoCreate,
@@ -170,6 +168,10 @@ export default function CTe() {
     cidade_termino_nome: ''
   })
 
+  // Estado para controlar a geração de arquivos
+  const [isGeneratingFiles, setIsGeneratingFiles] = useState(false)
+
+
   // Função para validar chave de acesso em tempo real
   const validateChaveAcesso = (value: string, fieldName: string) => {
     const chaveNumerica = value.replace(/\D/g, '')
@@ -190,7 +192,7 @@ export default function CTe() {
 
   const queryClient = useQueryClient()
 
-  const { data: documentos, isLoading } = useQuery({
+  const { data: documentos, isLoading, refetch } = useQuery({
     queryKey: ['cte-documentos'],
     queryFn: getCTeDocumentos,
     retry: 3,
@@ -727,7 +729,7 @@ export default function CTe() {
 
     // Validar remetente
     if (!formData.remetente_id || formData.remetente_id.trim() === '') {
-      toast.error('Por favor, selecione o remetente.')
+      toast.toast.error('Por favor, selecione o remetente.')
       return
     }
 
@@ -842,8 +844,33 @@ export default function CTe() {
 
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este documento CT-e?')) {
-      deleteMutation.mutate(id)
+    if (!window.confirm('Tem certeza de que deseja excluir este CT-e?')) {
+      return
+    }
+
+    // Confirmação adicional para exclusão
+    if (!window.confirm('Exclusão de CT-e é uma operação definitiva. Deseja continuar?')) {
+      return
+    }
+
+    // Usar a mutação de exclusão
+    deleteMutation.mutate(id)
+  }
+
+  const handleGenerateFiles = async (id: string) => {
+    setIsGeneratingFiles(true)
+    try {
+      // Chama a função para gerar os arquivos
+      await generateCTeFiles(id)
+      // Invalida a query para atualizar a lista de documentos com os novos status
+      await refetch()
+      toast.success('Arquivos XML e PDF gerados com sucesso!')
+    } catch (error) {
+      console.error('Erro ao gerar arquivos CT-e:', error)
+      // Exibe mensagem de erro genérica ou específica se disponível
+      toast.error(error instanceof Error ? error.message : 'Erro ao gerar arquivos CT-e')
+    } finally {
+      setIsGeneratingFiles(false) // Finaliza o estado de carregamento
     }
   }
 
@@ -858,23 +885,6 @@ export default function CTe() {
   const handleCopyChaveAcesso = (chave: string) => {
     navigator.clipboard.writeText(chave)
     toast.success('Chave de acesso copiada!')
-  }
-
-  const handleGenerateFiles = async (documento: CTeDocumento) => {
-    try {
-      toast.success('Gerando arquivos XML e PDF...')
-
-      // Importar e usar a nova função de geração
-      const { generateCTeFiles } = await import('@/lib/api/fiscal')
-      await generateCTeFiles(documento.id)
-
-      queryClient.invalidateQueries({ queryKey: ['cte-documentos'] })
-
-      toast.success('Arquivos gerados com sucesso!')
-    } catch (error: any) {
-      console.error('Error generating files:', error)
-      toast.error('Erro ao gerar arquivos: ' + (error.message || 'Erro desconhecido'))
-    }
   }
 
   const tabs = [
@@ -1049,9 +1059,10 @@ export default function CTe() {
                             </button>
                           )}
                           <button
-                            onClick={() => handleGenerateFiles(documento)}
+                            onClick={() => handleGenerateFiles(documento.id)}
                             className="text-green-600 hover:text-green-900 mr-4"
                             title="Gerar arquivos"
+                            disabled={isGeneratingFiles}
                           >
                             <DocumentArrowDownIcon className="h-5 w-5" />
                           </button>

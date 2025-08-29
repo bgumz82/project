@@ -1687,26 +1687,37 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
     );
 
     // Preparar paths dos arquivos
-    const basePath = documento.empresa_path || `/uploads/fiscal/${documento.empresa_cnpj}`;
+    const basePath = documento.empresa_path || `uploads/fiscal/${documento.empresa_cnpj}`;
+    const fullDirPath = `./${basePath}/cte`;
     const xmlPath = `${basePath}/cte/${documento.chave_acesso}-cte.xml`;
     const pdfPath = `${basePath}/cte/${documento.chave_acesso}-dacte.pdf`;
     const xmlProcPath = `${basePath}/cte/${documento.chave_acesso}-procCTe.xml`;
 
-    // TODO: Aqui você implementaria a gravação do arquivo XML e geração do PDF
-    // Por enquanto, simularemos que os arquivos foram gerados
+    // Criar diretórios se não existirem
+    const fs = await import('fs');
+    const path = await import('path');
+    
+    await fs.promises.mkdir(fullDirPath, { recursive: true });
+
+    // Salvar arquivo XML
+    const fullXmlPath = `./${xmlPath}`;
+    await fs.promises.writeFile(fullXmlPath, xmlContent, 'utf8');
+    
+    console.log("✅ Arquivo XML salvo em:", fullXmlPath);
 
     // Atualizar status dos arquivos no banco
     await query(`
       UPDATE cte_documentos 
       SET xml_path = $1, pdf_path = $2, xml_proc_path = $3,
-          xml_gerado = true, pdf_gerado = true,
-          xml_gerado_em = NOW(), pdf_gerado_em = NOW(),
+          xml_gerado = true, pdf_gerado = false,
+          xml_gerado_em = NOW(), pdf_gerado_em = NULL,
           updated_at = NOW()
       WHERE id = $4
     `, [xmlPath, pdfPath, xmlProcPath, documentoId]);
 
-    console.log("✅ Arquivos CT-e gerados com sucesso:", {
+    console.log("✅ Arquivo CT-e gerado com sucesso:", {
       xml: xmlPath,
+      xmlFisico: fullXmlPath,
       pdf: pdfPath,
       xmlProc: xmlProcPath
     });
