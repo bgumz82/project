@@ -242,55 +242,70 @@ function parseEndereco(enderecoCompleto: string | undefined | null, cidade?: str
 // Função para buscar código IBGE da cidade
 async function getCityCode(cityName: string, uf: string): Promise<string> {
   try {
-    // Importar a função query
+    // Importar funções necessárias
     const { query } = await import('@/lib/db')
+    const { getCityCodeFromFallback } = await import('./cities-fallback')
 
     console.log('🔍 Buscando código IBGE para cidade:', cityName, 'UF:', uf)
 
-    // Tentar buscar diretamente na tabela cities
-    let result = await query(`
-      SELECT cod_city 
-      FROM cities 
-      WHERE UPPER(UNACCENT(name)) = UPPER(UNACCENT($1)) 
-      AND UPPER(uf) = UPPER($2)
-      LIMIT 1
-    `, [cityName, uf])
+    // Normalizar nome da cidade (remover acentos manualmente)
+    const normalizedCity = removeAccents(cityName.toUpperCase().trim())
 
-    if (result && result.length > 0) {
-      console.log('✅ Código IBGE encontrado diretamente:', result[0].cod_city)
-      return result[0].cod_city
+    try {
+      // Verificar se a tabela cities existe
+      let result = await query(`
+        SELECT cod_city, name
+        FROM cities 
+        WHERE UPPER(TRIM(name)) = $1
+        AND UPPER(uf) = UPPER($2)
+        LIMIT 1
+      `, [normalizedCity, uf])
+
+      if (result && result.length > 0) {
+        console.log('✅ Código IBGE encontrado diretamente:', result[0].cod_city)
+        return result[0].cod_city
+      }
+
+      // Tentar busca com LIKE para cidades com nomes similares
+      result = await query(`
+        SELECT cod_city, name
+        FROM cities 
+        WHERE UPPER(TRIM(name)) LIKE $1
+        AND UPPER(uf) = UPPER($2)
+        LIMIT 1
+      `, [`%${normalizedCity}%`, uf])
+
+      if (result && result.length > 0) {
+        console.log('✅ Código IBGE encontrado com LIKE:', result[0].cod_city, 'para cidade:', result[0].name)
+        return result[0].cod_city
+      }
+
+      // Tentar busca com JOIN na tabela states (caso estrutura seja diferente)
+      result = await query(`
+        SELECT c.cod_city, c.name
+        FROM cities c
+        JOIN states s ON c.state_id = s.id
+        WHERE UPPER(TRIM(c.name)) = $1
+        AND (UPPER(s.name) = UPPER($2) OR UPPER(s.uf) = UPPER($2))
+        LIMIT 1
+      `, [normalizedCity, uf])
+
+      if (result && result.length > 0) {
+        console.log('✅ Código IBGE encontrado via JOIN:', result[0].cod_city, 'para cidade:', result[0].name)
+        return result[0].cod_city
+      }
+    } catch (dbError) {
+      console.log('⚠️ Tabela cities não encontrada ou erro na consulta, usando fallback')
     }
 
-    // Tentar busca com LIKE para cidades com nomes similares
-    result = await query(`
-      SELECT cod_city 
-      FROM cities 
-      WHERE UPPER(UNACCENT(name)) LIKE UPPER(UNACCENT($1)) 
-      AND UPPER(uf) = UPPER($2)
-      LIMIT 1
-    `, [`%${cityName}%`, uf])
-
-    if (result && result.length > 0) {
-      console.log('✅ Código IBGE encontrado com LIKE:', result[0].cod_city)
-      return result[0].cod_city
+    // Tentar usar fallback de cidades conhecidas
+    const fallbackCode = getCityCodeFromFallback(cityName, uf)
+    if (fallbackCode) {
+      console.log('✅ Código encontrado no fallback:', fallbackCode)
+      return fallbackCode
     }
 
-    // Tentar busca com JOIN na tabela states (caso estrutura seja diferente)
-    result = await query(`
-      SELECT c.cod_city
-      FROM cities c
-      JOIN states s ON c.state_id = s.id
-      WHERE UPPER(UNACCENT(c.name)) = UPPER(UNACCENT($1)) 
-      AND UPPER(s.name) = UPPER($2)
-      LIMIT 1
-    `, [cityName, uf])
-
-    if (result && result.length > 0) {
-      console.log('✅ Código IBGE encontrado via JOIN:', result[0].cod_city)
-      return result[0].cod_city
-    }
-
-    console.log('⚠️ Cidade não encontrada, usando fallback para UF:', uf)
+    console.log('⚠️ Cidade não encontrada, usando fallback genérico para UF:', uf)
     // Fallback: retornar código genérico baseado na UF
     const ufMap: { [key: string]: string } = {
       "AC": "1200000", "AL": "2700000", "AP": "1600000", "AM": "1300000", 
@@ -302,9 +317,9 @@ async function getCityCode(cityName: string, uf: string): Promise<string> {
       "SP": "3500000", "SE": "2800000", "TO": "1700000"
     }
 
-    const fallbackCode = ufMap[uf.toUpperCase()] || '3550308'
-    console.log('📍 Código fallback para', uf, ':', fallbackCode)
-    return fallbackCode
+    const genericCode = ufMap[uf.toUpperCase()] || '3550308'
+    console.log('📍 Código genérico para', uf, ':', genericCode)
+    return genericCode
   } catch (error) {
     console.error('❌ Erro ao buscar código da cidade:', error)
     return '3550308' // Default para São Paulo
@@ -314,42 +329,55 @@ async function getCityCode(cityName: string, uf: string): Promise<string> {
 // Função para buscar UF baseada no código IBGE da cidade
 async function getUFFromCityCode(cityCode: string): Promise<string> {
   try {
-    // Importar a função query
-    const { query } = await import('@/lib/db')
-
     console.log('🔍 Buscando UF para código da cidade:', cityCode)
 
-    // Tentar buscar diretamente na tabela cities
-    const result = await query(`
-      SELECT c.uf
-      FROM cities c 
-      WHERE c.cod_city = $1
-      LIMIT 1
-    `, [cityCode])
-
-    if (result && result.length > 0 && result[0].uf) {
-      console.log('✅ UF encontrada na tabela cities:', result[0].uf)
-      return result[0].uf.toUpperCase()
-    }
-
-    // Tentar buscar com JOIN na tabela states (caso a estrutura seja diferente)
-    const resultWithJoin = await query(`
-      SELECT s.name as uf
-      FROM cities c
-      JOIN states s ON c.state_id = s.id
-      WHERE c.cod_city = $1
-      LIMIT 1
-    `, [cityCode])
-
-    if (resultWithJoin && resultWithJoin.length > 0 && resultWithJoin[0].uf) {
-      console.log('✅ UF encontrada via JOIN com states:', resultWithJoin[0].uf)
-      return resultWithJoin[0].uf.toUpperCase()
-    }
-
-    console.log('⚠️ UF não encontrada na tabela, usando fallback para código:', cityCode)
-    // Fallback: usar função existente com base nos primeiros 2 dígitos
+    // Primeiro tentar usar o mapeamento por código IBGE (mais rápido e confiável)
     const ufFromCode = getUFFromCode(cityCode?.substring(0, 2) || '35')
-    console.log('📍 UF do fallback:', ufFromCode)
+    console.log('📍 UF do mapeamento por código:', ufFromCode)
+    
+    // Se conseguiu mapear por código, usar esse resultado
+    if (ufFromCode !== 'SP' || cityCode?.substring(0, 2) === '35') {
+      return ufFromCode
+    }
+
+    // Se não conseguiu mapear ou é código padrão, tentar buscar no banco
+    try {
+      const { query } = await import('@/lib/db')
+
+      // Tentar buscar diretamente na tabela cities
+      const result = await query(`
+        SELECT c.uf
+        FROM cities c 
+        WHERE c.cod_city = $1
+        LIMIT 1
+      `, [cityCode])
+
+      if (result && result.length > 0 && result[0].uf) {
+        console.log('✅ UF encontrada na tabela cities:', result[0].uf)
+        return result[0].uf.toUpperCase()
+      }
+
+      // Tentar buscar com JOIN na tabela states (caso a estrutura seja diferente)
+      const resultWithJoin = await query(`
+        SELECT s.uf, s.name as uf_name
+        FROM cities c
+        JOIN states s ON c.state_id = s.id
+        WHERE c.cod_city = $1
+        LIMIT 1
+      `, [cityCode])
+
+      if (resultWithJoin && resultWithJoin.length > 0) {
+        const uf = resultWithJoin[0].uf || resultWithJoin[0].uf_name
+        if (uf) {
+          console.log('✅ UF encontrada via JOIN com states:', uf)
+          return uf.toUpperCase()
+        }
+      }
+    } catch (dbError) {
+      console.log('⚠️ Erro ao consultar banco, usando mapeamento por código')
+    }
+
+    console.log('⚠️ UF não encontrada na tabela, usando fallback final')
     return ufFromCode
   } catch (error) {
     console.error('❌ Erro ao buscar UF da cidade:', error)
