@@ -276,27 +276,31 @@ async function getCityCode(cityName: string, uf: string): Promise<string> {
     const normalizedCity = removeAccents(cityName.toUpperCase().trim())
 
     try {
-      // Buscar com JOIN correto entre cities e states
+      // Buscar com JOIN correto entre cities e states, normalizando acentuação
       let result = await query(`
         SELECT c.cod_city, c.name, s.uf
         FROM cities c
         JOIN states s ON c.state_id = s.id
-        WHERE UPPER(TRIM(c.name)) = $1
+        WHERE UPPER(TRIM(TRANSLATE(c.name, 
+          'ÀÁÂÃÄÅàáâãäåÒÓÔÕÖØòóôõöøÈÉÊËèéêëÇçÌÍÎÏìíîïÙÚÛÜùúûüÿÑñ', 
+          'AAAAAAaaaaaaOOOOOOooooooEEEEeeeeeCcIIIIiiiiUUUUuuuuyNn'))) = $1
         AND UPPER(s.uf) = UPPER($2)
         LIMIT 1
       `, [normalizedCity, uf])
 
       if (result && result.length > 0) {
-        console.log('✅ Código IBGE encontrado diretamente:', result[0].cod_city)
+        console.log('✅ Código IBGE encontrado diretamente:', result[0].cod_city, 'para cidade:', result[0].name)
         return result[0].cod_city
       }
 
-      // Tentar busca com LIKE para cidades com nomes similares
+      // Tentar busca com LIKE para cidades com nomes similares, normalizando acentuação
       result = await query(`
         SELECT c.cod_city, c.name, s.uf
         FROM cities c
         JOIN states s ON c.state_id = s.id
-        WHERE UPPER(TRIM(c.name)) LIKE $1
+        WHERE UPPER(TRIM(TRANSLATE(c.name, 
+          'ÀÁÂÃÄÅàáâãäåÒÓÔÕÖØòóôõöøÈÉÊËèéêëÇçÌÍÎÏìíîïÙÚÛÜùúûüÿÑñ', 
+          'AAAAAAaaaaaaOOOOOOooooooEEEEeeeeeCcIIIIiiiiUUUUuuuuyNn'))) LIKE $1
         AND UPPER(s.uf) = UPPER($2)
         LIMIT 1
       `, [`%${normalizedCity}%`, uf])
@@ -306,12 +310,14 @@ async function getCityCode(cityName: string, uf: string): Promise<string> {
         return result[0].cod_city
       }
 
-      // Tentar busca alternativa por nome do estado
+      // Tentar busca alternativa por nome do estado, normalizando acentuação
       result = await query(`
         SELECT c.cod_city, c.name, s.uf
         FROM cities c
         JOIN states s ON c.state_id = s.id
-        WHERE UPPER(TRIM(c.name)) = $1
+        WHERE UPPER(TRIM(TRANSLATE(c.name, 
+          'ÀÁÂÃÄÅàáâãäåÒÓÔÕÖØòóôõöøÈÉÊËèéêëÇçÌÍÎÏìíîïÙÚÛÜùúûüÿÑñ', 
+          'AAAAAAaaaaaaOOOOOOooooooEEEEeeeeeCcIIIIiiiiUUUUuuuuyNn'))) = $1
         AND (UPPER(s.name) = UPPER($2) OR UPPER(s.uf) = UPPER($2))
         LIMIT 1
       `, [normalizedCity, uf])
