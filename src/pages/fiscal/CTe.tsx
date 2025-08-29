@@ -864,17 +864,16 @@ export default function CTe() {
     try {
       toast.success('Gerando arquivos XML e PDF...')
 
-      await updateDocumentFiles('cte', documento.id, {
-        xmlGerado: true,
-        pdfGerado: true
-      })
+      // Importar e usar a nova função de geração
+      const { generateCTeFiles } = await import('@/lib/api/fiscal')
+      await generateCTeFiles(documento.id)
 
       queryClient.invalidateQueries({ queryKey: ['cte-documentos'] })
 
       toast.success('Arquivos gerados com sucesso!')
     } catch (error: any) {
       console.error('Error generating files:', error)
-      toast.error('Erro ao gerar arquivos')
+      toast.error('Erro ao gerar arquivos: ' + (error.message || 'Erro desconhecido'))
     }
   }
 
