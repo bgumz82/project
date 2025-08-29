@@ -3,13 +3,14 @@ import { CTeDocumento } from './fiscal'
 
 interface ClienteInfo {
   id: string
-  razao_social: string
-  cnpj: string
+  razao_social?: string
+  cnpj?: string
   ie?: string
-  endereco_completo: string
-  cidade: string
-  estado: string
-  cep: string
+  endereco_completo?: string
+  endereco?: string
+  cidade?: string
+  estado?: string
+  cep?: string
   codigo_ibge?: string
 }
 
@@ -90,9 +91,9 @@ ${documento.observacoes ? `<compl>
 <xObs>${documento.observacoes}</xObs>
 </compl>` : ''}
 <emit>
-<CNPJ>${empresa.cnpj}</CNPJ>
-<IE>${empresa.ie}</IE>
-<xNome>${empresa.razao_social}</xNome>
+<CNPJ>${empresa.cnpj?.replace(/\D/g, '') || '00000000000000'}</CNPJ>
+<IE>${empresa.ie || 'ISENTO'}</IE>
+<xNome>${empresa.razao_social || 'NAO INFORMADO'}</xNome>
 <enderEmit>
 <xLgr>${parseEndereco(empresa.endereco_completo).logradouro}</xLgr>
 <nro>${parseEndereco(empresa.endereco_completo).numero}</nro>
@@ -105,33 +106,33 @@ ${documento.observacoes ? `<compl>
 <CRT>3</CRT>
 </emit>
 <rem>
-<CNPJ>${remetente.cnpj}</CNPJ>
-${remetente.ie ? `<IE>${remetente.ie}</IE>` : ''}
-<xNome>${remetente.razao_social}</xNome>
+<CNPJ>${remetente.cnpj?.replace(/\D/g, '') || '00000000000000'}</CNPJ>
+${remetente.ie ? `<IE>${remetente.ie}</IE>` : '<IE>ISENTO</IE>'}
+<xNome>${remetente.razao_social || 'NAO INFORMADO'}</xNome>
 <enderReme>
-<xLgr>${parseEndereco(remetente.endereco_completo).logradouro}</xLgr>
-<nro>${parseEndereco(remetente.endereco_completo).numero}</nro>
-<xBairro>${parseEndereco(remetente.endereco_completo).bairro}</xBairro>
+<xLgr>${parseEndereco(remetente.endereco_completo || remetente.endereco).logradouro}</xLgr>
+<nro>${parseEndereco(remetente.endereco_completo || remetente.endereco).numero}</nro>
+<xBairro>${parseEndereco(remetente.endereco_completo || remetente.endereco).bairro}</xBairro>
 <cMun>${remetente.codigo_ibge || '9999999'}</cMun>
-<xMun>${remetente.cidade}</xMun>
-<CEP>${remetente.cep.replace(/\D/g, '')}</CEP>
-<UF>${remetente.estado}</UF>
+<xMun>${remetente.cidade || 'NAO INFORMADO'}</xMun>
+<CEP>${(remetente.cep || '00000000').replace(/\D/g, '')}</CEP>
+<UF>${remetente.estado || 'SP'}</UF>
 <cPais>1058</cPais>
 <xPais>BRASIL</xPais>
 </enderReme>
 </rem>
 <dest>
-<CNPJ>${destinatario.cnpj}</CNPJ>
-${destinatario.ie ? `<IE>${destinatario.ie}</IE>` : ''}
-<xNome>${destinatario.razao_social}</xNome>
+<CNPJ>${destinatario.cnpj?.replace(/\D/g, '') || '00000000000000'}</CNPJ>
+${destinatario.ie ? `<IE>${destinatario.ie}</IE>` : '<IE>ISENTO</IE>'}
+<xNome>${destinatario.razao_social || 'NAO INFORMADO'}</xNome>
 <enderDest>
-<xLgr>${parseEndereco(destinatario.endereco_completo).logradouro}</xLgr>
-<nro>${parseEndereco(destinatario.endereco_completo).numero}</nro>
-<xBairro>${parseEndereco(destinatario.endereco_completo).bairro}</xBairro>
+<xLgr>${parseEndereco(destinatario.endereco_completo || destinatario.endereco).logradouro}</xLgr>
+<nro>${parseEndereco(destinatario.endereco_completo || destinatario.endereco).numero}</nro>
+<xBairro>${parseEndereco(destinatario.endereco_completo || destinatario.endereco).bairro}</xBairro>
 <cMun>${destinatario.codigo_ibge || '9999999'}</cMun>
-<xMun>${destinatario.cidade}</xMun>
-<CEP>${destinatario.cep.replace(/\D/g, '')}</CEP>
-<UF>${destinatario.estado}</UF>
+<xMun>${destinatario.cidade || 'NAO INFORMADO'}</xMun>
+<CEP>${(destinatario.cep || '00000000').replace(/\D/g, '')}</CEP>
+<UF>${destinatario.estado || 'SP'}</UF>
 <cPais>1058</cPais>
 <xPais>BRASIL</xPais>
 </enderDest>
@@ -206,8 +207,16 @@ ${documento.chave_acesso_4 ? `<infNFe>
   return xml
 }
 
-function parseEndereco(enderecoCompleto: string) {
-  // Parse básico do endereço completo
+function parseEndereco(enderecoCompleto: string | undefined | null) {
+  // Parse básico do endereço completo - tratar casos undefined/null
+  if (!enderecoCompleto) {
+    return {
+      logradouro: 'NAO INFORMADO',
+      numero: 'SN',
+      bairro: 'NAO INFORMADO'
+    }
+  }
+  
   const partes = enderecoCompleto.split(',')
   return {
     logradouro: partes[0]?.trim() || 'NAO INFORMADO',
