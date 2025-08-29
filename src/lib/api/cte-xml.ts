@@ -78,16 +78,16 @@ export async function generateCTeXML(
 <procEmi>0</procEmi>
 <verProc>4.00</verProc>
 <cMunEnv>${documento.cidade_inicio_ibge}</cMunEnv>
-<xMunEnv>${documento.cidade_inicio_nome}</xMunEnv>
-<UFEnv>${documento.uf_inicio}</UFEnv>
+<xMunEnv>${removeAccents(documento.cidade_inicio_nome || 'NAO INFORMADO').toUpperCase()}</xMunEnv>
+<UFEnv>${await getUFFromCityCode(documento.cidade_inicio_ibge)}</UFEnv>
 <modal>01</modal>
 <tpServ>${documento.tipo_servico || '0'}</tpServ>
 <cMunIni>${documento.cidade_inicio_ibge}</cMunIni>
-<xMunIni>${documento.cidade_inicio_nome}</xMunIni>
-<UFIni>${documento.uf_inicio}</UFIni>
+<xMunIni>${removeAccents(documento.cidade_inicio_nome || 'NAO INFORMADO').toUpperCase()}</xMunIni>
+<UFIni>${await getUFFromCityCode(documento.cidade_inicio_ibge)}</UFIni>
 <cMunFim>${documento.cidade_termino_ibge}</cMunFim>
-<xMunFim>${documento.cidade_termino_nome}</xMunFim>
-<UFFim>${documento.uf_termino}</UFFim>
+<xMunFim>${removeAccents(documento.cidade_termino_nome || 'NAO INFORMADO').toUpperCase()}</xMunFim>
+<UFFim>${await getUFFromCityCode(documento.cidade_termino_ibge)}</UFFim>
 <retira>1</retira>
 <xDetRetira>CONFORME SOLICITACAO</xDetRetira>
 <indIEToma>1</indIEToma>
@@ -273,6 +273,31 @@ async function getCityCode(cityName: string, uf: string): Promise<string> {
   } catch (error) {
     console.error('Erro ao buscar código da cidade:', error)
     return '3550308' // Default para São Paulo
+  }
+}
+
+// Função para buscar UF baseada no código IBGE da cidade
+async function getUFFromCityCode(cityCode: string): Promise<string> {
+  try {
+    // Importar a função query
+    const { query } = await import('@/lib/db')
+    
+    const result = await query(`
+      SELECT uf 
+      FROM cities 
+      WHERE cod_city = $1
+      LIMIT 1
+    `, [cityCode])
+    
+    if (result && result.length > 0) {
+      return result[0].uf.toUpperCase()
+    }
+    
+    // Fallback: usar função existente com base nos primeiros 2 dígitos
+    return getUFFromCode(cityCode?.substring(0, 2) || '35')
+  } catch (error) {
+    console.error('Erro ao buscar UF da cidade:', error)
+    return 'SP' // Default para São Paulo
   }
 }
 
