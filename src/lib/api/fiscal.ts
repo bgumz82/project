@@ -1698,25 +1698,33 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
       xmlProcPath
     });
 
-    // Tentar salvar o arquivo (a pasta já existe conforme mencionado)
+    // Salvar o arquivo usando Node.js fs
     try {
-      // Usar WriteableStream API que funciona no ambiente Replit
-      const response = await fetch(`/${xmlPath}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/xml',
-        },
-        body: xmlContent
-      });
-
-      if (!response.ok) {
-        console.log("⚠️ Método PUT não funcionou, tentando salvar localmente...");
-        // Se PUT não funcionar, simular salvamento
-        console.log("📄 Conteúdo XML gerado:", xmlContent.substring(0, 200) + "...");
-      }
+      // Importar módulos Node.js de forma dinâmica
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      // Construir caminho completo
+      const fullDirPath = path.join(process.cwd(), basePath, 'cte');
+      const fullXmlPath = path.join(process.cwd(), xmlPath);
+      
+      console.log("📁 Criando diretório:", fullDirPath);
+      
+      // Criar diretórios recursivamente se não existirem
+      await fs.promises.mkdir(fullDirPath, { recursive: true });
+      
+      console.log("💾 Salvando arquivo XML em:", fullXmlPath);
+      
+      // Salvar arquivo XML
+      await fs.promises.writeFile(fullXmlPath, xmlContent, 'utf8');
+      
+      console.log("✅ Arquivo XML salvo com sucesso!");
+      
     } catch (writeError) {
-      console.log("⚠️ Erro ao salvar arquivo, mas XML foi gerado:", writeError);
+      console.error("❌ Erro ao salvar arquivo XML:", writeError);
       console.log("📄 Conteúdo XML gerado:", xmlContent.substring(0, 200) + "...");
+      
+      // Mesmo com erro de salvamento, continue o processo
     }
 
     // Atualizar status dos arquivos no banco
