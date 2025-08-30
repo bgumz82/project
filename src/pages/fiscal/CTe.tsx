@@ -812,8 +812,17 @@ export default function CTe() {
   // Função para extrair CNPJ da chave de acesso NF-e
   const extrairCNPJDaChave = (chave: string): string => {
     // Chave de 44 dígitos: UF(2) + AAMM(4) + CNPJ(14) + Modelo(2) + Série(3) + Número(9) + Forma(1) + Código(8) + DV(1)
-    if (chave.length !== 44) return ''
-    return chave.substring(6, 20) // Posições 6-19 contêm o CNPJ (14 dígitos)
+    console.log('🔑 Extraindo CNPJ da chave:', chave)
+    
+    if (chave.length !== 44) {
+      console.log('❌ Chave inválida - deve ter 44 dígitos, tem:', chave.length)
+      return ''
+    }
+    
+    const cnpjExtraido = chave.substring(6, 20) // Posições 6-19 contêm o CNPJ (14 dígitos)
+    console.log('🏢 CNPJ extraído da chave:', cnpjExtraido)
+    
+    return cnpjExtraido
   }
 
   // Função para buscar frete
@@ -909,8 +918,12 @@ export default function CTe() {
       }
 
       // Extrair CNPJ remetente da chave NF-e
+      console.log('🚀 Iniciando validação do CT-e rápido')
       const cnpjRemetenteChave = extrairCNPJDaChave(chaveNFeLimpa)
+      console.log('🏢 CNPJ remetente extraído:', cnpjRemetenteChave)
+      
       if (!cnpjRemetenteChave) {
+        console.error('❌ Falha ao extrair CNPJ da chave NF-e')
         toast.error('Não foi possível extrair o CNPJ do remetente da chave NF-e')
         return
       }
@@ -941,18 +954,28 @@ export default function CTe() {
       }
 
       // Buscar remetente por CNPJ extraído da chave
+      console.log('🔍 Buscando remetente com CNPJ:', cnpjRemetenteChave)
       const remetente = await buscarClientePorCNPJ(cnpjRemetenteChave)
+      
       if (!remetente) {
+        console.error('❌ Remetente não encontrado para CNPJ:', cnpjRemetenteChave)
         toast.error(`Remetente não encontrado com CNPJ ${cnpjRemetenteChave} (extraído da chave NF-e). Cadastre o cliente primeiro.`)
         return
       }
+      
+      console.log('✅ Remetente encontrado:', remetente.razao_social)
 
       // Buscar destinatário por CNPJ informado
+      console.log('🔍 Buscando destinatário com CNPJ:', formRapido.cnpj_destinatario)
       const destinatario = await buscarClientePorCNPJ(formRapido.cnpj_destinatario)
+      
       if (!destinatario) {
+        console.error('❌ Destinatário não encontrado para CNPJ:', formRapido.cnpj_destinatario)
         toast.error('Destinatário não encontrado com este CNPJ. Cadastre o cliente primeiro.')
         return
       }
+      
+      console.log('✅ Destinatário encontrado:', destinatario.razao_social)
 
       // Buscar dados da associação de frota
       const associacao = associacoesFrota?.find(a => a.id === formRapido.associacao_frota_id)
@@ -1252,8 +1275,13 @@ export default function CTe() {
   // Função para buscar cliente por CNPJ
   const buscarClientePorCNPJ = async (cnpj: string) => {
     try {
+      console.log('🔍 Buscando cliente por CNPJ:', cnpj)
+      
       const cnpjLimpo = cnpj.replace(/\D/g, '')
+      console.log('🧹 CNPJ limpo:', cnpjLimpo)
+      
       if (cnpjLimpo.length !== 14) {
+        console.log('❌ CNPJ inválido - deve ter 14 dígitos, tem:', cnpjLimpo.length)
         return null
       }
 
@@ -1264,19 +1292,56 @@ export default function CTe() {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          query: 'SELECT * FROM cadastros WHERE cnpj = $1 AND tipo = $2 AND ativo = true LIMIT 1',
+          query: `
+            SELECT * FROM cadastros 
+            WHERE cnpj = $1 AND tipo = $2 AND ativo = true 
+            LIMIT 1
+          `,
           params: [cnpjLimpo, 'cliente']
         })
       })
 
       if (!response.ok) {
+        console.error('❌ Erro na resposta da API:', response.status, response.statusText)
         throw new Error('Erro ao buscar cliente')
       }
 
       const result = await response.json()
-      return result.data && result.data.length > 0 ? result.data[0] : null
+      console.log('📊 Resultado da busca por CNPJ:', result)
+      
+      if (result.data && result.data.length > 0) {
+        console.log('✅ Cliente encontrado:', result.data[0].razao_social)
+        return result.data[0]
+      } else {
+        console.log('❌ Cliente não encontrado para CNPJ:', cnpjLimpo)
+        
+        // Fazer uma busca mais ampla para debug
+        const debugResponse = await fetch('/api/db/query', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            query: `
+              SELECT cnpj, razao_social, tipo, ativo 
+              FROM cadastros 
+              WHERE cnpj LIKE $1 OR cnpj = $2
+              LIMIT 5
+            `,
+            params: [`%${cnpjLimpo}%`, cnpjLimpo]
+          })
+        })
+        
+        if (debugResponse.ok) {
+          const debugResult = await debugResponse.json()
+          console.log('🔍 CNPJs similares encontrados:', debugResult.data)
+        }
+        
+        return null
+      }
     } catch (error) {
-      console.error('Erro ao buscar cliente por CNPJ:', error)
+      console.error('❌ Erro ao buscar cliente por CNPJ:', error)
       return null
     }
   }
