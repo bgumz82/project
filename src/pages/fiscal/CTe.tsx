@@ -1745,7 +1745,6 @@ export default function CTe() {
                             min="0"
                             placeholder="0,00"
                             value={formData.icms_bc_valor || ''}
-                            onBlur={recalcularICMS}
                             onChange={(e) => updateFormData('icms_bc_valor', e.target.value)}
                             className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
@@ -1769,7 +1768,6 @@ export default function CTe() {
                             max="100"
                             placeholder="0,00"
                             value={formData.icms_aliquota || ''}
-                            onBlur={recalcularICMS}
                             onChange={(e) => updateFormData('icms_aliquota', e.target.value)}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
