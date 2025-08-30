@@ -914,14 +914,41 @@ export default function CTe() {
     }
   }
 
-  // Função para buscar ICMS por UF
+  // Função para buscar ICMS por UF com regras específicas
   const buscarICMSPorUF = async (ufOrigem: string, ufDestino: string) => {
     try {
+      console.log('🏛️ Aplicando regras específicas de ICMS')
+      console.log('- UF Origem:', ufOrigem)
+      console.log('- UF Destino:', ufDestino)
+
+      // Regras específicas implementadas
+      if (ufOrigem === 'MG' && ufDestino === 'GO') {
+        console.log('✅ Regra MG → GO: ICMS 7%')
+        return 7.0
+      }
+      
+      if (ufOrigem === 'GO' && ufDestino === 'MG') {
+        console.log('✅ Regra GO → MG: ICMS 12%')
+        return 12.0
+      }
+      
+      if (ufOrigem === 'MG' && ufDestino === 'MG') {
+        console.log('✅ Regra MG → MG: ICMS Isenção (0%)')
+        return 0.0
+      }
+      
+      if (ufOrigem === 'GO' && ufDestino === 'GO') {
+        console.log('✅ Regra GO → GO: ICMS Isenção (0%)')
+        return 0.0
+      }
+
+      // Para outras UFs, consultar tabela cte_icms
+      console.log('🔍 Consultando tabela cte_icms para outras UFs')
       const response = await fetch('/api/db/query', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
         },
         body: JSON.stringify({
           query: `SELECT "${ufDestino}" as aliquota FROM cte_icms WHERE "ORIGEM" = $1`,
@@ -934,10 +961,49 @@ export default function CTe() {
       }
 
       const result = await response.json()
-      return result.data && result.data.length > 0 ? parseFloat(result.data[0].aliquota) : 7.0 // 7% padrão
+      const aliquotaTabela = result.data && result.data.length > 0 ? parseFloat(result.data[0].aliquota) : 7.0
+      console.log('📊 ICMS da tabela:', aliquotaTabela + '%')
+      return aliquotaTabela
     } catch (error) {
-      console.error('Erro ao buscar ICMS:', error)
+      console.error('❌ Erro ao buscar ICMS:', error)
       return 7.0 // 7% padrão em caso de erro
+    }
+  }
+
+  // Função para determinar CFOP baseado nas UFs
+  const determinarCFOP = (ufOrigem: string, ufDestino: string) => {
+    console.log('📋 Determinando CFOP')
+    console.log('- UF Origem:', ufOrigem)
+    console.log('- UF Destino:', ufDestino)
+
+    // Regras específicas implementadas
+    if (ufOrigem === 'MG' && ufDestino === 'GO') {
+      console.log('✅ Regra MG → GO: CFOP 6352')
+      return '6352'
+    }
+    
+    if (ufOrigem === 'GO' && ufDestino === 'MG') {
+      console.log('✅ Regra GO → MG: CFOP 6932')
+      return '6932'
+    }
+    
+    if (ufOrigem === 'MG' && ufDestino === 'MG') {
+      console.log('✅ Regra MG → MG: CFOP 5352')
+      return '5352'
+    }
+    
+    if (ufOrigem === 'GO' && ufDestino === 'GO') {
+      console.log('✅ Regra GO → GO: CFOP 5932')
+      return '5932'
+    }
+
+    // Para outras UFs, usar regra padrão (dentro do estado = 5352, fora do estado = 6352)
+    if (ufOrigem === ufDestino) {
+      console.log('📋 Regra padrão dentro do estado: CFOP 5352')
+      return '5352'
+    } else {
+      console.log('📋 Regra padrão fora do estado: CFOP 6352')
+      return '6352'
     }
   }
 
@@ -1089,13 +1155,31 @@ export default function CTe() {
       // Usar o valor calculado
       const valorFrete = valorBaseFrete
 
-      // Buscar alíquota de ICMS baseada nos estados
+      // Buscar alíquota de ICMS baseada nos estados com regras específicas
       const aliquotaICMS = await buscarICMSPorUF(rapidoSelectedInicio.uf, rapidoSelectedTermino.uf)
 
-      // Calcular ICMS: Valor Base / (1 - Alíquota) - para incluir ICMS no valor
-      const aliquotaDecimal = aliquotaICMS / 100
-      const valorTotalComICMS = valorFrete / (1 - aliquotaDecimal)
-      const valorICMS = valorTotalComICMS - valorFrete
+      // Determinar CFOP baseado nas UFs
+      const cfopCalculado = determinarCFOP(rapidoSelectedInicio.uf, rapidoSelectedTermino.uf)
+
+      // Calcular ICMS
+      let valorTotalComICMS = valorFrete
+      let valorICMS = 0
+      let situacaoTributaria = '40' // Isenção por padrão
+
+      if (aliquotaICMS > 0) {
+        // Com ICMS: Valor Base / (1 - Alíquota) - para incluir ICMS no valor
+        const aliquotaDecimal = aliquotaICMS / 100
+        valorTotalComICMS = valorFrete / (1 - aliquotaDecimal)
+        valorICMS = valorTotalComICMS - valorFrete
+        situacaoTributaria = '00' // Tributação normal
+        console.log(`💰 ICMS calculado: ${aliquotaICMS}% = R$ ${valorICMS.toFixed(2)}`)
+      } else {
+        // Isenção: não há ICMS
+        valorTotalComICMS = valorFrete
+        valorICMS = 0
+        situacaoTributaria = '40' // Isenção
+        console.log('🆓 ICMS Isenção aplicada')
+      }
 
       const documentoData: CTeDocumentoCreate = {
         empresa_id: empresaPadrao.id,
@@ -1118,7 +1202,7 @@ export default function CTe() {
         valor_prestacao: valorTotalComICMS,
         valor_receber: valorTotalComICMS,
         valor_tributos: valorICMS,
-        icms_situacao_tributaria: '00',
+        icms_situacao_tributaria: situacaoTributaria,
         icms_bc_valor: valorTotalComICMS,
         icms_aliquota: aliquotaICMS,
         icms_valor: valorICMS,
@@ -1130,7 +1214,7 @@ export default function CTe() {
         // Dados padrão
         tipo_servico: '0',
         finalidade_cte: '0',
-        cfop: rapidoSelectedInicio.uf === rapidoSelectedTermino.uf ? '5352' : '6352',
+        cfop: cfopCalculado,
         // Dados de transporte
         associacao_frota_id: formRapido.associacao_frota_id,
         rntrc: empresaPadrao.rntrc,
@@ -1149,22 +1233,35 @@ export default function CTe() {
       
       // Construir mensagem detalhada
       let mensagemDetalhes = []
-      mensagemDetalhes.push(`Frete: R$ ${informacoesFrete.valor_frete.toFixed(2)}`)
+      
+      // Composição do frete
+      let composicaoFrete = [`Frete Base: R$ ${informacoesFrete.valor_frete.toFixed(2)}`]
       
       if (informacoesFrete.cobranca_pedagio && informacoesFrete.valor_pedagio > 0) {
-        mensagemDetalhes.push(`Pedágio: R$ ${informacoesFrete.valor_pedagio.toFixed(2)}`)
+        composicaoFrete.push(`Pedágio: R$ ${informacoesFrete.valor_pedagio.toFixed(2)}`)
       }
       
       if (informacoesFrete.cobranca_seguro && informacoesFrete.valor_seguro > 0) {
-        mensagemDetalhes.push(`Seguro: R$ ${informacoesFrete.valor_seguro.toFixed(2)}`)
+        composicaoFrete.push(`Seguro: R$ ${informacoesFrete.valor_seguro.toFixed(2)}`)
       }
       
-      mensagemDetalhes.push(`ICMS ${aliquotaICMS}% (${rapidoSelectedInicio.uf}→${rapidoSelectedTermino.uf})`)
+      // Informações fiscais
+      if (aliquotaICMS > 0) {
+        mensagemDetalhes.push(`ICMS ${aliquotaICMS}% = R$ ${valorICMS.toFixed(2)} (${rapidoSelectedInicio.uf}→${rapidoSelectedTermino.uf})`)
+      } else {
+        mensagemDetalhes.push(`ICMS Isenção (${rapidoSelectedInicio.uf}→${rapidoSelectedTermino.uf})`)
+      }
+      
+      mensagemDetalhes.push(`CFOP: ${cfopCalculado}`)
       mensagemDetalhes.push(`Tomador: ${informacoesFrete.tomador_frete === 'remetente' ? 'Remetente' : 'Destinatário'}`)
-      mensagemDetalhes.push(`Total: R$ ${valorTotalComICMS.toFixed(2)}`)
+      
+      // Exibir composição do frete e total
+      console.log('📋 Composição do Frete:')
+      composicaoFrete.forEach(item => console.log(`  - ${item}`))
+      console.log(`📋 Total: R$ ${valorTotalComICMS.toFixed(2)}`)
 
       toast.success(
-        `CT-e rápido criado! ${mensagemDetalhes.join(', ')}`
+        `CT-e rápido criado! ${composicaoFrete.join(' + ')} | ${mensagemDetalhes.join(' | ')} | Total: R$ ${valorTotalComICMS.toFixed(2)}`
       )
       
       setIsModalRapidoOpen(false)
