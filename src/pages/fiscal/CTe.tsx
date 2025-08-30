@@ -568,8 +568,6 @@ export default function CTe() {
     }
 
     console.log('🔍 Estrutura completa da associação:', JSON.stringify(associacao, null, 2))
-    console.log('👨‍💼 Dados do funcionário na associação:', associacao.funcionario)
-    console.log('🚛 Dados do veículo principal na associação:', associacao.veiculo_principal)
 
     // Definir placa do veículo principal
     const placaPrincipal = associacao.veiculo_principal?.placa || 'Placa não informada'
@@ -596,20 +594,18 @@ export default function CTe() {
     setPlacaReboque(placaReboque || 'Nenhum reboque/implemento')
     console.log('🚛 Placa reboque/implemento definida:', placaReboque)
 
-    // Definir informações do motorista
-    console.log('👨‍💼 Dados do funcionário recebidos:', associacao.funcionario)
-    console.log('👨‍💼 Nome do funcionário:', associacao.funcionario?.nome)
-    console.log('👨‍💼 CNH do funcionário:', associacao.funcionario?.cnh)
-    console.log('👨‍💼 Matrícula do funcionário:', associacao.funcionario?.matricula)
+    // Definir informações do motorista - usando dados corretos da estrutura mapeada
+    const funcionario = associacao.funcionario
+    console.log('👨‍💼 Dados do funcionário recebidos:', funcionario)
 
-    const validadeCnh = associacao.funcionario?.validade_cnh
-      ? format(parseISO(associacao.funcionario.validade_cnh), 'dd/MM/yyyy')
+    const validadeCnh = funcionario?.validade_cnh
+      ? format(parseISO(funcionario.validade_cnh), 'dd/MM/yyyy')
       : 'Não informado'
 
     const info = {
-      nome: associacao.funcionario?.nome || 'Nome não informado',
-      cnh: associacao.funcionario?.cnh || 'CNH não informada',
-      matricula: associacao.funcionario?.matricula || 'Matrícula não informada',
+      nome: funcionario?.nome || 'Nome não informado',
+      cnh: funcionario?.cnh || 'CNH não informada',
+      matricula: funcionario?.matricula || 'Matrícula não informada',
       validadeCnh
     }
 
