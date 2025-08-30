@@ -825,7 +825,7 @@ export default function CTe() {
     return cnpjExtraido
   }
 
-  // Função para buscar frete
+  // Função para buscar frete com informações completas
   const buscarFrete = async (cnpjOrigem: string, cnpjDestino: string, tipoReboque: string, cidadeOrigemIbge: string, cidadeDestinoIbge: string) => {
     try {
       console.log('💰 Iniciando busca de frete com parâmetros:')
@@ -836,7 +836,13 @@ export default function CTe() {
       console.log('- Cidade Destino IBGE:', cidadeDestinoIbge)
 
       const query = `
-        SELECT valor_frete 
+        SELECT 
+          valor_frete,
+          valor_pedagio,
+          valor_seguro,
+          cobranca_pedagio,
+          cobranca_seguro,
+          tomador_frete
         FROM frete_documentos 
         WHERE cliente_origem_id IN (
           SELECT id FROM cadastros WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
@@ -886,9 +892,17 @@ export default function CTe() {
       console.log('📄 Dados de frete encontrados:', dados)
 
       if (dados && dados.length > 0) {
-        const valorFrete = parseFloat(dados[0].valor_frete)
-        console.log('✅ Frete encontrado! Valor:', valorFrete)
-        return valorFrete
+        const frete = dados[0]
+        const informacoesFrete = {
+          valor_frete: parseFloat(frete.valor_frete),
+          valor_pedagio: parseFloat(frete.valor_pedagio || 0),
+          valor_seguro: parseFloat(frete.valor_seguro || 0),
+          cobranca_pedagio: frete.cobranca_pedagio || false,
+          cobranca_seguro: frete.cobranca_seguro || false,
+          tomador_frete: frete.tomador_frete || 'remetente'
+        }
+        console.log('✅ Frete encontrado com informações completas:', informacoesFrete)
+        return informacoesFrete
       } else {
         console.log('❌ Nenhum frete encontrado para os parâmetros informados')
         return null
@@ -1039,8 +1053,8 @@ export default function CTe() {
         tipoReboque = associacao.veiculo_reboque2.tipo
       }
 
-      // Buscar valor do frete cadastrado (obrigatório)
-      const valorFreteCadastrado = await buscarFrete(
+      // Buscar informações completas do frete cadastrado (obrigatório)
+      const informacoesFrete = await buscarFrete(
         cnpjRemetenteChave,
         formRapido.cnpj_destinatario,
         tipoReboque,
@@ -1048,13 +1062,32 @@ export default function CTe() {
         rapidoSelectedTermino.codigo
       )
 
-      if (!valorFreteCadastrado) {
+      if (!informacoesFrete) {
         toast.error('Frete não encontrado no cadastro. É necessário cadastrar o frete antes de criar o CT-e.')
         return
       }
 
-      // Usar apenas o valor do frete cadastrado
-      const valorFrete = valorFreteCadastrado
+      console.log('📋 Informações do frete encontradas:', informacoesFrete)
+
+      // Calcular valor base do frete
+      let valorBaseFrete = informacoesFrete.valor_frete
+
+      // Adicionar pedágio se configurado para cobrança
+      if (informacoesFrete.cobranca_pedagio && informacoesFrete.valor_pedagio > 0) {
+        valorBaseFrete += informacoesFrete.valor_pedagio
+        console.log(`💰 Pedágio adicionado: R$ ${informacoesFrete.valor_pedagio.toFixed(2)}`)
+      }
+
+      // Adicionar seguro se configurado para cobrança
+      if (informacoesFrete.cobranca_seguro && informacoesFrete.valor_seguro > 0) {
+        valorBaseFrete += informacoesFrete.valor_seguro
+        console.log(`🛡️ Seguro adicionado: R$ ${informacoesFrete.valor_seguro.toFixed(2)}`)
+      }
+
+      console.log(`💰 Valor base do frete calculado: R$ ${valorBaseFrete.toFixed(2)}`)
+
+      // Usar o valor calculado
+      const valorFrete = valorBaseFrete
 
       // Buscar alíquota de ICMS baseada nos estados
       const aliquotaICMS = await buscarICMSPorUF(rapidoSelectedInicio.uf, rapidoSelectedTermino.uf)
@@ -1076,7 +1109,8 @@ export default function CTe() {
         forma_emissao: 1,
         status: 'pendente',
         // Participantes - usar remetente da chave e destinatário informado
-        tomador_id: 'destinatario',
+        // Tomador baseado na configuração do frete
+        tomador_id: informacoesFrete.tomador_frete === 'remetente' ? remetente.id : destinatario.id,
         remetente_id: remetente.id,
         destinatario_id: destinatario.id,
         recebedor_id: null,
@@ -1113,8 +1147,24 @@ export default function CTe() {
       // Criar o documento
       await createMutation.mutateAsync(documentoData)
       
+      // Construir mensagem detalhada
+      let mensagemDetalhes = []
+      mensagemDetalhes.push(`Frete: R$ ${informacoesFrete.valor_frete.toFixed(2)}`)
+      
+      if (informacoesFrete.cobranca_pedagio && informacoesFrete.valor_pedagio > 0) {
+        mensagemDetalhes.push(`Pedágio: R$ ${informacoesFrete.valor_pedagio.toFixed(2)}`)
+      }
+      
+      if (informacoesFrete.cobranca_seguro && informacoesFrete.valor_seguro > 0) {
+        mensagemDetalhes.push(`Seguro: R$ ${informacoesFrete.valor_seguro.toFixed(2)}`)
+      }
+      
+      mensagemDetalhes.push(`ICMS ${aliquotaICMS}% (${rapidoSelectedInicio.uf}→${rapidoSelectedTermino.uf})`)
+      mensagemDetalhes.push(`Tomador: ${informacoesFrete.tomador_frete === 'remetente' ? 'Remetente' : 'Destinatário'}`)
+      mensagemDetalhes.push(`Total: R$ ${valorTotalComICMS.toFixed(2)}`)
+
       toast.success(
-        `CT-e rápido criado! Frete: R$ ${valorFrete.toFixed(2)}, ICMS ${aliquotaICMS}% (${rapidoSelectedInicio.uf}→${rapidoSelectedTermino.uf}), Total: R$ ${valorTotalComICMS.toFixed(2)}`
+        `CT-e rápido criado! ${mensagemDetalhes.join(', ')}`
       )
       
       setIsModalRapidoOpen(false)
