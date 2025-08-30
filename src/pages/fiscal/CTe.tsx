@@ -1285,6 +1285,7 @@ export default function CTe() {
         return null
       }
 
+      // Primeiro, buscar exato
       const response = await fetch('/api/db/query', {
         method: 'POST',
         headers: {
@@ -1294,10 +1295,10 @@ export default function CTe() {
         body: JSON.stringify({
           query: `
             SELECT * FROM cadastros 
-            WHERE cnpj = $1 AND tipo = $2 AND ativo = true 
+            WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true 
             LIMIT 1
           `,
-          params: [cnpjLimpo, 'cliente']
+          params: [cnpjLimpo]
         })
       })
 
@@ -1307,39 +1308,72 @@ export default function CTe() {
       }
 
       const result = await response.json()
-      console.log('📊 Resultado da busca por CNPJ:', result)
+      console.log('📊 Resultado da busca exata por CNPJ:', result)
       
       if (result.data && result.data.length > 0) {
-        console.log('✅ Cliente encontrado:', result.data[0].razao_social)
+        console.log('✅ Cliente encontrado (busca exata):', result.data[0].razao_social)
         return result.data[0]
-      } else {
-        console.log('❌ Cliente não encontrado para CNPJ:', cnpjLimpo)
-        
-        // Fazer uma busca mais ampla para debug
-        const debugResponse = await fetch('/api/db/query', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({
-            query: `
-              SELECT cnpj, razao_social, tipo, ativo 
-              FROM cadastros 
-              WHERE cnpj LIKE $1 OR cnpj = $2
-              LIMIT 5
-            `,
-            params: [`%${cnpjLimpo}%`, cnpjLimpo]
-          })
-        })
-        
-        if (debugResponse.ok) {
-          const debugResult = await debugResponse.json()
-          console.log('🔍 CNPJs similares encontrados:', debugResult.data)
-        }
-        
-        return null
       }
+
+      // Se não encontrou na busca exata, tentar busca flexível (sem formatação)
+      console.log('🔍 Tentando busca flexível por CNPJ...')
+      const flexResponse = await fetch('/api/db/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          query: `
+            SELECT * FROM cadastros 
+            WHERE REPLACE(REPLACE(REPLACE(cnpj, '.', ''), '/', ''), '-', '') = $1 
+            AND tipo = 'cliente' 
+            AND ativo = true 
+            LIMIT 1
+          `,
+          params: [cnpjLimpo]
+        })
+      })
+
+      if (flexResponse.ok) {
+        const flexResult = await flexResponse.json()
+        console.log('📊 Resultado da busca flexível por CNPJ:', flexResult)
+        
+        if (flexResult.data && flexResult.data.length > 0) {
+          console.log('✅ Cliente encontrado (busca flexível):', flexResult.data[0].razao_social)
+          return flexResult.data[0]
+        }
+      }
+
+      // Debug: mostrar alguns CNPJs para comparação
+      console.log('❌ Cliente não encontrado para CNPJ:', cnpjLimpo)
+      const debugResponse = await fetch('/api/db/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          query: `
+            SELECT cnpj, razao_social, tipo, ativo,
+                   REPLACE(REPLACE(REPLACE(cnpj, '.', ''), '/', ''), '-', '') as cnpj_limpo
+            FROM cadastros 
+            WHERE tipo = 'cliente' 
+            AND ativo = true
+            ORDER BY razao_social
+            LIMIT 10
+          `,
+          params: []
+        })
+      })
+      
+      if (debugResponse.ok) {
+        const debugResult = await debugResponse.json()
+        console.log('🔍 Amostra de CNPJs de clientes cadastrados:', debugResult.data)
+        console.log('🔍 CNPJ procurado:', cnpjLimpo)
+      }
+        
+      return null
     } catch (error) {
       console.error('❌ Erro ao buscar cliente por CNPJ:', error)
       return null
