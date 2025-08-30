@@ -951,7 +951,7 @@ export default function CTe() {
         tipoReboque = associacao.veiculo_reboque2.tipo
       }
 
-      // Buscar valor do frete cadastrado
+      // Buscar valor do frete cadastrado (obrigatório)
       const valorFreteCadastrado = await buscarFrete(
         cnpjRemetenteChave,
         formRapido.cnpj_destinatario,
@@ -960,9 +960,13 @@ export default function CTe() {
         rapidoSelectedTermino.codigo
       )
 
-      // Calcular valor do frete
-      const valorNota = parseFloat(formRapido.valor_nota)
-      const valorFrete = valorFreteCadastrado || (valorNota * 0.05) // Usar frete cadastrado ou 5% do valor da nota
+      if (!valorFreteCadastrado) {
+        toast.error('Frete não encontrado no cadastro. É necessário cadastrar o frete antes de criar o CT-e.')
+        return
+      }
+
+      // Usar apenas o valor do frete cadastrado
+      const valorFrete = valorFreteCadastrado
 
       // Buscar alíquota de ICMS baseada nos estados
       const aliquotaICMS = await buscarICMSPorUF(rapidoSelectedInicio.uf, rapidoSelectedTermino.uf)
@@ -997,7 +1001,7 @@ export default function CTe() {
         icms_aliquota: aliquotaICMS,
         icms_valor: valorICMS,
         // Dados da carga
-        valor_carga: valorNota,
+        valor_carga: parseFloat(formRapido.valor_nota),
         quantidade_carga: parseFloat(formRapido.quantidade),
         produto_predominante_id: formRapido.produto_id,
         chave_acesso_1: chaveNFeLimpa,
@@ -1021,13 +1025,8 @@ export default function CTe() {
       // Criar o documento
       await createMutation.mutateAsync(documentoData)
       
-      // Mensagem de sucesso com detalhes
-      const freteInfo = valorFreteCadastrado 
-        ? `Frete encontrado: R$ ${valorFrete.toFixed(2)}`
-        : `Frete calculado (5%): R$ ${valorFrete.toFixed(2)}`
-      
       toast.success(
-        `CT-e rápido criado! ${freteInfo}, ICMS ${aliquotaICMS}% (${rapidoSelectedInicio.uf}→${rapidoSelectedTermino.uf}), Total: R$ ${valorTotalComICMS.toFixed(2)}`
+        `CT-e rápido criado! Frete: R$ ${valorFrete.toFixed(2)}, ICMS ${aliquotaICMS}% (${rapidoSelectedInicio.uf}→${rapidoSelectedTermino.uf}), Total: R$ ${valorTotalComICMS.toFixed(2)}`
       )
       
       setIsModalRapidoOpen(false)
@@ -3023,19 +3022,7 @@ export default function CTe() {
                   </div>
                 </div>
 
-                {/* Informações Automáticas */}
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="text-sm font-medium text-blue-900 mb-2">🤖 Valores Calculados Automaticamente</h4>
-                  <div className="text-sm text-blue-700 space-y-1">
-                    <p>• <strong>Remetente:</strong> Extraído automaticamente da chave NF-e (posições 6-19)</p>
-                    <p>• <strong>Destinatário:</strong> Cliente informado manualmente no CNPJ</p>
-                    <p>• <strong>Frete:</strong> Busca na tabela de frete ou 5% do valor da nota</p>
-                    <p>• <strong>ICMS:</strong> Consulta tabela cte_icms por UF origem/destino</p>
-                    <p>• <strong>CFOP:</strong> 5352 (mesmo estado) ou 6352 (estados diferentes)</p>
-                    <p>• <strong>Tomador:</strong> Destinatário</p>
-                    <p>• <strong>Tipo Reboque:</strong> Baseado no veículo associado ao motorista</p>
-                  </div>
-                </div>
+                
               </div>
 
               <div className="mt-8 flex justify-between">
