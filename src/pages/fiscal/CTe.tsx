@@ -81,6 +81,7 @@ export default function CTe() {
   const [selectedDocumento, setSelectedDocumento] = useState<CTeDocumento | null>(null)
   const [filterStatus, setFilterStatus] = useState<'todos' | 'pendente' | 'emitido' | 'cancelado'>('todos')
   const [activeTab, setActiveTab] = useState('dados-cte')
+  const [isModalRapidoOpen, setIsModalRapidoOpen] = useState(false)
 
   // Estados para pesquisa de cidades
   const [inicioSearchTerm, setInicioSearchTerm] = useState('')
@@ -173,6 +174,28 @@ export default function CTe() {
 
   // Estado para controlar a geração de arquivos
   const [isGeneratingFiles, setIsGeneratingFiles] = useState(false)
+
+  // Estados para formulário CT-e Rápido
+  const [formRapido, setFormRapido] = useState({
+    associacao_frota_id: '',
+    produto_id: '',
+    chave_nfe: '',
+    cnpj_destinatario: '',
+    valor_nota: '',
+    quantidade: '',
+    cidade_inicio: '',
+    cidade_termino: ''
+  })
+
+  // Estados para busca de cidades no formulário rápido
+  const [rapidoCidadeInicioNome, setRapidoCidadeInicioNome] = useState('')
+  const [rapidoCidadeTerminoNome, setRapidoCidadeTerminoNome] = useState('')
+  const [rapidoCidadeInicioResults, setRapidoCidadeInicioResults] = useState<Cidade[]>([])
+  const [rapidoCidadeTerminoResults, setRapidoCidadeTerminoResults] = useState<Cidade[]>([])
+  const [rapidoSelectedInicio, setRapidoSelectedInicio] = useState<{codigo: string, nome: string, uf: string} | null>(null)
+  const [rapidoSelectedTermino, setRapidoSelectedTermino] = useState<{codigo: string, nome: string, uf: string} | null>(null)
+  const [rapidoShowInicioResults, setRapidoShowInicioResults] = useState(false)
+  const [rapidoShowTerminoResults, setRapidoShowTerminoResults] = useState(false)
 
 
   // Função para validar chave de acesso em tempo real
@@ -334,6 +357,27 @@ export default function CTe() {
       cidade_inicio_nome: '',
       cidade_termino_nome: ''
     })
+  }
+
+  const resetFormRapido = () => {
+    setFormRapido({
+      associacao_frota_id: '',
+      produto_id: '',
+      chave_nfe: '',
+      cnpj_destinatario: '',
+      valor_nota: '',
+      quantidade: '',
+      cidade_inicio: '',
+      cidade_termino: ''
+    })
+    setRapidoCidadeInicioNome('')
+    setRapidoCidadeTerminoNome('')
+    setRapidoCidadeInicioResults([])
+    setRapidoCidadeTerminoResults([])
+    setRapidoSelectedInicio(null)
+    setRapidoSelectedTermino(null)
+    setRapidoShowInicioResults(false)
+    setRapidoShowTerminoResults(false)
   }
 
   // Função para atualizar dados do formulário
@@ -706,6 +750,169 @@ export default function CTe() {
     }
   }
 
+  // Buscar cidades para formulário rápido - início
+  const handleRapidoCidadeInicioSearch = async (term: string) => {
+    if (term.length < 2) {
+      setRapidoCidadeInicioResults([])
+      return
+    }
+
+    try {
+      const cities = await getCidadesPorNome(term)
+      setRapidoCidadeInicioResults(cities)
+    } catch (error) {
+      console.error('Erro ao buscar cidades:', error)
+      setRapidoCidadeInicioResults([])
+    }
+  }
+
+  // Buscar cidades para formulário rápido - término
+  const handleRapidoCidadeTerminoSearch = async (term: string) => {
+    if (term.length < 2) {
+      setRapidoCidadeTerminoResults([])
+      return
+    }
+
+    try {
+      const cities = await getCidadesPorNome(term)
+      setRapidoCidadeTerminoResults(cities)
+    } catch (error) {
+      console.error('Erro ao buscar cidades:', error)
+      setRapidoCidadeTerminoResults([])
+    }
+  }
+
+  const handleSubmitRapido = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    try {
+      // Validações básicas
+      if (!formRapido.associacao_frota_id) {
+        toast.error('Selecione o motorista e veículo')
+        return
+      }
+
+      if (!formRapido.produto_id) {
+        toast.error('Selecione o produto')
+        return
+      }
+
+      if (!formRapido.chave_nfe || formRapido.chave_nfe.length !== 44) {
+        toast.error('Informe uma chave de NF-e válida (44 dígitos)')
+        return
+      }
+
+      if (!formRapido.cnpj_destinatario) {
+        toast.error('Informe o CNPJ do destinatário')
+        return
+      }
+
+      if (!formRapido.valor_nota || parseFloat(formRapido.valor_nota) <= 0) {
+        toast.error('Informe um valor válido da nota fiscal')
+        return
+      }
+
+      if (!formRapido.quantidade || parseFloat(formRapido.quantidade) <= 0) {
+        toast.error('Informe uma quantidade válida')
+        return
+      }
+
+      if (!rapidoSelectedInicio) {
+        toast.error('Selecione a cidade de início')
+        return
+      }
+
+      if (!rapidoSelectedTermino) {
+        toast.error('Selecione a cidade de término')
+        return
+      }
+
+      // Buscar cliente por CNPJ
+      const cliente = await buscarClientePorCNPJ(formRapido.cnpj_destinatario)
+      if (!cliente) {
+        toast.error('Cliente não encontrado com este CNPJ. Cadastre o cliente primeiro.')
+        return
+      }
+
+      // Buscar dados da associação de frota
+      const associacao = associacoesFrota?.find(a => a.id === formRapido.associacao_frota_id)
+      if (!associacao) {
+        toast.error('Associação de frota não encontrada')
+        return
+      }
+
+      // Usar a primeira empresa ativa disponível
+      const empresaPadrao = empresas?.[0]
+      if (!empresaPadrao) {
+        toast.error('Nenhuma empresa fiscal cadastrada')
+        return
+      }
+
+      // Preparar dados do CT-e com valores padrão calculados
+      const valorNota = parseFloat(formRapido.valor_nota)
+      const valorFrete = valorNota * 0.05 // 5% do valor da nota como padrão
+      const aliquotaICMS = 7.0 // 7% padrão
+      const valorICMS = (valorFrete * aliquotaICMS) / 100
+      const valorTotal = valorFrete + valorICMS
+
+      const documentoData: CTeDocumentoCreate = {
+        empresa_id: empresaPadrao.id,
+        data_emissao: format(new Date(), 'yyyy-MM-dd'),
+        cidade_inicio_ibge: rapidoSelectedInicio.codigo,
+        cidade_termino_ibge: rapidoSelectedTermino.codigo,
+        uf_inicio: rapidoSelectedInicio.uf,
+        uf_termino: rapidoSelectedTermino.uf,
+        cidade_inicio_nome: rapidoSelectedInicio.nome,
+        cidade_termino_nome: rapidoSelectedTermino.nome,
+        forma_emissao: 1,
+        status: 'pendente',
+        // Participantes - cliente será remetente e destinatário
+        tomador_id: 'destinatario',
+        remetente_id: cliente.id,
+        destinatario_id: cliente.id,
+        recebedor_id: null,
+        // Valores calculados
+        valor_prestacao: valorTotal,
+        valor_receber: valorTotal,
+        valor_tributos: valorICMS,
+        icms_situacao_tributaria: '00',
+        icms_bc_valor: valorTotal,
+        icms_aliquota: aliquotaICMS,
+        icms_valor: valorICMS,
+        // Dados da carga
+        valor_carga: valorNota,
+        quantidade_carga: parseFloat(formRapido.quantidade),
+        produto_predominante_id: formRapido.produto_id,
+        chave_acesso_1: formRapido.chave_nfe,
+        // Dados padrão
+        tipo_servico: '0',
+        finalidade_cte: '0',
+        cfop: rapidoSelectedInicio.uf === rapidoSelectedTermino.uf ? '5352' : '6352',
+        // Dados de transporte
+        associacao_frota_id: formRapido.associacao_frota_id,
+        rntrc: empresaPadrao.rntrc,
+        motorista_nome: associacao.funcionario?.nome,
+        motorista_cnh: associacao.funcionario?.cnh,
+        motorista_matricula: associacao.funcionario?.matricula,
+        motorista_validade_cnh: associacao.funcionario?.validade_cnh,
+        placa_veiculo: associacao.veiculo_principal?.placa,
+        placa_reboque: associacao.veiculo_implemento?.placa || 
+                      [associacao.veiculo_reboque1?.placa, associacao.veiculo_reboque2?.placa]
+                        .filter(Boolean).join(' + ') || null
+      }
+
+      // Criar o documento
+      await createMutation.mutateAsync(documentoData)
+      toast.success('CT-e rápido criado com sucesso!')
+      setIsModalRapidoOpen(false)
+      resetFormRapido()
+
+    } catch (error) {
+      console.error('Erro ao criar CT-e rápido:', error)
+      toast.error(error instanceof Error ? error.message : 'Erro ao criar CT-e rápido')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formDataElement = new FormData(e.currentTarget)
@@ -890,6 +1097,38 @@ export default function CTe() {
     toast.success('Chave de acesso copiada!')
   }
 
+  // Função para buscar cliente por CNPJ
+  const buscarClientePorCNPJ = async (cnpj: string) => {
+    try {
+      const cnpjLimpo = cnpj.replace(/\D/g, '')
+      if (cnpjLimpo.length !== 14) {
+        return null
+      }
+
+      const response = await fetch('/api/db/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          query: 'SELECT * FROM cadastros WHERE cnpj = $1 AND tipo = $2 AND ativo = true LIMIT 1',
+          params: [cnpjLimpo, 'cliente']
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao buscar cliente')
+      }
+
+      const result = await response.json()
+      return result.data && result.data.length > 0 ? result.data[0] : null
+    } catch (error) {
+      console.error('Erro ao buscar cliente por CNPJ:', error)
+      return null
+    }
+  }
+
   const tabs = [
     { id: 'dados-cte', label: 'Dados CT-e' },
     { id: 'tomador', label: 'Tomador' },
@@ -922,16 +1161,28 @@ export default function CTe() {
             <DocumentTextIcon className="h-8 w-8 text-indigo-600 mr-3" />
             <h1 className="text-2xl font-semibold text-gray-900">Documentos CT-e</h1>
           </div>
-          <button
-            onClick={() => {
-              resetForm()
-              setIsModalOpen(true)
-            }}
-            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-          >
-            <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-            Novo CT-e
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => {
+                resetForm()
+                setIsModalOpen(true)
+              }}
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+              Novo CT-e
+            </button>
+            <button
+              onClick={() => {
+                resetFormRapido()
+                setIsModalRapidoOpen(true)
+              }}
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+            >
+              <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+              Novo CT-e Rápido
+            </button>
+          </div>
         </div>
 
         {/* Filtros */}
@@ -2321,6 +2572,328 @@ export default function CTe() {
                     </button>
                   )}
                 </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de CT-e Rápido */}
+      {isModalRapidoOpen && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full p-6 max-h-[95vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-medium text-green-600">
+                🚀 Novo CT-e Rápido
+              </h2>
+              <button
+                onClick={() => setIsModalRapidoOpen(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="bg-green-50 p-4 rounded-lg mb-6">
+              <h4 className="text-sm font-medium text-green-900 mb-2">💡 CT-e Rápido</h4>
+              <p className="text-sm text-green-700">
+                Crie um CT-e rapidamente informando apenas os dados essenciais. 
+                Os demais campos serão preenchidos automaticamente com valores padrão.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmitRapido}>
+              <div className="space-y-6">
+                {/* Motorista e Veículo */}
+                <div>
+                  <label htmlFor="rapido_associacao_frota_id" className="block text-sm font-medium text-gray-700">
+                    Motorista e Veículo *
+                  </label>
+                  <select
+                    name="rapido_associacao_frota_id"
+                    id="rapido_associacao_frota_id"
+                    value={formRapido.associacao_frota_id}
+                    onChange={(e) => setFormRapido(prev => ({ ...prev, associacao_frota_id: e.target.value }))}
+                    required
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                  >
+                    <option value="">Selecione motorista e veículo</option>
+                    {associacoesFrota?.map((associacao) => (
+                      <option key={associacao.id} value={associacao.id}>
+                        {associacao.funcionario?.nome} - {associacao.veiculo_principal?.placa}
+                        {associacao.veiculo_implemento?.placa && ` + ${associacao.veiculo_implemento.placa}`}
+                        {associacao.veiculo_reboque1?.placa && ` + ${associacao.veiculo_reboque1.placa}`}
+                        {associacao.veiculo_reboque2?.placa && ` + ${associacao.veiculo_reboque2.placa}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Produto */}
+                <div>
+                  <label htmlFor="rapido_produto_id" className="block text-sm font-medium text-gray-700">
+                    Produto *
+                  </label>
+                  <select
+                    name="rapido_produto_id"
+                    id="rapido_produto_id"
+                    value={formRapido.produto_id}
+                    onChange={(e) => setFormRapido(prev => ({ ...prev, produto_id: e.target.value }))}
+                    required
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                  >
+                    <option value="">Selecione o produto</option>
+                    {produtos?.map((produto) => (
+                      <option key={produto.id} value={produto.id}>
+                        {produto.cod_ncm} - {produto.descricao}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  {/* Chave NF-e */}
+                  <div>
+                    <label htmlFor="rapido_chave_nfe" className="block text-sm font-medium text-gray-700">
+                      Chave de Acesso da NF-e *
+                    </label>
+                    <input
+                      type="text"
+                      name="rapido_chave_nfe"
+                      id="rapido_chave_nfe"
+                      maxLength="44"
+                      value={formRapido.chave_nfe}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '')
+                        setFormRapido(prev => ({ ...prev, chave_nfe: value }))
+                      }}
+                      placeholder="44 dígitos da chave de acesso"
+                      required
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm font-mono"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Digite apenas números (44 dígitos)
+                    </p>
+                  </div>
+
+                  {/* CNPJ Destinatário */}
+                  <div>
+                    <label htmlFor="rapido_cnpj_destinatario" className="block text-sm font-medium text-gray-700">
+                      CNPJ do Destinatário *
+                    </label>
+                    <input
+                      type="text"
+                      name="rapido_cnpj_destinatario"
+                      id="rapido_cnpj_destinatario"
+                      value={formRapido.cnpj_destinatario}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '')
+                        setFormRapido(prev => ({ ...prev, cnpj_destinatario: value }))
+                      }}
+                      placeholder="Apenas números"
+                      required
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Cliente deve estar cadastrado no sistema
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  {/* Valor da Nota */}
+                  <div>
+                    <label htmlFor="rapido_valor_nota" className="block text-sm font-medium text-gray-700">
+                      Valor da Nota Fiscal (R$) *
+                    </label>
+                    <div className="mt-1 relative rounded-md shadow-sm">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm">R$</span>
+                      </div>
+                      <input
+                        type="number"
+                        name="rapido_valor_nota"
+                        id="rapido_valor_nota"
+                        step="0.01"
+                        min="0"
+                        value={formRapido.valor_nota}
+                        onChange={(e) => setFormRapido(prev => ({ ...prev, valor_nota: e.target.value }))}
+                        placeholder="0,00"
+                        required
+                        className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Quantidade */}
+                  <div>
+                    <label htmlFor="rapido_quantidade" className="block text-sm font-medium text-gray-700">
+                      Quantidade (Litros) *
+                    </label>
+                    <div className="mt-1 relative rounded-md shadow-sm">
+                      <input
+                        type="number"
+                        name="rapido_quantidade"
+                        id="rapido_quantidade"
+                        step="0.001"
+                        min="0"
+                        value={formRapido.quantidade}
+                        onChange={(e) => setFormRapido(prev => ({ ...prev, quantidade: e.target.value }))}
+                        placeholder="0,000"
+                        required
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                      />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm">L</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Local de Início */}
+                <div>
+                  <label htmlFor="rapido_cidade_inicio" className="block text-sm font-medium text-gray-700">
+                    Local de Início da Prestação *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      id="rapido_cidade_inicio"
+                      value={rapidoCidadeInicioNome}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        setRapidoCidadeInicioNome(value)
+                        setRapidoSelectedInicio(null)
+                        handleRapidoCidadeInicioSearch(value)
+                        setRapidoShowInicioResults(true)
+                      }}
+                      onFocus={() => setRapidoShowInicioResults(true)}
+                      onBlur={() => setTimeout(() => setRapidoShowInicioResults(false), 150)}
+                      placeholder="Digite o nome da cidade..."
+                      required
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                    />
+
+                    {rapidoShowInicioResults && rapidoCidadeInicioResults.length > 0 && (
+                      <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto">
+                        {rapidoCidadeInicioResults.map((cidade) => (
+                          <div
+                            key={cidade.cod_city}
+                            onClick={() => {
+                              const cidadeSelecionada = {
+                                codigo: cidade.cod_city,
+                                nome: cidade.name,
+                                uf: cidade.uf || ''
+                              }
+                              setRapidoSelectedInicio(cidadeSelecionada)
+                              setRapidoCidadeInicioNome(cidade.name)
+                              setRapidoShowInicioResults(false)
+                              setRapidoCidadeInicioResults([])
+                            }}
+                            className="cursor-pointer hover:bg-gray-100 px-4 py-2 flex justify-between items-center"
+                          >
+                            <span>{cidade.name}/{cidade.uf || ''}</span>
+                            <span className="text-xs text-gray-500 font-mono">
+                              {cidade.cod_city}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Local de Término */}
+                <div>
+                  <label htmlFor="rapido_cidade_termino" className="block text-sm font-medium text-gray-700">
+                    Local de Término da Prestação *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      id="rapido_cidade_termino"
+                      value={rapidoCidadeTerminoNome}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        setRapidoCidadeTerminoNome(value)
+                        setRapidoSelectedTermino(null)
+                        handleRapidoCidadeTerminoSearch(value)
+                        setRapidoShowTerminoResults(true)
+                      }}
+                      onFocus={() => setRapidoShowTerminoResults(true)}
+                      onBlur={() => setTimeout(() => setRapidoShowTerminoResults(false), 150)}
+                      placeholder="Digite o nome da cidade..."
+                      required
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                    />
+
+                    {rapidoShowTerminoResults && rapidoCidadeTerminoResults.length > 0 && (
+                      <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto">
+                        {rapidoCidadeTerminoResults.map((cidade) => (
+                          <div
+                            key={cidade.cod_city}
+                            onClick={() => {
+                              const cidadeSelecionada = {
+                                codigo: cidade.cod_city,
+                                nome: cidade.name,
+                                uf: cidade.uf || ''
+                              }
+                              setRapidoSelectedTermino(cidadeSelecionada)
+                              setRapidoCidadeTerminoNome(cidade.name)
+                              setRapidoShowTerminoResults(false)
+                              setRapidoCidadeTerminoResults([])
+                            }}
+                            className="cursor-pointer hover:bg-gray-100 px-4 py-2 flex justify-between items-center"
+                          >
+                            <span>{cidade.name}/{cidade.uf || ''}</span>
+                            <span className="text-xs text-gray-500 font-mono">
+                              {cidade.cod_city}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Informações Automáticas */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-blue-900 mb-2">🤖 Valores Calculados Automaticamente</h4>
+                  <div className="text-sm text-blue-700 space-y-1">
+                    <p>• <strong>Frete:</strong> 5% do valor da nota fiscal</p>
+                    <p>• <strong>ICMS:</strong> 7% sobre o valor do frete</p>
+                    <p>• <strong>CFOP:</strong> 5352 (mesmo estado) ou 6352 (estados diferentes)</p>
+                    <p>• <strong>Tomador:</strong> Destinatário (cliente informado no CNPJ)</p>
+                    <p>• <strong>Remetente/Destinatário:</strong> Cliente do CNPJ informado</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 flex justify-between">
+                <button
+                  type="button"
+                  onClick={() => setIsModalRapidoOpen(false)}
+                  className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={createMutation.isPending}
+                  className="inline-flex justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700 disabled:opacity-50"
+                >
+                  {createMutation.isPending ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Criando...
+                    </>
+                  ) : (
+                    '🚀 Criar CT-e Rápido'
+                  )}
+                </button>
               </div>
             </form>
           </div>
