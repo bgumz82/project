@@ -782,6 +782,77 @@ export default function CTe() {
     }
   }
 
+  // Função para extrair CNPJ da chave de acesso NF-e
+  const extrairCNPJDaChave = (chave: string): string => {
+    // Chave de 44 dígitos: UF(2) + AAMM(4) + CNPJ(14) + Modelo(2) + Série(3) + Número(9) + Forma(1) + Código(8) + DV(1)
+    if (chave.length !== 44) return ''
+    return chave.substring(6, 20) // Posições 6-19 contêm o CNPJ (14 dígitos)
+  }
+
+  // Função para buscar frete
+  const buscarFrete = async (cnpjOrigem: string, cnpjDestino: string, tipoReboque: string, cidadeOrigemIbge: string, cidadeDestinoIbge: string) => {
+    try {
+      const response = await fetch('/api/db/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          query: `
+            SELECT valor_frete 
+            FROM frete 
+            WHERE cnpj_origem = $1 
+              AND cnpj_destino = $2 
+              AND tipo_reboque = $3 
+              AND cidade_origem_ibge = $4 
+              AND cidade_destino_ibge = $5
+              AND ativo = true
+            LIMIT 1
+          `,
+          params: [cnpjOrigem, cnpjDestino, tipoReboque, cidadeOrigemIbge, cidadeDestinoIbge]
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao buscar frete')
+      }
+
+      const result = await response.json()
+      return result.data && result.data.length > 0 ? parseFloat(result.data[0].valor_frete) : null
+    } catch (error) {
+      console.error('Erro ao buscar frete:', error)
+      return null
+    }
+  }
+
+  // Função para buscar ICMS por UF
+  const buscarICMSPorUF = async (ufOrigem: string, ufDestino: string) => {
+    try {
+      const response = await fetch('/api/db/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          query: `SELECT "${ufDestino}" as aliquota FROM cte_icms WHERE "ORIGEM" = $1`,
+          params: [ufOrigem]
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao buscar ICMS')
+      }
+
+      const result = await response.json()
+      return result.data && result.data.length > 0 ? parseFloat(result.data[0].aliquota) : 7.0 // 7% padrão
+    } catch (error) {
+      console.error('Erro ao buscar ICMS:', error)
+      return 7.0 // 7% padrão em caso de erro
+    }
+  }
+
   const handleSubmitRapido = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
@@ -797,8 +868,23 @@ export default function CTe() {
         return
       }
 
-      if (!formRapido.chave_nfe || formRapido.chave_nfe.length !== 44) {
-        toast.error('Informe uma chave de NF-e válida (44 dígitos)')
+      // Limpar e validar chave NF-e
+      const chaveNFeLimpa = formRapido.chave_nfe.replace(/\s/g, '') // Remove todos os espaços
+      if (!chaveNFeLimpa || chaveNFeLimpa.length !== 44) {
+        toast.error('Informe uma chave de NF-e válida (44 dígitos). Chave atual tem ' + chaveNFeLimpa.length + ' dígitos.')
+        return
+      }
+
+      // Validar se chave contém apenas números
+      if (!/^\d+$/.test(chaveNFeLimpa)) {
+        toast.error('A chave de NF-e deve conter apenas números')
+        return
+      }
+
+      // Extrair CNPJ remetente da chave NF-e
+      const cnpjRemetenteChave = extrairCNPJDaChave(chaveNFeLimpa)
+      if (!cnpjRemetenteChave) {
+        toast.error('Não foi possível extrair o CNPJ do remetente da chave NF-e')
         return
       }
 
@@ -827,10 +913,17 @@ export default function CTe() {
         return
       }
 
-      // Buscar cliente por CNPJ
-      const cliente = await buscarClientePorCNPJ(formRapido.cnpj_destinatario)
-      if (!cliente) {
-        toast.error('Cliente não encontrado com este CNPJ. Cadastre o cliente primeiro.')
+      // Buscar remetente por CNPJ extraído da chave
+      const remetente = await buscarClientePorCNPJ(cnpjRemetenteChave)
+      if (!remetente) {
+        toast.error(`Remetente não encontrado com CNPJ ${cnpjRemetenteChave} (extraído da chave NF-e). Cadastre o cliente primeiro.`)
+        return
+      }
+
+      // Buscar destinatário por CNPJ informado
+      const destinatario = await buscarClientePorCNPJ(formRapido.cnpj_destinatario)
+      if (!destinatario) {
+        toast.error('Destinatário não encontrado com este CNPJ. Cadastre o cliente primeiro.')
         return
       }
 
@@ -848,12 +941,36 @@ export default function CTe() {
         return
       }
 
-      // Preparar dados do CT-e com valores padrão calculados
+      // Determinar tipo de reboque/implemento para busca de frete
+      let tipoReboque = 'padrao'
+      if (associacao.veiculo_implemento?.tipo) {
+        tipoReboque = associacao.veiculo_implemento.tipo
+      } else if (associacao.veiculo_reboque1?.tipo) {
+        tipoReboque = associacao.veiculo_reboque1.tipo
+      } else if (associacao.veiculo_reboque2?.tipo) {
+        tipoReboque = associacao.veiculo_reboque2.tipo
+      }
+
+      // Buscar valor do frete cadastrado
+      const valorFreteCadastrado = await buscarFrete(
+        cnpjRemetenteChave,
+        formRapido.cnpj_destinatario,
+        tipoReboque,
+        rapidoSelectedInicio.codigo,
+        rapidoSelectedTermino.codigo
+      )
+
+      // Calcular valor do frete
       const valorNota = parseFloat(formRapido.valor_nota)
-      const valorFrete = valorNota * 0.05 // 5% do valor da nota como padrão
-      const aliquotaICMS = 7.0 // 7% padrão
-      const valorICMS = (valorFrete * aliquotaICMS) / 100
-      const valorTotal = valorFrete + valorICMS
+      const valorFrete = valorFreteCadastrado || (valorNota * 0.05) // Usar frete cadastrado ou 5% do valor da nota
+
+      // Buscar alíquota de ICMS baseada nos estados
+      const aliquotaICMS = await buscarICMSPorUF(rapidoSelectedInicio.uf, rapidoSelectedTermino.uf)
+
+      // Calcular ICMS: Valor Base / (1 - Alíquota) - para incluir ICMS no valor
+      const aliquotaDecimal = aliquotaICMS / 100
+      const valorTotalComICMS = valorFrete / (1 - aliquotaDecimal)
+      const valorICMS = valorTotalComICMS - valorFrete
 
       const documentoData: CTeDocumentoCreate = {
         empresa_id: empresaPadrao.id,
@@ -866,24 +983,24 @@ export default function CTe() {
         cidade_termino_nome: rapidoSelectedTermino.nome,
         forma_emissao: 1,
         status: 'pendente',
-        // Participantes - cliente será remetente e destinatário
+        // Participantes - usar remetente da chave e destinatário informado
         tomador_id: 'destinatario',
-        remetente_id: cliente.id,
-        destinatario_id: cliente.id,
+        remetente_id: remetente.id,
+        destinatario_id: destinatario.id,
         recebedor_id: null,
         // Valores calculados
-        valor_prestacao: valorTotal,
-        valor_receber: valorTotal,
+        valor_prestacao: valorTotalComICMS,
+        valor_receber: valorTotalComICMS,
         valor_tributos: valorICMS,
         icms_situacao_tributaria: '00',
-        icms_bc_valor: valorTotal,
+        icms_bc_valor: valorTotalComICMS,
         icms_aliquota: aliquotaICMS,
         icms_valor: valorICMS,
         // Dados da carga
         valor_carga: valorNota,
         quantidade_carga: parseFloat(formRapido.quantidade),
         produto_predominante_id: formRapido.produto_id,
-        chave_acesso_1: formRapido.chave_nfe,
+        chave_acesso_1: chaveNFeLimpa,
         // Dados padrão
         tipo_servico: '0',
         finalidade_cte: '0',
@@ -903,7 +1020,16 @@ export default function CTe() {
 
       // Criar o documento
       await createMutation.mutateAsync(documentoData)
-      toast.success('CT-e rápido criado com sucesso!')
+      
+      // Mensagem de sucesso com detalhes
+      const freteInfo = valorFreteCadastrado 
+        ? `Frete encontrado: R$ ${valorFrete.toFixed(2)}`
+        : `Frete calculado (5%): R$ ${valorFrete.toFixed(2)}`
+      
+      toast.success(
+        `CT-e rápido criado! ${freteInfo}, ICMS ${aliquotaICMS}% (${rapidoSelectedInicio.uf}→${rapidoSelectedTermino.uf}), Total: R$ ${valorTotalComICMS.toFixed(2)}`
+      )
+      
       setIsModalRapidoOpen(false)
       resetFormRapido()
 
@@ -2618,14 +2744,31 @@ export default function CTe() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
                   >
                     <option value="">Selecione motorista e veículo</option>
-                    {associacoesFrota?.map((associacao) => (
-                      <option key={associacao.id} value={associacao.id}>
-                        {associacao.funcionario?.nome} - {associacao.veiculo_principal?.placa}
-                        {associacao.veiculo_implemento?.placa && ` + ${associacao.veiculo_implemento.placa}`}
-                        {associacao.veiculo_reboque1?.placa && ` + ${associacao.veiculo_reboque1.placa}`}
-                        {associacao.veiculo_reboque2?.placa && ` + ${associacao.veiculo_reboque2.placa}`}
-                      </option>
-                    ))}
+                    {associacoesFrota?.map((associacao) => {
+                      // Construir descrição do conjunto
+                      const motorista = associacao.funcionario?.nome || 'Motorista não informado'
+                      const veiculo = associacao.veiculo_principal?.placa || 'Sem placa'
+                      
+                      // Coletar implementos/reboques
+                      const implementos = []
+                      if (associacao.veiculo_implemento?.placa) {
+                        implementos.push(`${associacao.veiculo_implemento.placa} (${associacao.veiculo_implemento.tipo || 'implemento'})`)
+                      }
+                      if (associacao.veiculo_reboque1?.placa) {
+                        implementos.push(`${associacao.veiculo_reboque1.placa} (${associacao.veiculo_reboque1.tipo || 'reboque'})`)
+                      }
+                      if (associacao.veiculo_reboque2?.placa) {
+                        implementos.push(`${associacao.veiculo_reboque2.placa} (${associacao.veiculo_reboque2.tipo || 'reboque'})`)
+                      }
+                      
+                      const implementosTexto = implementos.length > 0 ? ` + ${implementos.join(' + ')}` : ''
+                      
+                      return (
+                        <option key={associacao.id} value={associacao.id}>
+                          🚛 {motorista} - {veiculo}{implementosTexto}
+                        </option>
+                      )
+                    })}
                   </select>
                 </div>
 
@@ -2661,19 +2804,43 @@ export default function CTe() {
                       type="text"
                       name="rapido_chave_nfe"
                       id="rapido_chave_nfe"
-                      maxLength="44"
                       value={formRapido.chave_nfe}
                       onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '')
+                        // Remove espaços e caracteres não numéricos
+                        const value = e.target.value.replace(/\D/g, '').substring(0, 44)
                         setFormRapido(prev => ({ ...prev, chave_nfe: value }))
+                        
+                        // Auto-preencher CNPJ do remetente se chave tiver 44 dígitos
+                        if (value.length === 44) {
+                          const cnpjExtraido = value.substring(6, 20)
+                          console.log('🔑 CNPJ extraído da chave:', cnpjExtraido)
+                        }
                       }}
-                      placeholder="44 dígitos da chave de acesso"
+                      placeholder="Cole a chave da NF-e aqui (44 dígitos)"
                       required
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm font-mono"
+                      className={`mt-1 block w-full rounded-md shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm font-mono ${
+                        formRapido.chave_nfe.length === 44 
+                          ? 'border-green-300 bg-green-50' 
+                          : formRapido.chave_nfe.length > 0 && formRapido.chave_nfe.length !== 44
+                          ? 'border-red-300 bg-red-50'
+                          : 'border-gray-300'
+                      }`}
                     />
                     <p className="mt-1 text-xs text-gray-500">
-                      Digite apenas números (44 dígitos)
+                      {formRapido.chave_nfe.length > 0 && (
+                        <span className={formRapido.chave_nfe.length === 44 ? 'text-green-600' : 'text-red-600'}>
+                          {formRapido.chave_nfe.length}/44 dígitos
+                          {formRapido.chave_nfe.length === 44 && ' ✓ Válida'}
+                          {formRapido.chave_nfe.length > 0 && formRapido.chave_nfe.length !== 44 && ' ⚠️ Incompleta'}
+                        </span>
+                      )}
+                      {formRapido.chave_nfe.length === 0 && 'Cole ou digite a chave da NF-e (remove espaços automaticamente)'}
                     </p>
+                    {formRapido.chave_nfe.length === 44 && (
+                      <p className="mt-1 text-xs text-blue-600">
+                        🏢 CNPJ do remetente (extraído): {extrairCNPJDaChave(formRapido.chave_nfe)}
+                      </p>
+                    )}
                   </div>
 
                   {/* CNPJ Destinatário */}
@@ -2860,11 +3027,13 @@ export default function CTe() {
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <h4 className="text-sm font-medium text-blue-900 mb-2">🤖 Valores Calculados Automaticamente</h4>
                   <div className="text-sm text-blue-700 space-y-1">
-                    <p>• <strong>Frete:</strong> 5% do valor da nota fiscal</p>
-                    <p>• <strong>ICMS:</strong> 7% sobre o valor do frete</p>
+                    <p>• <strong>Remetente:</strong> Extraído automaticamente da chave NF-e (posições 6-19)</p>
+                    <p>• <strong>Destinatário:</strong> Cliente informado manualmente no CNPJ</p>
+                    <p>• <strong>Frete:</strong> Busca na tabela de frete ou 5% do valor da nota</p>
+                    <p>• <strong>ICMS:</strong> Consulta tabela cte_icms por UF origem/destino</p>
                     <p>• <strong>CFOP:</strong> 5352 (mesmo estado) ou 6352 (estados diferentes)</p>
-                    <p>• <strong>Tomador:</strong> Destinatário (cliente informado no CNPJ)</p>
-                    <p>• <strong>Remetente/Destinatário:</strong> Cliente do CNPJ informado</p>
+                    <p>• <strong>Tomador:</strong> Destinatário</p>
+                    <p>• <strong>Tipo Reboque:</strong> Baseado no veículo associado ao motorista</p>
                   </div>
                 </div>
               </div>
