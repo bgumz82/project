@@ -1317,9 +1317,12 @@ export default function CTe() {
       const result = await response.json()
       console.log('📊 Resultado completo da API:', result)
       
-      if (result.data && result.data.length > 0) {
-        console.log('✅ Cliente encontrado:', result.data[0].razao_social)
-        return result.data[0]
+      // A API pode retornar tanto result.data quanto result.rows dependendo do endpoint
+      const dados = result.data || result.rows || []
+      
+      if (dados && dados.length > 0) {
+        console.log('✅ Cliente encontrado:', dados[0].razao_social)
+        return dados[0]
       }
 
       console.log('❌ Nenhum cliente encontrado com CNPJ:', cnpjLimpo)
