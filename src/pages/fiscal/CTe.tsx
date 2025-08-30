@@ -254,6 +254,7 @@ export default function CTe() {
         console.log('🎯 Primeira associação no componente:', data[0])
         console.log('🎯 Funcionário da primeira associação:', data[0].funcionario)
         console.log('🎯 Veículo principal da primeira associação:', data[0].veiculo_principal)
+        console.log('🎯 Estrutura completa da primeira associação:', JSON.stringify(data[0], null, 2))
       }
     },
     onError: (error) => {
@@ -387,6 +388,14 @@ export default function CTe() {
       [field]: value
     }))
   }
+
+  // useEffect para carregar dados quando modal CT-e rápido abre
+  React.useEffect(() => {
+    if (!isModalRapidoOpen) return
+
+    // Invalidar cache das associações para garantir dados atualizados
+    queryClient.invalidateQueries({ queryKey: ['associacoes-frota-ativas'] })
+  }, [isModalRapidoOpen, queryClient])
 
   // useEffect para carregar dados quando modal abre ou documento selecionado muda
   React.useEffect(() => {
@@ -568,6 +577,9 @@ export default function CTe() {
     }
 
     console.log('🔍 Estrutura completa da associação:', JSON.stringify(associacao, null, 2))
+    console.log('🔍 Funcionário da associação:', associacao.funcionario)
+    console.log('🔍 Veículo principal da associação:', associacao.veiculo_principal)
+    console.log('🔍 Implementos da associação:', associacao.veiculo_implemento)
 
     // Definir placa do veículo principal
     const placaPrincipal = associacao.veiculo_principal?.placa || 'Placa não informada'
@@ -598,14 +610,25 @@ export default function CTe() {
     const funcionario = associacao.funcionario
     console.log('👨‍💼 Dados do funcionário recebidos:', funcionario)
 
-    const validadeCnh = funcionario?.validade_cnh
+    if (!funcionario) {
+      console.log('❌ Funcionário não encontrado na associação')
+      setMotoristaInfo({
+        nome: 'Nome não informado',
+        cnh: 'CNH não informada', 
+        matricula: 'Matrícula não informada',
+        validadeCnh: 'Não informado'
+      })
+      return
+    }
+
+    const validadeCnh = funcionario.validade_cnh
       ? format(parseISO(funcionario.validade_cnh), 'dd/MM/yyyy')
       : 'Não informado'
 
     const info = {
-      nome: funcionario?.nome || 'Nome não informado',
-      cnh: funcionario?.cnh || 'CNH não informada',
-      matricula: funcionario?.matricula || 'Matrícula não informada',
+      nome: funcionario.nome || 'Nome não informado',
+      cnh: funcionario.cnh || 'CNH não informada',
+      matricula: funcionario.matricula || 'Matrícula não informada',
       validadeCnh
     }
 

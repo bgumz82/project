@@ -746,6 +746,7 @@ export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> 
     
     const mappedData = result.map(associacao => {
       console.log('🔄 Processando associação:', associacao.id)
+      console.log('🔄 Dados completos da associação RAW:', associacao)
       console.log('🔄 Dados do funcionário RAW:', {
         nome: associacao.funcionario_nome,
         matricula: associacao.funcionario_matricula,
