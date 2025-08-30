@@ -828,36 +828,74 @@ export default function CTe() {
   // Função para buscar frete
   const buscarFrete = async (cnpjOrigem: string, cnpjDestino: string, tipoReboque: string, cidadeOrigemIbge: string, cidadeDestinoIbge: string) => {
     try {
+      console.log('💰 Iniciando busca de frete com parâmetros:')
+      console.log('- CNPJ Origem:', cnpjOrigem)
+      console.log('- CNPJ Destino:', cnpjDestino)
+      console.log('- Tipo Reboque:', tipoReboque)
+      console.log('- Cidade Origem IBGE:', cidadeOrigemIbge)
+      console.log('- Cidade Destino IBGE:', cidadeDestinoIbge)
+
+      const query = `
+        SELECT valor_frete 
+        FROM frete_documentos 
+        WHERE cliente_origem_id IN (
+          SELECT id FROM cadastros WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
+        )
+        AND cliente_destino_id IN (
+          SELECT id FROM cadastros WHERE cnpj = $2 AND tipo = 'cliente' AND ativo = true
+        )
+        AND tipo_reboque = $3 
+        AND cidade_origem_ibge = $4 
+        AND cidade_destino_ibge = $5
+        AND ativo = true
+        LIMIT 1
+      `
+
+      const params = [cnpjOrigem, cnpjDestino, tipoReboque, cidadeOrigemIbge, cidadeDestinoIbge]
+
+      console.log('🔍 Query SQL:')
+      console.log(query)
+      console.log('📋 Parâmetros:')
+      console.log(params)
+
       const response = await fetch('/api/db/query', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
         },
         body: JSON.stringify({
-          query: `
-            SELECT valor_frete 
-            FROM frete 
-            WHERE cnpj_origem = $1 
-              AND cnpj_destino = $2 
-              AND tipo_reboque = $3 
-              AND cidade_origem_ibge = $4 
-              AND cidade_destino_ibge = $5
-              AND ativo = true
-            LIMIT 1
-          `,
-          params: [cnpjOrigem, cnpjDestino, tipoReboque, cidadeOrigemIbge, cidadeDestinoIbge]
+          query: query,
+          params: params
         })
       })
 
+      console.log('🌐 Status da resposta:', response.status)
+
       if (!response.ok) {
-        throw new Error('Erro ao buscar frete')
+        const errorText = await response.text()
+        console.error('❌ Erro na resposta da API:', errorText)
+        throw new Error(`Erro ${response.status}: ${response.statusText}`)
       }
 
       const result = await response.json()
-      return result.data && result.data.length > 0 ? parseFloat(result.data[0].valor_frete) : null
+      console.log('📊 Resultado completo da busca de frete:', result)
+
+      // Verificar estrutura da resposta
+      const dados = result.data || result.rows || []
+      console.log('📄 Dados de frete encontrados:', dados)
+
+      if (dados && dados.length > 0) {
+        const valorFrete = parseFloat(dados[0].valor_frete)
+        console.log('✅ Frete encontrado! Valor:', valorFrete)
+        return valorFrete
+      } else {
+        console.log('❌ Nenhum frete encontrado para os parâmetros informados')
+        return null
+      }
     } catch (error) {
-      console.error('Erro ao buscar frete:', error)
+      console.error('❌ Erro ao buscar frete:', error)
+      console.error('🔍 Stack trace:', error instanceof Error ? error.stack : 'N/A')
       return null
     }
   }
