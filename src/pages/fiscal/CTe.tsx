@@ -548,8 +548,16 @@ export default function CTe() {
       return
     }
 
-    const associacao = associacoesFrota?.find(a => a.id === associacaoId)
-    console.log('🔍 Associação encontrada completa:', associacao)
+    if (!associacoesFrota || associacoesFrota.length === 0) {
+      console.log('❌ Nenhuma associação de frota disponível')
+      setPlacaVeiculo('')
+      setPlacaReboque('')
+      setMotoristaInfo(null)
+      return
+    }
+
+    const associacao = associacoesFrota.find(a => a.id === associacaoId)
+    console.log('🔍 Associação encontrada:', associacao)
 
     if (!associacao) {
       console.log('❌ Associação não encontrada para ID:', associacaoId)
@@ -569,10 +577,10 @@ export default function CTe() {
     console.log('🚛 Placa principal definida:', placaPrincipal)
 
     // Definir placa do reboque (combinando reboque1 e reboque2 se existirem, ou implemento)
-    let placaReboque = ''
+    let placaRebasque = ''
     if (associacao.veiculo_implemento?.placa) {
-      placaReboque = associacao.veiculo_implemento.placa
-      console.log('🚛 Implemento encontrado:', placaReboque)
+      placaRebasque = associacao.veiculo_implemento.placa
+      console.log('🚛 Implemento encontrado:', placaRebasque)
     } else {
       const placas = []
       if (associacao.veiculo_reboque1?.placa) {
@@ -583,10 +591,10 @@ export default function CTe() {
         placas.push(associacao.veiculo_reboque2.placa)
         console.log('🚛 Reboque 2 encontrado:', associacao.veiculo_reboque2.placa)
       }
-      placaReboque = placas.join(' + ')
+      placaRebasque = placas.join(' + ')
     }
-    setPlacaReboque(placaReboque || 'Nenhum reboque/implemento')
-    console.log('🚛 Placa reboque/implemento definida:', placaReboque)
+    setPlacaReboque(placaRebasque || 'Nenhum reboque/implemento')
+    console.log('🚛 Placa reboque/implemento definida:', placaRebasque)
 
     // Definir informações do motorista
     console.log('👨‍💼 Dados do funcionário recebidos:', associacao.funcionario)
