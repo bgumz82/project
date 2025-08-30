@@ -577,10 +577,10 @@ export default function CTe() {
     console.log('🚛 Placa principal definida:', placaPrincipal)
 
     // Definir placa do reboque (combinando reboque1 e reboque2 se existirem, ou implemento)
-    let placaRebasque = ''
+    let placaReboque = ''
     if (associacao.veiculo_implemento?.placa) {
-      placaRebasque = associacao.veiculo_implemento.placa
-      console.log('🚛 Implemento encontrado:', placaRebasque)
+      placaReboque = associacao.veiculo_implemento.placa
+      console.log('🚛 Implemento encontrado:', placaReboque)
     } else {
       const placas = []
       if (associacao.veiculo_reboque1?.placa) {
@@ -591,10 +591,10 @@ export default function CTe() {
         placas.push(associacao.veiculo_reboque2.placa)
         console.log('🚛 Reboque 2 encontrado:', associacao.veiculo_reboque2.placa)
       }
-      placaRebasque = placas.join(' + ')
+      placaReboque = placas.join(' + ')
     }
-    setPlacaReboque(placaRebasque || 'Nenhum reboque/implemento')
-    console.log('🚛 Placa reboque/implemento definida:', placaRebasque)
+    setPlacaReboque(placaReboque || 'Nenhum reboque/implemento')
+    console.log('🚛 Placa reboque/implemento definida:', placaReboque)
 
     // Definir informações do motorista
     console.log('👨‍💼 Dados do funcionário recebidos:', associacao.funcionario)
