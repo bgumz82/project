@@ -1285,17 +1285,17 @@ export default function CTe() {
         return null
       }
 
-      // Query 1: Busca exata
-      const query1 = `
+      // Usar a mesma query que funcionou no teste direto
+      const query = `
         SELECT * FROM cadastros 
         WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true 
         LIMIT 1
       `
-      const params1 = [cnpjLimpo]
+      const params = [cnpjLimpo]
       
-      console.log('🔍 Executando Query 1 (busca exata):')
-      console.log('📋 SQL:', query1.trim())
-      console.log('📋 Parâmetros:', params1)
+      console.log('🔍 Executando query:')
+      console.log('📋 SQL:', query.trim())
+      console.log('📋 Parâmetros:', params)
 
       const response = await fetch('/api/db/query', {
         method: 'POST',
@@ -1304,105 +1304,25 @@ export default function CTe() {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          query: query1,
-          params: params1
+          query: query,
+          params: params
         })
       })
 
       if (!response.ok) {
-        console.error('❌ Erro na resposta da API Query 1:', response.status, response.statusText)
-        throw new Error('Erro ao buscar cliente')
+        console.error('❌ Erro na resposta da API:', response.status, response.statusText)
+        throw new Error(`Erro ${response.status}: ${response.statusText}`)
       }
 
       const result = await response.json()
-      console.log('📊 Resultado da Query 1 (busca exata):', result)
+      console.log('📊 Resultado completo da API:', result)
       
       if (result.data && result.data.length > 0) {
-        console.log('✅ Cliente encontrado (busca exata):', result.data[0].razao_social)
+        console.log('✅ Cliente encontrado:', result.data[0].razao_social)
         return result.data[0]
       }
 
-      // Query 2: Busca flexível (removendo formatação)
-      const query2 = `
-        SELECT * FROM cadastros 
-        WHERE REPLACE(REPLACE(REPLACE(cnpj, '.', ''), '/', ''), '-', '') = $1 
-        AND tipo = 'cliente' 
-        AND ativo = true 
-        LIMIT 1
-      `
-      const params2 = [cnpjLimpo]
-      
-      console.log('🔍 Executando Query 2 (busca flexível):')
-      console.log('📋 SQL:', query2.trim())
-      console.log('📋 Parâmetros:', params2)
-
-      const flexResponse = await fetch('/api/db/query', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          query: query2,
-          params: params2
-        })
-      })
-
-      if (flexResponse.ok) {
-        const flexResult = await flexResponse.json()
-        console.log('📊 Resultado da Query 2 (busca flexível):', flexResult)
-        
-        if (flexResult.data && flexResult.data.length > 0) {
-          console.log('✅ Cliente encontrado (busca flexível):', flexResult.data[0].razao_social)
-          return flexResult.data[0]
-        }
-      } else {
-        console.error('❌ Erro na resposta da API Query 2:', flexResponse.status, flexResponse.statusText)
-      }
-
-      // Query 3: Debug - buscar todos os clientes com seus CNPJs
-      const query3 = `
-        SELECT cnpj, razao_social, tipo, ativo,
-               REPLACE(REPLACE(REPLACE(cnpj, '.', ''), '/', ''), '-', '') as cnpj_limpo
-        FROM cadastros 
-        WHERE tipo = 'cliente' 
-        AND ativo = true
-        ORDER BY razao_social
-        LIMIT 10
-      `
-      
-      console.log('🔍 Executando Query 3 (debug - amostra de clientes):')
-      console.log('📋 SQL:', query3.trim())
-      console.log('📋 Parâmetros: []')
-
-      const debugResponse = await fetch('/api/db/query', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          query: query3,
-          params: []
-        })
-      })
-      
-      if (debugResponse.ok) {
-        const debugResult = await debugResponse.json()
-        console.log('📊 Resultado da Query 3 (debug):', debugResult)
-        console.log('🔍 Amostra de CNPJs de clientes cadastrados:')
-        debugResult.data?.forEach((cliente: any, index: number) => {
-          console.log(`  ${index + 1}. ${cliente.razao_social}`)
-          console.log(`     CNPJ original: "${cliente.cnpj}"`)
-          console.log(`     CNPJ limpo: "${cliente.cnpj_limpo}"`)
-          console.log(`     Match com procurado (${cnpjLimpo}): ${cliente.cnpj_limpo === cnpjLimpo ? '✅ SIM' : '❌ NÃO'}`)
-        })
-        console.log(`🔍 CNPJ procurado: "${cnpjLimpo}"`)
-      } else {
-        console.error('❌ Erro na resposta da API Query 3:', debugResponse.status, debugResponse.statusText)
-      }
-
-      console.log('❌ Cliente não encontrado para CNPJ:', cnpjLimpo)
+      console.log('❌ Nenhum cliente encontrado com CNPJ:', cnpjLimpo)
       return null
     } catch (error) {
       console.error('❌ Erro ao buscar cliente por CNPJ:', error)
