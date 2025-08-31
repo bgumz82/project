@@ -393,6 +393,14 @@ export default function CTe() {
       ...prev,
       [field]: value
     }))
+
+    // Recalcular automaticamente quando pedágio ou seguro mudarem
+    if (field === 'valor_pedagio' || field === 'valor_seguro') {
+      // Usar setTimeout para garantir que o estado foi atualizado
+      setTimeout(() => {
+        calcularImpostos()
+      }, 100)
+    }
   }
 
   // useEffect para carregar dados quando modal CT-e rápido abre
@@ -512,10 +520,12 @@ export default function CTe() {
     if (!valorPrestacaoInput || !valorTributosInput || !valorReceberInput || !icmsValorInput || !icmsBcInput) return
 
     const valorICMS = parseFloat(icmsValorInput.value) || 0
-    const valorTotalComICMS = parseFloat(icmsBcInput.value) || 0
+    const valorBaseComICMS = parseFloat(icmsBcInput.value) || 0
+    const valorPedagio = parseFloat(formData.valor_pedagio || '0') || 0
+    const valorSeguro = parseFloat(formData.valor_seguro || '0') || 0
 
-    // Valor Total da Prestação = Valor total já calculado com ICMS
-    const valorTotalPrestacao = valorTotalComICMS
+    // Valor Total da Prestação = Valor base com ICMS + Pedágio + Seguro
+    const valorTotalPrestacao = valorBaseComICMS + valorPedagio + valorSeguro
 
     // Atualizar campos e estado
     const valorPrestacaoFormatado = valorTotalPrestacao.toFixed(2)
@@ -533,6 +543,13 @@ export default function CTe() {
       valor_tributos: valorTributosFormatado,
       valor_receber: valorReceberFormatado
     }))
+
+    console.log('💰 Cálculo de impostos atualizado:')
+    console.log('- Valor base com ICMS:', valorBaseComICMS.toFixed(2))
+    console.log('- Valor pedágio:', valorPedagio.toFixed(2))
+    console.log('- Valor seguro:', valorSeguro.toFixed(2))
+    console.log('- Valor ICMS:', valorICMS.toFixed(2))
+    console.log('- Valor total final:', valorTotalPrestacao.toFixed(2))
   }
 
   // Função para atualizar dados baseado na empresa selecionada
@@ -2503,6 +2520,37 @@ export default function CTe() {
                         </p>
                       </div>
                     </div>
+
+                    {/* Resumo da Composição do Frete */}
+                    {(parseFloat(formData.valor_pedagio || '0') > 0 || parseFloat(formData.valor_seguro || '0') > 0) && (
+                      <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                        <h5 className="text-sm font-medium text-green-900 mb-2">📊 Resumo da Composição</h5>
+                        <div className="grid grid-cols-1 gap-2 text-sm">
+                          {parseFloat(formData.valor_pedagio || '0') > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-green-700">🛣️ Pedágio:</span>
+                              <span className="font-medium text-green-900">
+                                R$ {parseFloat(formData.valor_pedagio || '0').toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+                          {parseFloat(formData.valor_seguro || '0') > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-green-700">🛡️ Seguro:</span>
+                              <span className="font-medium text-green-900">
+                                R$ {parseFloat(formData.valor_seguro || '0').toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex justify-between border-t border-green-300 pt-2">
+                            <span className="text-green-800 font-medium">💰 Total Adicional:</span>
+                            <span className="font-bold text-green-900">
+                              R$ {(parseFloat(formData.valor_pedagio || '0') + parseFloat(formData.valor_seguro || '0')).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Valores da Prestação */}
