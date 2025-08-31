@@ -125,6 +125,8 @@ export default function CTe() {
     valor_prestacao: string
     valor_receber: string
     valor_tributos: string
+    valor_pedagio: string
+    valor_seguro: string
     icms_situacao_tributaria: string
     icms_bc_valor: string
     icms_aliquota: string
@@ -153,6 +155,8 @@ export default function CTe() {
     valor_prestacao: '',
     valor_receber: '',
     valor_tributos: '',
+    valor_pedagio: '',
+    valor_seguro: '',
     icms_situacao_tributaria: '',
     icms_bc_valor: '',
     icms_aliquota: '',
@@ -340,6 +344,8 @@ export default function CTe() {
       valor_prestacao: '',
       valor_receber: '',
       valor_tributos: '',
+      valor_pedagio: '',
+      valor_seguro: '',
       icms_situacao_tributaria: '',
       icms_bc_valor: '',
       icms_aliquota: '',
@@ -436,6 +442,8 @@ export default function CTe() {
         valor_prestacao: selectedDocumento.valor_prestacao?.toString() || '',
         valor_receber: selectedDocumento.valor_receber?.toString() || '',
         valor_tributos: selectedDocumento.valor_tributos?.toString() || '',
+        valor_pedagio: selectedDocumento.valor_pedagio?.toString() || '',
+        valor_seguro: selectedDocumento.valor_seguro?.toString() || '',
         icms_situacao_tributaria: selectedDocumento.icms_situacao_tributaria || '',
         icms_bc_valor: selectedDocumento.icms_bc_valor?.toString() || '',
         icms_aliquota: selectedDocumento.icms_aliquota?.toString() || '',
@@ -1326,6 +1334,8 @@ export default function CTe() {
         valor_prestacao: valorTotalComICMS,
         valor_receber: valorTotalComICMS,
         valor_tributos: valorICMS,
+        valor_pedagio: informacoesFrete.cobranca_pedagio ? informacoesFrete.valor_pedagio : 0,
+        valor_seguro: informacoesFrete.cobranca_seguro ? informacoesFrete.valor_seguro : 0,
         icms_situacao_tributaria: situacaoTributaria,
         icms_bc_valor: valorTotalComICMS,
         icms_aliquota: aliquotaICMS,
@@ -1541,6 +1551,8 @@ export default function CTe() {
       valor_prestacao: formData.valor_prestacao ? parseFloat(formData.valor_prestacao) : null,
       valor_receber: formData.valor_receber ? parseFloat(formData.valor_receber) : null,
       valor_tributos: formData.valor_tributos ? parseFloat(formData.valor_tributos) : null,
+      valor_pedagio: formData.valor_pedagio ? parseFloat(formData.valor_pedagio) : null,
+      valor_seguro: formData.valor_seguro ? parseFloat(formData.valor_seguro) : null,
       icms_situacao_tributaria: formData.icms_situacao_tributaria || null,
       icms_bc_valor: formData.icms_bc_valor ? parseFloat(formData.icms_bc_valor) : null,
       icms_aliquota: formData.icms_aliquota ? parseFloat(formData.icms_aliquota) : null,
@@ -2436,6 +2448,63 @@ export default function CTe() {
                     </p>
                   </div>
 
+                  {/* Composição do Frete */}
+                  <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                    <h4 className="text-lg font-medium text-gray-900 mb-4">🚛 Composição do Frete</h4>
+
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="valor_pedagio" className="block text-sm font-medium text-gray-700">
+                          Valor do Pedágio
+                        </label>
+                        <div className="mt-1 relative rounded-md shadow-sm">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 sm:text-sm">R$</span>
+                          </div>
+                          <input
+                            type="number"
+                            name="valor_pedagio"
+                            id="valor_pedagio"
+                            step="0.01"
+                            min="0"
+                            placeholder="0,00"
+                            value={formData.valor_pedagio || ''}
+                            onChange={(e) => updateFormData('valor_pedagio', e.target.value)}
+                            className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          />
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Valor do pedágio incluído no frete
+                        </p>
+                      </div>
+
+                      <div>
+                        <label htmlFor="valor_seguro" className="block text-sm font-medium text-gray-700">
+                          Valor do Seguro
+                        </label>
+                        <div className="mt-1 relative rounded-md shadow-sm">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 sm:text-sm">R$</span>
+                          </div>
+                          <input
+                            type="number"
+                            name="valor_seguro"
+                            id="valor_seguro"
+                            step="0.01"
+                            min="0"
+                            placeholder="0,00"
+                            value={formData.valor_seguro || ''}
+                            onChange={(e) => updateFormData('valor_seguro', e.target.value)}
+                            className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          />
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Valor do seguro incluído no frete
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Valores da Prestação */}
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                     <div>
@@ -2460,7 +2529,7 @@ export default function CTe() {
                         />
                       </div>
                       <p id="valor_prestacao_desc" className="mt-1 text-xs text-gray-500">
-                        Calculado automaticamente (Base + ICMS)
+                        Calculado automaticamente (Frete + Pedágio + Seguro + ICMS)
                       </p>
                     </div>
 
@@ -2486,7 +2555,7 @@ export default function CTe() {
                         />
                       </div>
                       <p id="valor_receber_desc" className="mt-1 text-xs text-gray-500">
-                        Valor total a receber (Base + ICMS)
+                        Valor total a receber (Frete + Pedágio + Seguro + ICMS)
                       </p>
                     </div>
 

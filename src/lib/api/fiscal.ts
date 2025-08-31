@@ -70,6 +70,8 @@ export interface CTeDocumento {
   valor_prestacao?: number | null;
   valor_receber?: number | null;
   valor_tributos?: number | null;
+  valor_pedagio?: number | null;
+  valor_seguro?: number | null;
   icms_situacao_tributaria?: string | null;
   icms_bc_valor?: number | null;
   icms_aliquota?: number | null;
@@ -121,6 +123,8 @@ export interface CTeDocumentoCreate {
   valor_prestacao?: number | null;
   valor_receber?: number | null;
   valor_tributos?: number | null;
+  valor_pedagio?: number | null;
+  valor_seguro?: number | null;
   icms_situacao_tributaria?: string | null;
   icms_bc_valor?: number | null;
   icms_aliquota?: number | null;
@@ -369,17 +373,17 @@ export async function updateEmpresaFiscal(
     // Normalizar path_arquivos se fornecido
     if (empresa.path_arquivos !== undefined && empresa.path_arquivos) {
       let pathNormalizado = empresa.path_arquivos;
-      
+
       // Remover "./" do início se existir
       if (pathNormalizado.startsWith('./')) {
         pathNormalizado = pathNormalizado.substring(2);
       }
-      
+
       // Garantir que não comece com "/"
       if (pathNormalizado.startsWith('/')) {
         pathNormalizado = pathNormalizado.substring(1);
       }
-      
+
       empresa.path_arquivos = pathNormalizado;
     }
 
@@ -456,20 +460,20 @@ export async function updateEmpresaFiscal(
 
     if (empresa.path_arquivos !== undefined) {
       let pathFinal = empresa.path_arquivos;
-      
+
       // Normalizar path se não for null
       if (pathFinal) {
         // Remover "./" do início se existir
         if (pathFinal.startsWith('./')) {
           pathFinal = pathFinal.substring(2);
         }
-        
+
         // Garantir que não comece com "/"
         if (pathFinal.startsWith('/')) {
           pathFinal = pathFinal.substring(1);
         }
       }
-      
+
       updates.push(`path_arquivos = $${paramIndex}`);
       values.push(pathFinal);
       paramIndex++;
@@ -667,11 +671,11 @@ export async function createCTeDocumento(
 
     // ATENÇÃO: chave_acesso_1, 2, 3, 4 são chaves das NF-es referenciadas (não do CT-e)
     // A chave_acesso principal será gerada automaticamente pelo sistema para o CT-e
-    
+
     // Validar chaves das NF-es referenciadas (se fornecidas)
     const chavesNFe = [documento.chave_acesso_1, documento.chave_acesso_2, documento.chave_acesso_3, documento.chave_acesso_4]
       .filter(chave => chave && chave.trim() !== '');
-    
+
     // Validar cada chave de NF-e fornecida
     chavesNFe.forEach((chave, index) => {
       if (chave && chave.length !== 44) {
@@ -707,6 +711,8 @@ export async function createCTeDocumento(
         valor_prestacao,
         valor_receber,
         valor_tributos,
+        valor_pedagio,
+        valor_seguro,
         icms_situacao_tributaria,
         icms_bc_valor,
         icms_aliquota,
@@ -767,6 +773,8 @@ export async function createCTeDocumento(
         documento.valor_prestacao,
         documento.valor_receber,
         documento.valor_tributos,
+        documento.valor_pedagio,
+        documento.valor_seguro,
         documento.icms_situacao_tributaria,
         documento.icms_bc_valor,
         documento.icms_aliquota,
@@ -804,7 +812,7 @@ export async function createCTeDocumento(
     // Verificar se a chave de acesso foi gerada e forçar regeneração se necessário
     if (!result.chave_acesso) {
       console.log("⚠️ Chave de acesso não gerada, forçando regeneração...");
-      
+
       const updatedResult = await queryOne(
         `
         UPDATE cte_documentos 
@@ -815,7 +823,7 @@ export async function createCTeDocumento(
         `,
         [result.id]
       );
-      
+
       if (updatedResult) {
         console.log("✅ Chave de acesso regenerada:", updatedResult.chave_acesso);
         return updatedResult;
@@ -1003,6 +1011,19 @@ export async function updateCTeDocumento(
     if (documento.valor_tributos !== undefined && documento.valor_tributos !== null) {
       updates.push(`valor_tributos = $${paramIndex}`);
       values.push(documento.valor_tributos);
+      paramIndex++;
+    }
+
+    // Adicionar os novos campos de pedágio e seguro
+    if (documento.valor_pedagio !== undefined && documento.valor_pedagio !== null) {
+      updates.push(`valor_pedagio = $${paramIndex}`);
+      values.push(documento.valor_pedagio);
+      paramIndex++;
+    }
+
+    if (documento.valor_seguro !== undefined && documento.valor_seguro !== null) {
+      updates.push(`valor_seguro = $${paramIndex}`);
+      values.push(documento.valor_seguro);
       paramIndex++;
     }
 
@@ -1720,12 +1741,12 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
 
     // Normalizar basePath - sempre usar padrão sem "./" no início
     let basePath = documento.empresa_path || `uploads/fiscal/${documento.empresa_cnpj}`;
-    
+
     // Remover "./" do início se existir
     if (basePath.startsWith('./')) {
       basePath = basePath.substring(2);
     }
-    
+
     // Garantir que não comece com "/"
     if (basePath.startsWith('/')) {
       basePath = basePath.substring(1);
@@ -1745,13 +1766,13 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
     // Salvar o arquivo usando fetch para o servidor
     try {
       console.log("💾 Tentando salvar arquivo XML fisicamente...");
-      
+
       const fileName = `${documento.chave_acesso}-cte.xml`;
       const fullXmlPath = `${basePath}/cte/${fileName}`;
-      
+
       console.log("📁 Salvando arquivo em:", fullXmlPath);
       console.log("📄 Tamanho do conteúdo XML:", xmlContent.length, "caracteres");
-      
+
       // Fazer upload do arquivo para o servidor
       const response = await fetch('/api/upload-xml', {
         method: 'POST',
@@ -1771,13 +1792,13 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
       } else {
         console.log("⚠️ Erro no upload, mas XML foi gerado:", await response.text());
       }
-      
+
       console.log("📄 Preview do XML:", xmlContent.substring(0, 300) + "...");
-      
+
     } catch (writeError) {
       console.error("❌ Erro ao salvar arquivo XML:", writeError);
       console.log("📄 Conteúdo XML gerado:", xmlContent.substring(0, 200) + "...");
-      
+
       // Mesmo com erro de salvamento, continue o processo
     }
 
