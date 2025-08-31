@@ -934,23 +934,63 @@ export default function CTe() {
       console.log('- UF Origem:', ufOrigem)
       console.log('- UF Destino:', ufDestino)
 
+      // Normalizar nomes dos estados para comparação
+      const normalizeUF = (uf: string) => {
+        const ufMap: { [key: string]: string } = {
+          'Minas Gerais': 'MG',
+          'Goiás': 'GO',
+          'São Paulo': 'SP',
+          'Rio de Janeiro': 'RJ',
+          'Bahia': 'BA',
+          'Paraná': 'PR',
+          'Rio Grande do Sul': 'RS',
+          'Pernambuco': 'PE',
+          'Ceará': 'CE',
+          'Pará': 'PA',
+          'Santa Catarina': 'SC',
+          'Maranhão': 'MA',
+          'Paraíba': 'PB',
+          'Espírito Santo': 'ES',
+          'Piauí': 'PI',
+          'Alagoas': 'AL',
+          'Distrito Federal': 'DF',
+          'Mato Grosso do Sul': 'MS',
+          'Mato Grosso': 'MT',
+          'Rio Grande do Norte': 'RN',
+          'Sergipe': 'SE',
+          'Rondônia': 'RO',
+          'Acre': 'AC',
+          'Amazonas': 'AM',
+          'Roraima': 'RR',
+          'Amapá': 'AP',
+          'Tocantins': 'TO'
+        }
+        return ufMap[uf] || uf
+      }
+
+      const ufOrigemNorm = normalizeUF(ufOrigem)
+      const ufDestinoNorm = normalizeUF(ufDestino)
+
+      console.log('- UF Origem normalizada:', ufOrigemNorm)
+      console.log('- UF Destino normalizada:', ufDestinoNorm)
+
       // Regras específicas implementadas
-      if (ufOrigem === 'MG' && ufDestino === 'GO') {
+      if (ufOrigemNorm === 'MG' && ufDestinoNorm === 'GO') {
         console.log('✅ Regra MG → GO: ICMS 7%')
         return 7.0
       }
       
-      if (ufOrigem === 'GO' && ufDestino === 'MG') {
+      if (ufOrigemNorm === 'GO' && ufDestinoNorm === 'MG') {
         console.log('✅ Regra GO → MG: ICMS 12%')
         return 12.0
       }
       
-      if (ufOrigem === 'MG' && ufDestino === 'MG') {
+      if (ufOrigemNorm === 'MG' && ufDestinoNorm === 'MG') {
         console.log('✅ Regra MG → MG: ICMS Isenção (0%)')
         return 0.0
       }
       
-      if (ufOrigem === 'GO' && ufDestino === 'GO') {
+      if (ufOrigemNorm === 'GO' && ufDestinoNorm === 'GO') {
         console.log('✅ Regra GO → GO: ICMS Isenção (0%)')
         return 0.0
       }
@@ -964,8 +1004,8 @@ export default function CTe() {
           'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
         },
         body: JSON.stringify({
-          query: `SELECT "${ufDestino}" as aliquota FROM cte_icms WHERE "ORIGEM" = $1`,
-          params: [ufOrigem]
+          query: `SELECT "${ufDestinoNorm}" as aliquota FROM cte_icms WHERE "ORIGEM" = $1`,
+          params: [ufOrigemNorm]
         })
       })
 
@@ -974,7 +1014,8 @@ export default function CTe() {
       }
 
       const result = await response.json()
-      const aliquotaTabela = result.data && result.data.length > 0 ? parseFloat(result.data[0].aliquota) : 7.0
+      const dados = result.data || result.rows || []
+      const aliquotaTabela = dados.length > 0 ? parseFloat(dados[0].aliquota) : 7.0
       console.log('📊 ICMS da tabela:', aliquotaTabela + '%')
       return aliquotaTabela
     } catch (error) {
@@ -989,29 +1030,69 @@ export default function CTe() {
     console.log('- UF Origem:', ufOrigem)
     console.log('- UF Destino:', ufDestino)
 
+    // Normalizar nomes dos estados para comparação
+    const normalizeUF = (uf: string) => {
+      const ufMap: { [key: string]: string } = {
+        'Minas Gerais': 'MG',
+        'Goiás': 'GO',
+        'São Paulo': 'SP',
+        'Rio de Janeiro': 'RJ',
+        'Bahia': 'BA',
+        'Paraná': 'PR',
+        'Rio Grande do Sul': 'RS',
+        'Pernambuco': 'PE',
+        'Ceará': 'CE',
+        'Pará': 'PA',
+        'Santa Catarina': 'SC',
+        'Maranhão': 'MA',
+        'Paraíba': 'PB',
+        'Espírito Santo': 'ES',
+        'Piauí': 'PI',
+        'Alagoas': 'AL',
+        'Distrito Federal': 'DF',
+        'Mato Grosso do Sul': 'MS',
+        'Mato Grosso': 'MT',
+        'Rio Grande do Norte': 'RN',
+        'Sergipe': 'SE',
+        'Rondônia': 'RO',
+        'Acre': 'AC',
+        'Amazonas': 'AM',
+        'Roraima': 'RR',
+        'Amapá': 'AP',
+        'Tocantins': 'TO'
+      }
+      return ufMap[uf] || uf
+    }
+
+    const ufOrigemNorm = normalizeUF(ufOrigem)
+    const ufDestinoNorm = normalizeUF(ufDestino)
+
+    console.log('- UF Origem normalizada:', ufOrigemNorm)
+    console.log('- UF Destino normalizada:', ufDestinoNorm)
+
     // Regras específicas implementadas
-    if (ufOrigem === 'MG' && ufDestino === 'GO') {
+    if (ufOrigemNorm === 'MG' && ufDestinoNorm === 'GO') {
       console.log('✅ Regra MG → GO: CFOP 6352')
       return '6352'
     }
     
-    if (ufOrigem === 'GO' && ufDestino === 'MG') {
+    if (ufOrigemNorm === 'GO' && ufDestinoNorm === 'MG') {
       console.log('✅ Regra GO → MG: CFOP 6932')
       return '6932'
     }
     
-    if (ufOrigem === 'MG' && ufDestino === 'MG') {
+    if (ufOrigemNorm === 'MG' && ufDestinoNorm === 'MG') {
       console.log('✅ Regra MG → MG: CFOP 5352')
       return '5352'
     }
     
-    if (ufOrigem === 'GO' && ufDestino === 'GO') {
+    if (ufOrigemNorm === 'GO' && ufDestinoNorm === 'GO') {
       console.log('✅ Regra GO → GO: CFOP 5932')
       return '5932'
     }
 
     // Para outras UFs, usar regra padrão (dentro do estado = 5352, fora do estado = 6352)
-    if (ufOrigem === ufDestino) {
+    if (ufOrigemNorm === ufDestinoNorm) {
       console.log('📋 Regra padrão dentro do estado: CFOP 5352')
       return '5352'
     } else {
@@ -1168,29 +1249,59 @@ export default function CTe() {
       // Usar o valor calculado
       const valorFrete = valorBaseFrete
 
-      // Buscar alíquota de ICMS baseada nos estados com regras específicas
-      const aliquotaICMS = await buscarICMSPorUF(rapidoSelectedInicio.uf, rapidoSelectedTermino.uf)
+      // Aplicar regras específicas de ICMS e CFOP
+      console.log('🏛️ Aplicando regras específicas de ICMS e CFOP')
+      console.log('- UF Origem:', rapidoSelectedInicio.uf)
+      console.log('- UF Destino:', rapidoSelectedTermino.uf)
 
-      // Determinar CFOP baseado nas UFs
-      const cfopCalculado = determinarCFOP(rapidoSelectedInicio.uf, rapidoSelectedTermino.uf)
+      let aliquotaICMS = 0
+      let cfopCalculado = '5352'
+      let situacaoTributaria = '40' // Isenção por padrão
+
+      // Regras específicas implementadas
+      if (rapidoSelectedInicio.uf === 'Minas Gerais' && rapidoSelectedTermino.uf === 'Goiás') {
+        aliquotaICMS = 7.0
+        cfopCalculado = '6352'
+        situacaoTributaria = '00'
+        console.log('✅ Regra MG → GO: ICMS 7%, CFOP 6352')
+      } else if (rapidoSelectedInicio.uf === 'Goiás' && rapidoSelectedTermino.uf === 'Minas Gerais') {
+        aliquotaICMS = 12.0
+        cfopCalculado = '6932'
+        situacaoTributaria = '00'
+        console.log('✅ Regra GO → MG: ICMS 12%, CFOP 6932')
+      } else if (rapidoSelectedInicio.uf === 'Minas Gerais' && rapidoSelectedTermino.uf === 'Minas Gerais') {
+        aliquotaICMS = 0.0
+        cfopCalculado = '5352'
+        situacaoTributaria = '40'
+        console.log('✅ Regra MG → MG: ICMS Isenção, CFOP 5352')
+      } else if (rapidoSelectedInicio.uf === 'Goiás' && rapidoSelectedTermino.uf === 'Goiás') {
+        aliquotaICMS = 0.0
+        cfopCalculado = '5932'
+        situacaoTributaria = '40'
+        console.log('✅ Regra GO → GO: ICMS Isenção, CFOP 5932')
+      } else {
+        // Para outras UFs, buscar na tabela cte_icms
+        console.log('🔍 Buscando ICMS na tabela para outras UFs')
+        aliquotaICMS = await buscarICMSPorUF(rapidoSelectedInicio.uf, rapidoSelectedTermino.uf)
+        cfopCalculado = rapidoSelectedInicio.uf === rapidoSelectedTermino.uf ? '5352' : '6352'
+        situacaoTributaria = aliquotaICMS > 0 ? '00' : '40'
+        console.log(`📊 ICMS da tabela: ${aliquotaICMS}%, CFOP: ${cfopCalculado}`)
+      }
 
       // Calcular ICMS
       let valorTotalComICMS = valorFrete
       let valorICMS = 0
-      let situacaoTributaria = '40' // Isenção por padrão
 
       if (aliquotaICMS > 0) {
         // Com ICMS: Valor Base / (1 - Alíquota) - para incluir ICMS no valor
         const aliquotaDecimal = aliquotaICMS / 100
         valorTotalComICMS = valorFrete / (1 - aliquotaDecimal)
         valorICMS = valorTotalComICMS - valorFrete
-        situacaoTributaria = '00' // Tributação normal
         console.log(`💰 ICMS calculado: ${aliquotaICMS}% = R$ ${valorICMS.toFixed(2)}`)
       } else {
         // Isenção: não há ICMS
         valorTotalComICMS = valorFrete
         valorICMS = 0
-        situacaoTributaria = '40' // Isenção
         console.log('🆓 ICMS Isenção aplicada')
       }
 
@@ -1244,34 +1355,89 @@ export default function CTe() {
       // Criar o documento
       await createMutation.mutateAsync(documentoData)
       
-      // Construir mensagem detalhada
+      // Construir mensagem detalhada com composição completa
       let mensagemDetalhes = []
       
-      // Composição do frete
-      let composicaoFrete = [`Frete Base: R$ ${informacoesFrete.valor_frete.toFixed(2)}`]
+      // Composição detalhada do frete
+      let composicaoFrete = [`Frete: R$ ${informacoesFrete.valor_frete.toFixed(2)}`]
+      let valorPedagio = 0
+      let valorSeguro = 0
       
       if (informacoesFrete.cobranca_pedagio && informacoesFrete.valor_pedagio > 0) {
-        composicaoFrete.push(`Pedágio: R$ ${informacoesFrete.valor_pedagio.toFixed(2)}`)
+        valorPedagio = informacoesFrete.valor_pedagio
+        composicaoFrete.push(`Pedágio: R$ ${valorPedagio.toFixed(2)}`)
       }
       
       if (informacoesFrete.cobranca_seguro && informacoesFrete.valor_seguro > 0) {
-        composicaoFrete.push(`Seguro: R$ ${informacoesFrete.valor_seguro.toFixed(2)}`)
+        valorSeguro = informacoesFrete.valor_seguro
+        composicaoFrete.push(`Seguro: R$ ${valorSeguro.toFixed(2)}`)
       }
+
+      // Mostrar subtotal antes do ICMS
+      const subtotalAntesTributos = informacoesFrete.valor_frete + valorPedagio + valorSeguro
+      console.log(`💰 Subtotal antes dos tributos: R$ ${subtotalAntesTributos.toFixed(2)}`)
       
       // Informações fiscais
+      const ufOrigemAbrev = normalizeUF(rapidoSelectedInicio.uf)
+      const ufDestinoAbrev = normalizeUF(rapidoSelectedTermino.uf)
+      
       if (aliquotaICMS > 0) {
-        mensagemDetalhes.push(`ICMS ${aliquotaICMS}% = R$ ${valorICMS.toFixed(2)} (${rapidoSelectedInicio.uf}→${rapidoSelectedTermino.uf})`)
+        mensagemDetalhes.push(`ICMS ${aliquotaICMS}% = R$ ${valorICMS.toFixed(2)} (${ufOrigemAbrev}→${ufDestinoAbrev})`)
+        composicaoFrete.push(`ICMS ${aliquotaICMS}%: R$ ${valorICMS.toFixed(2)}`)
       } else {
-        mensagemDetalhes.push(`ICMS Isenção (${rapidoSelectedInicio.uf}→${rapidoSelectedTermino.uf})`)
+        mensagemDetalhes.push(`ICMS Isenção (${ufOrigemAbrev}→${ufDestinoAbrev})`)
       }
       
       mensagemDetalhes.push(`CFOP: ${cfopCalculado}`)
       mensagemDetalhes.push(`Tomador: ${informacoesFrete.tomador_frete === 'remetente' ? 'Remetente' : 'Destinatário'}`)
       
-      // Exibir composição do frete e total
-      console.log('📋 Composição do Frete:')
-      composicaoFrete.forEach(item => console.log(`  - ${item}`))
-      console.log(`📋 Total: R$ ${valorTotalComICMS.toFixed(2)}`)
+      // Log detalhado da composição
+      console.log('📋 Composição Detalhada do Frete:')
+      console.log(`  - Frete Base: R$ ${informacoesFrete.valor_frete.toFixed(2)}`)
+      if (valorPedagio > 0) {
+        console.log(`  - Pedágio: R$ ${valorPedagio.toFixed(2)} ${informacoesFrete.cobranca_pedagio ? '✅ Incluído' : '❌ Não cobrado'}`)
+      }
+      if (valorSeguro > 0) {
+        console.log(`  - Seguro: R$ ${valorSeguro.toFixed(2)} ${informacoesFrete.cobranca_seguro ? '✅ Incluído' : '❌ Não cobrado'}`)
+      }
+      if (valorICMS > 0) {
+        console.log(`  - ICMS ${aliquotaICMS}%: R$ ${valorICMS.toFixed(2)}`)
+      }
+      console.log(`  - TOTAL FINAL: R$ ${valorTotalComICMS.toFixed(2)}`)
+
+      // Função auxiliar para normalizar UF
+      function normalizeUF(uf: string): string {
+        const ufMap: { [key: string]: string } = {
+          'Minas Gerais': 'MG',
+          'Goiás': 'GO',
+          'São Paulo': 'SP',
+          'Rio de Janeiro': 'RJ',
+          'Bahia': 'BA',
+          'Paraná': 'PR',
+          'Rio Grande do Sul': 'RS',
+          'Pernambuco': 'PE',
+          'Ceará': 'CE',
+          'Pará': 'PA',
+          'Santa Catarina': 'SC',
+          'Maranhão': 'MA',
+          'Paraíba': 'PB',
+          'Espírito Santo': 'ES',
+          'Piauí': 'PI',
+          'Alagoas': 'AL',
+          'Distrito Federal': 'DF',
+          'Mato Grosso do Sul': 'MS',
+          'Mato Grosso': 'MT',
+          'Rio Grande do Norte': 'RN',
+          'Sergipe': 'SE',
+          'Rondônia': 'RO',
+          'Acre': 'AC',
+          'Amazonas': 'AM',
+          'Roraima': 'RR',
+          'Amapá': 'AP',
+          'Tocantins': 'TO'
+        }
+        return ufMap[uf] || uf
+      }
 
       toast.success(
         `CT-e rápido criado! ${composicaoFrete.join(' + ')} | ${mensagemDetalhes.join(' | ')} | Total: R$ ${valorTotalComICMS.toFixed(2)}`
