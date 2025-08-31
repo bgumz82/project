@@ -393,6 +393,7 @@ export default function CTe() {
   React.useEffect(() => {
     if (!isModalRapidoOpen) return
 
+    console.log('🚀 Modal CT-e rápido aberto - invalidando cache das associações')
     // Invalidar cache das associações para garantir dados atualizados
     queryClient.invalidateQueries({ queryKey: ['associacoes-frota-ativas'] })
   }, [isModalRapidoOpen, queryClient])
@@ -401,10 +402,12 @@ export default function CTe() {
   React.useEffect(() => {
     if (!isModalOpen) return
 
+    console.log('📝 Modal CT-e aberto - invalidando cache das associações')
     // Invalidar cache das associações para garantir dados atualizados
     queryClient.invalidateQueries({ queryKey: ['associacoes-frota-ativas'] })
 
     if (selectedDocumento && empresas) {
+      console.log('📝 Carregando documento para edição:', selectedDocumento.id)
       // Carregar dados do documento em edição
       const empresa = empresas.find(emp => emp.id === selectedDocumento.empresa_id)
       setSelectedEmpresaId(selectedDocumento.empresa_id)
@@ -474,11 +477,13 @@ export default function CTe() {
 
       // Preencher dados de transporte
       if (selectedDocumento.associacao_frota_id) {
+        console.log('🚛 Carregando associação de frota do documento:', selectedDocumento.associacao_frota_id)
         handleMotoristaChange(selectedDocumento.associacao_frota_id);
       }
 
     } else {
       // Reset para novo documento
+      console.log('🔄 Reset para novo documento')
       setSelectedEmpresaId('')
       setRntrcValue('Selecione uma empresa para exibir o RNTRC')
       setSelectedMotoristaId('')
@@ -566,7 +571,13 @@ export default function CTe() {
     }
 
     const associacao = associacoesFrota.find(a => a.id === associacaoId)
-    console.log('🔍 Associação encontrada:', associacao)
+    console.log('🔍 Associação encontrada completa:', {
+      id: associacao?.id,
+      motorista_nome: associacao?.funcionario?.nome,
+      veiculo_principal_placa: associacao?.veiculo_principal?.placa,
+      veiculo_implemento_placa: associacao?.veiculo_implemento?.placa,
+      data_inicio: associacao?.data_inicio
+    })
 
     if (!associacao) {
       console.log('❌ Associação não encontrada para ID:', associacaoId)
@@ -577,9 +588,8 @@ export default function CTe() {
     }
 
     console.log('🔍 Estrutura completa da associação:', JSON.stringify(associacao, null, 2))
-    console.log('🔍 Funcionário da associação:', associacao.funcionario)
-    console.log('🔍 Veículo principal da associação:', associacao.veiculo_principal)
-    console.log('🔍 Implementos da associação:', associacao.veiculo_implemento)
+    console.log('👨‍💼 Dados do funcionário na associação:', associacao.funcionario)
+    console.log('🚛 Dados do veículo principal na associação:', associacao.veiculo_principal)
 
     // Definir placa do veículo principal
     const placaPrincipal = associacao.veiculo_principal?.placa || 'Placa não informada'
@@ -609,6 +619,9 @@ export default function CTe() {
     // Definir informações do motorista - usando dados corretos da estrutura mapeada
     const funcionario = associacao.funcionario
     console.log('👨‍💼 Dados do funcionário recebidos:', funcionario)
+    console.log('👨‍💼 Nome do funcionário:', funcionario?.nome)
+    console.log('👨‍💼 CNH do funcionário:', funcionario?.cnh)
+    console.log('👨‍💼 Matrícula do funcionário:', funcionario?.matricula)
 
     if (!funcionario) {
       console.log('❌ Funcionário não encontrado na associação')
@@ -3008,6 +3021,13 @@ export default function CTe() {
                   >
                     <option value="">Selecione motorista e veículo</option>
                     {associacoesFrota?.map((associacao) => {
+                      console.log('🔍 Renderizando associação no select:', {
+                        id: associacao.id,
+                        funcionario: associacao.funcionario,
+                        veiculo_principal: associacao.veiculo_principal,
+                        veiculo_implemento: associacao.veiculo_implemento
+                      })
+                      
                       // Construir descrição do conjunto
                       const motorista = associacao.funcionario?.nome || 'Motorista não informado'
                       const veiculo = associacao.veiculo_principal?.placa || 'Sem placa'
@@ -3025,6 +3045,8 @@ export default function CTe() {
                       }
                       
                       const implementosTexto = implementos.length > 0 ? ` + ${implementos.join(' + ')}` : ''
+                      
+                      console.log('🔍 Descrição da opção:', `🚛 ${motorista} - ${veiculo}${implementosTexto}`)
                       
                       return (
                         <option key={associacao.id} value={associacao.id}>

@@ -60,7 +60,7 @@ export interface AssociacaoFrotaCreate {
 export async function getAssociacoesFrota(): Promise<AssociacaoFrota[]> {
   try {
     console.log('🔍 Buscando associações de frota')
-    
+
     const result = await query(`
       SELECT 
         af.*,
@@ -92,9 +92,9 @@ export async function getAssociacoesFrota(): Promise<AssociacaoFrota[]> {
       LEFT JOIN veiculos vi ON af.veiculo_implemento_id = vi.id
       ORDER BY af.data_inicio DESC, vp.placa
     `)
-    
+
     console.log('✅ Associações de frota encontradas:', result.length)
-    
+
     return result.map(associacao => ({
       ...associacao,
       funcionario: {
@@ -167,9 +167,9 @@ export async function getAssociacaoFrota(id: string): Promise<AssociacaoFrota | 
       LEFT JOIN veiculos vi ON af.veiculo_implemento_id = vi.id
       WHERE af.id = $1
     `, [id])
-    
+
     if (!result) return null
-    
+
     return {
       ...result,
       funcionario: {
@@ -225,7 +225,7 @@ export async function getMotoristasPorVeiculo(): Promise<any[]> {
       AND f.cnh IS NOT NULL
       ORDER BY f.nome
     `)
-    
+
     return result
   } catch (error) {
     console.error('❌ Erro ao buscar motoristas:', error)
@@ -254,7 +254,7 @@ export async function getVeiculosPesados(): Promise<any[]> {
       AND v.ativo = true
       ORDER BY v.placa
     `)
-    
+
     return result
   } catch (error) {
     console.error('❌ Erro ao buscar veículos pesados:', error)
@@ -265,55 +265,55 @@ export async function getVeiculosPesados(): Promise<any[]> {
 export async function createAssociacaoFrota(associacao: AssociacaoFrotaCreate): Promise<AssociacaoFrota> {
   try {
     console.log('📝 Criando nova associação de frota:', associacao)
-    
+
     // Validar se o funcionário é motorista
     const funcionario = await queryOne(`
       SELECT funcao, status, cnh FROM funcionarios WHERE id = $1
     `, [associacao.funcionario_id])
-    
+
     if (!funcionario) {
       throw new Error('Funcionário não encontrado')
     }
-    
+
     if (funcionario.funcao !== 'motorista') {
       throw new Error('Apenas funcionários com função "Motorista" podem ser associados a veículos')
     }
-    
+
     if (funcionario.status !== 'ativo') {
       throw new Error('Apenas funcionários ativos podem ser associados a veículos')
     }
-    
+
     if (!funcionario.cnh) {
       throw new Error('Funcionário deve ter CNH cadastrada para ser associado a veículos')
     }
-    
+
     // Validar se o veículo é pesado
     const veiculo = await queryOne(`
       SELECT tipo, status FROM veiculos WHERE id = $1
     `, [associacao.veiculo_principal_id])
-    
+
     if (!veiculo) {
       throw new Error('Veículo não encontrado')
     }
-    
+
     if (veiculo.tipo !== 'caminhao') {
       throw new Error('O veículo principal deve ser um caminhão')
     }
-    
+
     if (veiculo.status !== 'ativo') {
       throw new Error('Apenas veículos ativos podem ter motoristas associados')
     }
-    
+
     // Verificar se já existe associação ativa para este veículo
     const associacaoExistente = await queryOne(`
       SELECT id FROM associacoes_frota 
       WHERE veiculo_principal_id = $1 AND ativo = true AND data_fim IS NULL
     `, [associacao.veiculo_principal_id])
-    
+
     if (associacaoExistente) {
       throw new Error('Este veículo já possui um motorista associado. Finalize a associação atual primeiro.')
     }
-    
+
     const result = await queryOne(`
       INSERT INTO associacoes_frota (
         funcionario_id,
@@ -346,7 +346,7 @@ export async function createAssociacaoFrota(associacao: AssociacaoFrotaCreate): 
     }
 
     console.log('✅ Associação de frota criada com sucesso:', result.id)
-    
+
     return result
   } catch (error) {
     console.error('❌ Erro ao criar associação de frota:', error)
@@ -357,7 +357,7 @@ export async function createAssociacaoFrota(associacao: AssociacaoFrotaCreate): 
 export async function updateAssociacaoFrota(id: string, associacao: Partial<AssociacaoFrotaCreate>): Promise<AssociacaoFrota> {
   try {
     console.log('📝 Atualizando associação de frota:', id, associacao)
-    
+
     // Construir query dinamicamente
     const updates: string[] = []
     const values: any[] = []
@@ -368,11 +368,11 @@ export async function updateAssociacaoFrota(id: string, associacao: Partial<Asso
       const funcionario = await queryOne(`
         SELECT funcao, status, cnh FROM funcionarios WHERE id = $1
       `, [associacao.funcionario_id])
-      
+
       if (!funcionario || funcionario.funcao !== 'motorista' || funcionario.status !== 'ativo' || !funcionario.cnh) {
         throw new Error('Funcionário deve ser um motorista ativo com CNH')
       }
-      
+
       updates.push(`funcionario_id = $${paramIndex}`)
       values.push(associacao.funcionario_id)
       paramIndex++
@@ -383,11 +383,11 @@ export async function updateAssociacaoFrota(id: string, associacao: Partial<Asso
       const veiculo = await queryOne(`
         SELECT tipo, status FROM veiculos WHERE id = $1
       `, [associacao.veiculo_principal_id])
-      
+
       if (!veiculo || veiculo.tipo !== 'caminhao') {
         throw new Error('O veículo principal deve ser um caminhão')
       }
-      
+
       updates.push(`veiculo_principal_id = $${paramIndex}`)
       values.push(associacao.veiculo_principal_id)
       paramIndex++
@@ -468,7 +468,7 @@ export async function updateAssociacaoFrota(id: string, associacao: Partial<Asso
 export async function deleteAssociacaoFrota(id: string): Promise<void> {
   try {
     console.log('🗑️ Excluindo associação de frota:', id)
-    
+
     await query('DELETE FROM associacoes_frota WHERE id = $1', [id])
     console.log('✅ Associação de frota excluída com sucesso')
   } catch (error) {
@@ -480,7 +480,7 @@ export async function deleteAssociacaoFrota(id: string): Promise<void> {
 export async function finalizarAssociacaoFrota(id: string, dataFim: string): Promise<AssociacaoFrota> {
   try {
     console.log('🏁 Finalizando associação de frota:', id, 'em', dataFim)
-    
+
     const result = await queryOne(`
       UPDATE associacoes_frota
       SET 
@@ -526,7 +526,7 @@ export async function getMotoristasDisponiveis(): Promise<any[]> {
       )
       ORDER BY f.nome
     `)
-    
+
     return result
   } catch (error) {
     console.error('❌ Erro ao buscar motoristas disponíveis:', error)
@@ -550,7 +550,7 @@ export async function getCaminhoesDisponiveis(): Promise<any[]> {
         )
       ORDER BY v.placa
     `)
-    
+
     return result
   } catch (error) {
     console.error('❌ Erro ao buscar caminhões disponíveis:', error)
@@ -581,7 +581,7 @@ export async function getReboquesDisponiveis(): Promise<any[]> {
         )
       ORDER BY v.placa
     `)
-    
+
     return result
   } catch (error) {
     console.error('❌ Erro ao buscar reboques disponíveis:', error)
@@ -606,7 +606,7 @@ export async function getImplementosDisponiveis(): Promise<any[]> {
         )
       ORDER BY v.placa
     `)
-    
+
     return result
   } catch (error) {
     console.error('❌ Erro ao buscar implementos disponíveis:', error)
@@ -629,7 +629,7 @@ export async function getHistoricoAssociacoesFuncionario(funcionarioId: string):
       WHERE af.funcionario_id = $1
       ORDER BY af.data_inicio DESC
     `, [funcionarioId])
-    
+
     return result.map(associacao => ({
       ...associacao,
       veiculo: {
@@ -659,7 +659,7 @@ export async function getHistoricoAssociacoesVeiculo(veiculoId: string): Promise
       WHERE af.veiculo_id = $1
       ORDER BY af.data_inicio DESC
     `, [veiculoId])
-    
+
     return result.map(associacao => ({
       ...associacao,
       funcionario: {
@@ -677,149 +677,161 @@ export async function getHistoricoAssociacoesVeiculo(veiculoId: string): Promise
 
 // Função para obter associações ativas para uso em CT-e
 export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> {
-  try {
-    console.log('🔍 Buscando associações ativas para CT-e com dados completos')
-    
-    const result = await query(`
-      SELECT 
-        af.id,
-        af.funcionario_id,
-        af.veiculo_principal_id,
-        af.veiculo_reboque1_id,
-        af.veiculo_reboque2_id,
-        af.veiculo_implemento_id,
-        af.data_inicio,
-        af.data_fim,
-        af.ativo,
-        af.observacoes,
-        af.created_at,
-        af.updated_at,
-        f.nome as funcionario_nome,
-        f.matricula as funcionario_matricula,
-        f.cnh as funcionario_cnh,
-        f.validade_cnh as funcionario_validade_cnh,
-        vp.placa as veiculo_principal_placa,
-        vp.modelo as veiculo_principal_modelo,
-        vp.marca as veiculo_principal_marca,
-        vp.tipo as veiculo_principal_tipo,
-        vr1.placa as veiculo_reboque1_placa,
-        vr1.modelo as veiculo_reboque1_modelo,
-        vr1.marca as veiculo_reboque1_marca,
-        vr1.tipo as veiculo_reboque1_tipo,
-        vr2.placa as veiculo_reboque2_placa,
-        vr2.modelo as veiculo_reboque2_modelo,
-        vr2.marca as veiculo_reboque2_marca,
-        vr2.tipo as veiculo_reboque2_tipo,
-        vi.placa as veiculo_implemento_placa,
-        vi.modelo as veiculo_implemento_modelo,
-        vi.marca as veiculo_implemento_marca,
-        vi.tipo as veiculo_implemento_tipo
-      FROM associacoes_frota af
-      INNER JOIN funcionarios f ON af.funcionario_id = f.id
-      INNER JOIN veiculos vp ON af.veiculo_principal_id = vp.id
-      LEFT JOIN veiculos vr1 ON af.veiculo_reboque1_id = vr1.id
-      LEFT JOIN veiculos vr2 ON af.veiculo_reboque2_id = vr2.id
-      LEFT JOIN veiculos vi ON af.veiculo_implemento_id = vi.id
-      WHERE af.ativo = true 
-        AND (af.data_fim IS NULL OR af.data_fim > CURRENT_DATE)
-        AND f.status = 'ativo'
-        AND f.funcao = 'motorista'
-        AND f.cnh IS NOT NULL
-        AND vp.ativo = true
-      ORDER BY f.nome, vp.placa
-    `)
-    
-    console.log('✅ Associações ativas encontradas para CT-e:', result.length)
-    
-    if (result.length > 0) {
-      console.log('📋 Primeira associação encontrada (RAW):', result[0])
-      console.log('📋 Dados do funcionário:', {
-        nome: result[0].funcionario_nome,
-        cnh: result[0].funcionario_cnh,
-        matricula: result[0].funcionario_matricula
-      })
-      console.log('📋 Dados do veículo principal:', {
-        placa: result[0].veiculo_principal_placa,
-        modelo: result[0].veiculo_principal_modelo
-      })
-    }
-    
-    const mappedData = result.map(associacao => {
-      console.log('🔄 Processando associação:', associacao.id)
-      console.log('🔄 Dados completos da associação RAW:', associacao)
-      console.log('🔄 Dados do funcionário RAW:', {
-        nome: associacao.funcionario_nome,
-        matricula: associacao.funcionario_matricula,
-        cnh: associacao.funcionario_cnh,
-        validade_cnh: associacao.funcionario_validade_cnh
-      })
-      console.log('🔄 Dados do veículo principal RAW:', {
-        placa: associacao.veiculo_principal_placa,
-        modelo: associacao.veiculo_principal_modelo,
-        marca: associacao.veiculo_principal_marca,
-        tipo: associacao.veiculo_principal_tipo
-      })
-      
-      const mapped = {
-        id: associacao.id,
-        funcionario_id: associacao.funcionario_id,
-        veiculo_principal_id: associacao.veiculo_principal_id,
-        veiculo_reboque1_id: associacao.veiculo_reboque1_id,
-        veiculo_reboque2_id: associacao.veiculo_reboque2_id,
-        veiculo_implemento_id: associacao.veiculo_implemento_id,
-        data_inicio: associacao.data_inicio,
-        data_fim: associacao.data_fim,
-        ativo: associacao.ativo,
-        observacoes: associacao.observacoes,
-        created_at: associacao.created_at,
-        updated_at: associacao.updated_at,
-        funcionario: {
-          nome: associacao.funcionario_nome || 'Nome não informado',
-          matricula: associacao.funcionario_matricula || 'Matrícula não informada',
-          cnh: associacao.funcionario_cnh || 'CNH não informada',
-          validade_cnh: associacao.funcionario_validade_cnh || null
-        },
-        veiculo_principal: {
-          placa: associacao.veiculo_principal_placa || 'Placa não informada',
-          modelo: associacao.veiculo_principal_modelo || 'Modelo não informado',
-          marca: associacao.veiculo_principal_marca || 'Marca não informada',
-          tipo: associacao.veiculo_principal_tipo || 'Tipo não informado'
-        },
-        veiculo_reboque1: associacao.veiculo_reboque1_placa ? {
-          placa: associacao.veiculo_reboque1_placa,
-          modelo: associacao.veiculo_reboque1_modelo || 'Modelo não informado',
-          marca: associacao.veiculo_reboque1_marca || 'Marca não informada',
-          tipo: associacao.veiculo_reboque1_tipo || 'Tipo não informado'
-        } : null,
-        veiculo_reboque2: associacao.veiculo_reboque2_placa ? {
-          placa: associacao.veiculo_reboque2_placa,
-          modelo: associacao.veiculo_reboque2_modelo || 'Modelo não informado',
-          marca: associacao.veiculo_reboque2_marca || 'Marca não informada',
-          tipo: associacao.veiculo_reboque2_tipo || 'Tipo não informado'
-        } : null,
-        veiculo_implemento: associacao.veiculo_implemento_placa ? {
-          placa: associacao.veiculo_implemento_placa,
-          modelo: associacao.veiculo_implemento_modelo || 'Modelo não informado',
-          marca: associacao.veiculo_implemento_marca || 'Marca não informada',
-          tipo: associacao.veiculo_implemento_tipo || 'Tipo não informado'
-        } : null
-      }
-      
-      console.log('✅ Dados mapeados final:', {
-        id: mapped.id,
-        funcionario: mapped.funcionario,
-        veiculo_principal: mapped.veiculo_principal,
-        veiculo_implemento: mapped.veiculo_implemento
-      })
-      
-      return mapped
+  console.log('🔍 Buscando associações ativas para CT-e com dados completos')
+
+  const response = await fetch('/api/db/query', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
+    },
+    body: JSON.stringify({
+      query: `
+        SELECT 
+          af.id,
+          af.funcionario_id,
+          af.veiculo_principal_id,
+          af.veiculo_reboque1_id,
+          af.veiculo_reboque2_id,
+          af.veiculo_implemento_id,
+          af.data_inicio,
+          af.data_fim,
+          af.ativo,
+          af.observacoes,
+          af.created_at,
+          af.updated_at,
+          f.nome as funcionario_nome,
+          f.matricula as funcionario_matricula,
+          f.cnh as funcionario_cnh,
+          f.validade_cnh as funcionario_validade_cnh,
+          vp.placa as veiculo_principal_placa,
+          vp.modelo as veiculo_principal_modelo,
+          vp.marca as veiculo_principal_marca,
+          vp.tipo as veiculo_principal_tipo,
+          vr1.placa as veiculo_reboque1_placa,
+          vr1.modelo as veiculo_reboque1_modelo,
+          vr1.marca as veiculo_reboque1_marca,
+          vr1.tipo as veiculo_reboque1_tipo,
+          vr2.placa as veiculo_reboque2_placa,
+          vr2.modelo as veiculo_reboque2_modelo,
+          vr2.marca as veiculo_reboque2_marca,
+          vr2.tipo as veiculo_reboque2_tipo,
+          vi.placa as veiculo_implemento_placa,
+          vi.modelo as veiculo_implemento_modelo,
+          vi.marca as veiculo_implemento_marca,
+          vi.tipo as veiculo_implemento_tipo
+        FROM associacoes_frota af
+        LEFT JOIN funcionarios f ON af.funcionario_id = f.id
+        LEFT JOIN veiculos vp ON af.veiculo_principal_id = vp.id
+        LEFT JOIN veiculos vr1 ON af.veiculo_reboque1_id = vr1.id
+        LEFT JOIN veiculos vr2 ON af.veiculo_reboque2_id = vr2.id
+        LEFT JOIN veiculos vi ON af.veiculo_implemento_id = vi.id
+        WHERE af.ativo = true
+          AND (af.data_fim IS NULL OR af.data_fim >= CURRENT_DATE)
+          AND f.id IS NOT NULL
+          AND vp.id IS NOT NULL
+        ORDER BY f.nome, vp.placa
+      `,
+      params: null
     })
-    
-    console.log('✅ Total de associações processadas:', mappedData.length)
-    return mappedData
-  } catch (error) {
-    console.error('❌ Erro ao buscar associações ativas para CT-e:', error)
-    console.error('❌ Stack trace:', error.stack)
+  })
+
+  console.log('🌐 Status da resposta API:', response.status)
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('❌ Erro ao buscar associações ativas para CT-e:', response.status, response.statusText)
+    console.error('❌ Detalhes do erro:', errorText)
+    throw new Error(`Erro ao buscar associações ativas para CT-e: ${response.status}`)
+  }
+
+  const result = await response.json()
+  console.log('📊 Resultado completo da API:', result)
+  console.log('📊 Query rows:', result.rows)
+  console.log('✅ Associações ativas encontradas para CT-e:', result.rows?.length || 0)
+
+  if (!result.rows || result.rows.length === 0) {
+    console.log('⚠️ Nenhuma associação ativa encontrada')
     return []
   }
+
+  // Log da primeira associação para debug
+  console.log('📋 Primeira associação encontrada (RAW):', result.rows[0])
+  console.log('📋 Dados do funcionário:', {
+    nome: result.rows[0].funcionario_nome,
+    cnh: result.rows[0].funcionario_cnh,
+    matricula: result.rows[0].funcionario_matricula
+  })
+  console.log('📋 Dados do veículo principal:', {
+    placa: result.rows[0].veiculo_principal_placa,
+    modelo: result.rows[0].veiculo_principal_modelo
+  })
+
+  // Mapear os dados para o formato esperado
+  const associacoesMapeadas = result.rows.map((row: any) => {
+    console.log('🔄 Processando associação:', row.id)
+    console.log('🔄 Dados do funcionário RAW:', {
+      nome: row.funcionario_nome,
+      matricula: row.funcionario_matricula,
+      cnh: row.funcionario_cnh,
+      validade_cnh: row.funcionario_validade_cnh
+    })
+    console.log('🔄 Dados do veículo principal RAW:', {
+      placa: row.veiculo_principal_placa,
+      modelo: row.veiculo_principal_modelo,
+      marca: row.veiculo_principal_marca,
+      tipo: row.veiculo_principal_tipo
+    })
+
+    const associacao: AssociacaoFrota = {
+      id: row.id,
+      funcionario_id: row.funcionario_id,
+      veiculo_principal_id: row.veiculo_principal_id,
+      veiculo_reboque1_id: row.veiculo_reboque1_id,
+      veiculo_reboque2_id: row.veiculo_reboque2_id,
+      veiculo_implemento_id: row.veiculo_implemento_id,
+      data_inicio: row.data_inicio,
+      data_fim: row.data_fim,
+      ativo: row.ativo,
+      observacoes: row.observacoes,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      funcionario: row.funcionario_nome ? {
+        nome: row.funcionario_nome,
+        matricula: row.funcionario_matricula,
+        cnh: row.funcionario_cnh,
+        validade_cnh: row.funcionario_validade_cnh
+      } : null,
+      veiculo_principal: row.veiculo_principal_placa ? {
+        placa: row.veiculo_principal_placa,
+        modelo: row.veiculo_principal_modelo,
+        marca: row.veiculo_principal_marca,
+        tipo: row.veiculo_principal_tipo
+      } : null,
+      veiculo_reboque1: row.veiculo_reboque1_placa ? {
+        placa: row.veiculo_reboque1_placa,
+        modelo: row.veiculo_reboque1_modelo,
+        marca: row.veiculo_reboque1_marca,
+        tipo: row.veiculo_reboque1_tipo
+      } : null,
+      veiculo_reboque2: row.veiculo_reboque2_placa ? {
+        placa: row.veiculo_reboque2_placa,
+        modelo: row.veiculo_reboque2_modelo,
+        marca: row.veiculo_reboque2_marca,
+        tipo: row.veiculo_reboque2_tipo
+      } : null,
+      veiculo_implemento: row.veiculo_implemento_placa ? {
+        placa: row.veiculo_implemento_placa,
+        modelo: row.veiculo_implemento_modelo,
+        marca: row.veiculo_implemento_marca,
+        tipo: row.veiculo_implemento_tipo
+      } : null
+    }
+
+    console.log('✅ Dados mapeados final:', associacao)
+    return associacao
+  })
+
+  console.log('✅ Total de associações processadas:', associacoesMapeadas.length)
+  return associacoesMapeadas
 }
