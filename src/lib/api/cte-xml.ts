@@ -147,14 +147,55 @@ ${destinatario.ie ? `<IE>${destinatario.ie}</IE>` : '<IE>ISENTO</IE>'}
 <vPrest>
 <vTPrest>${(parseFloat(documento.valor_prestacao as any) || 0).toFixed(2)}</vTPrest>
 <vRec>${(parseFloat(documento.valor_receber as any) || 0).toFixed(2)}</vRec>
-<Comp>
+${(() => {
+  // Calcular valor do frete base (sem pedágio, seguro e ICMS)
+  const valorPrestacao = parseFloat(documento.valor_prestacao as any) || 0;
+  const valorPedagio = parseFloat(documento.valor_pedagio as any) || 0;
+  const valorSeguro = parseFloat(documento.valor_seguro as any) || 0;
+  const valorICMS = parseFloat(documento.icms_valor as any) || 0;
+  
+  const valorFreteBase = valorPrestacao - valorPedagio - valorSeguro - valorICMS;
+  
+  let componentes = '';
+  
+  // Componente FRETE (sempre presente)
+  if (valorFreteBase > 0) {
+    componentes += `<Comp>
 <xNome>FRETE</xNome>
-<vComp>${((parseFloat(documento.valor_prestacao as any) || 0) - (parseFloat(documento.icms_valor as any) || 0)).toFixed(2)}</vComp>
+<vComp>${valorFreteBase.toFixed(2)}</vComp>
 </Comp>
-${documento.icms_valor && parseFloat(documento.icms_valor as any) > 0 ? `<Comp>
+`;
+  }
+  
+  // Componente PEDAGIO (quando houver)
+  if (valorPedagio > 0) {
+    componentes += `<Comp>
+<xNome>PEDAGIO</xNome>
+<vComp>${valorPedagio.toFixed(2)}</vComp>
+</Comp>
+`;
+  }
+  
+  // Componente SEGURO (quando houver)
+  if (valorSeguro > 0) {
+    componentes += `<Comp>
+<xNome>SEGURO</xNome>
+<vComp>${valorSeguro.toFixed(2)}</vComp>
+</Comp>
+`;
+  }
+  
+  // Componente ICMS (quando houver)
+  if (valorICMS > 0) {
+    componentes += `<Comp>
 <xNome>ICMS</xNome>
-<vComp>${(parseFloat(documento.icms_valor as any) || 0).toFixed(2)}</vComp>
-</Comp>` : ''}
+<vComp>${valorICMS.toFixed(2)}</vComp>
+</Comp>
+`;
+  }
+  
+  return componentes;
+})()}
 </vPrest>
 <imp>
 <ICMS>
