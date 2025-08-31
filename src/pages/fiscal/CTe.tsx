@@ -388,18 +388,31 @@ export default function CTe() {
   }
 
   // Função para atualizar dados do formulário
-  const updateFormData = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
+  const handleUpdateFormData = (field: string, value: any) => {
+    try {
+      console.log(`📝 Atualizando campo ${field}:`, value)
 
-    // Recalcular automaticamente quando pedágio ou seguro mudarem
-    if (field === 'valor_pedagio' || field === 'valor_seguro') {
-      // Usar setTimeout para garantir que o estado foi atualizado
-      setTimeout(() => {
-        calcularImpostos()
-      }, 100)
+      setFormData(prev => {
+        const newData = {
+          ...prev,
+          [field]: value
+        }
+
+        console.log('📋 Estado atualizado:', { campo: field, valor: value })
+        return newData
+      })
+
+      // Recalcular automaticamente quando pedágio ou seguro mudarem
+      if (field === 'valor_pedagio' || field === 'valor_seguro') {
+        console.log('💰 Valor financeiro alterado, recalculando impostos...')
+        // Usar setTimeout para garantir que o estado foi atualizado
+        setTimeout(() => {
+          calcularImpostos()
+        }, 150)
+      }
+
+    } catch (error) {
+      console.error('❌ Erro ao atualizar formData:', error)
     }
   }
 
@@ -511,45 +524,65 @@ export default function CTe() {
 
   // Função para calcular impostos e valores totais
   const calcularImpostos = () => {
-    const valorPrestacaoInput = document.getElementById('valor_prestacao') as HTMLInputElement
-    const valorTributosInput = document.getElementById('valor_tributos') as HTMLInputElement
-    const valorReceberInput = document.getElementById('valor_receber') as HTMLInputElement
-    const icmsValorInput = document.getElementById('icms_valor') as HTMLInputElement
-    const icmsBcInput = document.getElementById('icms_bc_valor') as HTMLInputElement
+    try {
+      console.log('🧮 Iniciando cálculo de impostos...')
 
-    if (!valorPrestacaoInput || !valorTributosInput || !valorReceberInput || !icmsValorInput || !icmsBcInput) return
+      // Buscar elementos do DOM com verificação de existência
+      const valorPrestacaoInput = document.getElementById('valor_prestacao') as HTMLInputElement
+      const valorTributosInput = document.getElementById('valor_tributos') as HTMLInputElement
+      const valorReceberInput = document.getElementById('valor_receber') as HTMLInputElement
+      const icmsValorInput = document.getElementById('icms_valor') as HTMLInputElement
+      const icmsBcInput = document.getElementById('icms_bc_valor') as HTMLInputElement
 
-    const valorICMS = parseFloat(icmsValorInput.value) || 0
-    const valorBaseComICMS = parseFloat(icmsBcInput.value) || 0
-    const valorPedagio = parseFloat(formData.valor_pedagio || '0') || 0
-    const valorSeguro = parseFloat(formData.valor_seguro || '0') || 0
+      if (!valorPrestacaoInput || !valorTributosInput || !valorReceberInput || !icmsValorInput || !icmsBcInput) {
+        console.log('⚠️ Campos necessários não encontrados no DOM, saindo do cálculo')
+        return
+      }
 
-    // Valor Total da Prestação = Valor base com ICMS + Pedágio + Seguro
-    const valorTotalPrestacao = valorBaseComICMS + valorPedagio + valorSeguro
+      // Obter valores com validação segura
+      const valorICMS = parseFloat(icmsValorInput.value || '0') || 0
+      const valorBaseComICMS = parseFloat(icmsBcInput.value || '0') || 0
+      const valorPedagio = parseFloat(formData.valor_pedagio || '0') || 0
+      const valorSeguro = parseFloat(formData.valor_seguro || '0') || 0
 
-    // Atualizar campos e estado
-    const valorPrestacaoFormatado = valorTotalPrestacao.toFixed(2)
-    const valorTributosFormatado = valorICMS.toFixed(2)
-    const valorReceberFormatado = valorTotalPrestacao.toFixed(2)
+      console.log('📊 Valores para cálculo:', {
+        valorICMS,
+        valorBaseComICMS,
+        valorPedagio,
+        valorSeguro
+      })
 
-    valorPrestacaoInput.value = valorPrestacaoFormatado
-    valorTributosInput.value = valorTributosFormatado
-    valorReceberInput.value = valorReceberFormatado
+      // Valor Total da Prestação = Valor base com ICMS + Pedágio + Seguro
+      const valorTotalPrestacao = valorBaseComICMS + valorPedagio + valorSeguro
 
-    // Sincronizar com o estado formData
-    setFormData(prev => ({
-      ...prev,
-      valor_prestacao: valorPrestacaoFormatado,
-      valor_tributos: valorTributosFormatado,
-      valor_receber: valorReceberFormatado
-    }))
+      // Atualizar campos e estado com validação
+      const valorPrestacaoFormatado = valorTotalPrestacao.toFixed(2)
+      const valorTributosFormatado = valorICMS.toFixed(2)
+      const valorReceberFormatado = valorTotalPrestacao.toFixed(2)
 
-    console.log('💰 Cálculo de impostos atualizado:')
-    console.log('- Valor base com ICMS:', valorBaseComICMS.toFixed(2))
-    console.log('- Valor pedágio:', valorPedagio.toFixed(2))
-    console.log('- Valor seguro:', valorSeguro.toFixed(2))
-    console.log('- Valor ICMS:', valorICMS.toFixed(2))
-    console.log('- Valor total final:', valorTotalPrestacao.toFixed(2))
+      // Atualizar campos do DOM
+      valorPrestacaoInput.value = valorPrestacaoFormatado
+      valorTributosInput.value = valorTributosFormatado
+      valorReceberInput.value = valorReceberFormatado
+
+      // Atualizar estado do componente
+      setFormData(prev => ({
+        ...prev,
+        valor_prestacao: valorPrestacaoFormatado,
+        valor_tributos: valorTributosFormatado,
+        valor_receber: valorReceberFormatado
+      }))
+
+      console.log('💰 Cálculo de impostos concluído:')
+      console.log('- Valor base com ICMS:', valorBaseComICMS.toFixed(2))
+      console.log('- Valor pedágio:', valorPedagio.toFixed(2))
+      console.log('- Valor seguro:', valorSeguro.toFixed(2))
+      console.log('- Valor ICMS:', valorICMS.toFixed(2))
+      console.log('- Valor total final:', valorTotalPrestacao.toFixed(2))
+
+    } catch (error) {
+      console.error('❌ Erro no cálculo de impostos:', error)
+    }
   }
 
   // Função para atualizar dados baseado na empresa selecionada
@@ -652,7 +685,7 @@ export default function CTe() {
       console.log('❌ Funcionário não encontrado na associação')
       setMotoristaInfo({
         nome: 'Nome não informado',
-        cnh: 'CNH não informada', 
+        cnh: 'CNH não informada',
         matricula: 'Matrícula não informada',
         validadeCnh: 'Não informado'
       })
@@ -851,15 +884,15 @@ export default function CTe() {
   const extrairCNPJDaChave = (chave: string): string => {
     // Chave de 44 dígitos: UF(2) + AAMM(4) + CNPJ(14) + Modelo(2) + Série(3) + Número(9) + Forma(1) + Código(8) + DV(1)
     console.log('🔑 Extraindo CNPJ da chave:', chave)
-    
+
     if (chave.length !== 44) {
       console.log('❌ Chave inválida - deve ter 44 dígitos, tem:', chave.length)
       return ''
     }
-    
+
     const cnpjExtraido = chave.substring(6, 20) // Posições 6-19 contêm o CNPJ (14 dígitos)
     console.log('🏢 CNPJ extraído da chave:', cnpjExtraido)
-    
+
     return cnpjExtraido
   }
 
@@ -874,22 +907,22 @@ export default function CTe() {
       console.log('- Cidade Destino IBGE:', cidadeDestinoIbge)
 
       const query = `
-        SELECT 
+        SELECT
           valor_frete,
           valor_pedagio,
           valor_seguro,
           cobranca_pedagio,
           cobranca_seguro,
           tomador_frete
-        FROM frete_documentos 
+        FROM frete_documentos
         WHERE cliente_origem_id IN (
           SELECT id FROM cadastros WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
         )
         AND cliente_destino_id IN (
           SELECT id FROM cadastros WHERE cnpj = $2 AND tipo = 'cliente' AND ativo = true
         )
-        AND tipo_reboque = $3 
-        AND cidade_origem_ibge = $4 
+        AND tipo_reboque = $3
+        AND cidade_origem_ibge = $4
         AND cidade_destino_ibge = $5
         AND ativo = true
         LIMIT 1
@@ -1004,17 +1037,17 @@ export default function CTe() {
         console.log('✅ Regra MG → GO: ICMS 7%')
         return 7.0
       }
-      
+
       if (ufOrigemNorm === 'GO' && ufDestinoNorm === 'MG') {
         console.log('✅ Regra GO → MG: ICMS 12%')
         return 12.0
       }
-      
+
       if (ufOrigemNorm === 'MG' && ufDestinoNorm === 'MG') {
         console.log('✅ Regra MG → MG: ICMS Isenção (0%)')
         return 0.0
       }
-      
+
       if (ufOrigemNorm === 'GO' && ufDestinoNorm === 'GO') {
         console.log('✅ Regra GO → GO: ICMS Isenção (0%)')
         return 0.0
@@ -1100,17 +1133,17 @@ export default function CTe() {
       console.log('✅ Regra MG → GO: CFOP 6352')
       return '6352'
     }
-    
+
     if (ufOrigemNorm === 'GO' && ufDestinoNorm === 'MG') {
       console.log('✅ Regra GO → MG: CFOP 6932')
       return '6932'
     }
-    
+
     if (ufOrigemNorm === 'MG' && ufDestinoNorm === 'MG') {
       console.log('✅ Regra MG → MG: CFOP 5352')
       return '5352'
     }
-    
+
     if (ufOrigemNorm === 'GO' && ufDestinoNorm === 'GO') {
       console.log('✅ Regra GO → GO: CFOP 5932')
       return '5932'
@@ -1158,7 +1191,7 @@ export default function CTe() {
       console.log('🚀 Iniciando validação do CT-e rápido')
       const cnpjRemetenteChave = extrairCNPJDaChave(chaveNFeLimpa)
       console.log('🏢 CNPJ remetente extraído:', cnpjRemetenteChave)
-      
+
       if (!cnpjRemetenteChave) {
         console.error('❌ Falha ao extrair CNPJ da chave NF-e')
         toast.error('Não foi possível extrair o CNPJ do remetente da chave NF-e')
@@ -1193,25 +1226,25 @@ export default function CTe() {
       // Buscar remetente por CNPJ extraído da chave
       console.log('🔍 Buscando remetente com CNPJ:', cnpjRemetenteChave)
       const remetente = await buscarClientePorCNPJ(cnpjRemetenteChave)
-      
+
       if (!remetente) {
         console.error('❌ Remetente não encontrado para CNPJ:', cnpjRemetenteChave)
         toast.error(`Remetente não encontrado com CNPJ ${cnpjRemetenteChave} (extraído da chave NF-e). Cadastre o cliente primeiro.`)
         return
       }
-      
+
       console.log('✅ Remetente encontrado:', remetente.razao_social)
 
       // Buscar destinatário por CNPJ informado
       console.log('🔍 Buscando destinatário com CNPJ:', formRapido.cnpj_destinatario)
       const destinatario = await buscarClientePorCNPJ(formRapido.cnpj_destinatario)
-      
+
       if (!destinatario) {
         console.error('❌ Destinatário não encontrado para CNPJ:', formRapido.cnpj_destinatario)
         toast.error('Destinatário não encontrado com este CNPJ. Cadastre o cliente primeiro.')
         return
       }
-      
+
       console.log('✅ Destinatário encontrado:', destinatario.razao_social)
 
       // Buscar dados da associação de frota
@@ -1374,27 +1407,27 @@ export default function CTe() {
         motorista_matricula: associacao.funcionario?.matricula,
         motorista_validade_cnh: associacao.funcionario?.validade_cnh,
         placa_veiculo: associacao.veiculo_principal?.placa,
-        placa_reboque: associacao.veiculo_implemento?.placa || 
-                      [associacao.veiculo_reboque1?.placa, associacao.veiculo_reboque2?.placa]
-                        .filter(Boolean).join(' + ') || null
+        placa_reboque: associacao.veiculo_implemento?.placa ||
+          [associacao.veiculo_reboque1?.placa, associacao.veiculo_reboque2?.placa]
+            .filter(Boolean).join(' + ') || null
       }
 
       // Criar o documento
       await createMutation.mutateAsync(documentoData)
-      
+
       // Construir mensagem detalhada com composição completa
       let mensagemDetalhes = []
-      
+
       // Composição detalhada do frete
       let composicaoFrete = [`Frete: R$ ${informacoesFrete.valor_frete.toFixed(2)}`]
       let valorPedagio = 0
       let valorSeguro = 0
-      
+
       if (informacoesFrete.cobranca_pedagio && informacoesFrete.valor_pedagio > 0) {
         valorPedagio = informacoesFrete.valor_pedagio
         composicaoFrete.push(`Pedágio: R$ ${valorPedagio.toFixed(2)}`)
       }
-      
+
       if (informacoesFrete.cobranca_seguro && informacoesFrete.valor_seguro > 0) {
         valorSeguro = informacoesFrete.valor_seguro
         composicaoFrete.push(`Seguro: R$ ${valorSeguro.toFixed(2)}`)
@@ -1403,21 +1436,21 @@ export default function CTe() {
       // Mostrar subtotal antes do ICMS
       const subtotalAntesTributos = informacoesFrete.valor_frete + valorPedagio + valorSeguro
       console.log(`💰 Subtotal antes dos tributos: R$ ${subtotalAntesTributos.toFixed(2)}`)
-      
+
       // Informações fiscais
       const ufOrigemAbrev = normalizeUF(rapidoSelectedInicio.uf)
       const ufDestinoAbrev = normalizeUF(rapidoSelectedTermino.uf)
-      
+
       if (aliquotaICMS > 0) {
         mensagemDetalhes.push(`ICMS ${aliquotaICMS}% = R$ ${valorICMS.toFixed(2)} (${ufOrigemAbrev}→${ufDestinoAbrev})`)
         composicaoFrete.push(`ICMS ${aliquotaICMS}%: R$ ${valorICMS.toFixed(2)}`)
       } else {
         mensagemDetalhes.push(`ICMS Isenção (${ufOrigemAbrev}→${ufDestinoAbrev})`)
       }
-      
+
       mensagemDetalhes.push(`CFOP: ${cfopCalculado}`)
       mensagemDetalhes.push(`Tomador: ${informacoesFrete.tomador_frete === 'remetente' ? 'Remetente' : 'Destinatário'}`)
-      
+
       // Log detalhado da composição
       console.log('📋 Composição Detalhada do Frete:')
       console.log(`  - Frete Base: R$ ${informacoesFrete.valor_frete.toFixed(2)}`)
@@ -1469,7 +1502,7 @@ export default function CTe() {
       toast.success(
         `CT-e rápido criado! ${composicaoFrete.join(' + ')} | ${mensagemDetalhes.join(' | ')} | Total: R$ ${valorTotalComICMS.toFixed(2)}`
       )
-      
+
       setIsModalRapidoOpen(false)
       resetFormRapido()
 
@@ -1483,7 +1516,8 @@ export default function CTe() {
     e.preventDefault()
     const formDataElement = new FormData(e.currentTarget)
 
-    const empresaIdValue = formDataElement.get('empresa_id') as string || selectedEmpresaId
+    // Use o estado `selectedEmpresaId` para garantir que a empresa selecionada seja usada
+    const empresaIdValue = selectedEmpresaId || ''
 
     // Validação adicional do empresa_id
     if (!empresaIdValue || empresaIdValue.trim() === '') {
@@ -1505,7 +1539,7 @@ export default function CTe() {
 
     // Validar remetente
     if (!formData.remetente_id || formData.remetente_id.trim() === '') {
-      toast.toast.error('Por favor, selecione o remetente.')
+      toast.error('Por favor, selecione o remetente.')
       return
     }
 
@@ -1602,6 +1636,7 @@ export default function CTe() {
       return
     }
 
+    // Preencher dados do documento selecionado para edição
     if (selectedDocumento) {
       updateMutation.mutate({ id: selectedDocumento.id, data: documentoData })
     } else {
@@ -1669,10 +1704,10 @@ export default function CTe() {
   const buscarClientePorCNPJ = async (cnpj: string) => {
     try {
       console.log('🔍 Buscando cliente por CNPJ:', cnpj)
-      
+
       const cnpjLimpo = cnpj.replace(/\D/g, '')
       console.log('🧹 CNPJ limpo:', cnpjLimpo)
-      
+
       if (cnpjLimpo.length !== 14) {
         console.log('❌ CNPJ inválido - deve ter 14 dígitos, tem:', cnpjLimpo.length)
         return null
@@ -1680,12 +1715,12 @@ export default function CTe() {
 
       // Usar a mesma query que funcionou no teste direto
       const query = `
-        SELECT * FROM cadastros 
-        WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true 
+        SELECT * FROM cadastros
+        WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
         LIMIT 1
       `
       const params = [cnpjLimpo]
-      
+
       console.log('🔍 Executando query:')
       console.log('📋 SQL:', query.trim())
       console.log('📋 Parâmetros:', params)
@@ -1709,10 +1744,10 @@ export default function CTe() {
 
       const result = await response.json()
       console.log('📊 Resultado completo da API:', result)
-      
+
       // A API pode retornar tanto result.data quanto result.rows dependendo do endpoint
       const dados = result.data || result.rows || []
-      
+
       if (dados && dados.length > 0) {
         console.log('✅ Cliente encontrado:', dados[0].razao_social)
         return dados[0]
@@ -2083,7 +2118,7 @@ export default function CTe() {
                         name="data_emissao"
                         id="data_emissao"
                         value={formData.data_emissao}
-                        onChange={(e) => updateFormData('data_emissao', e.target.value)}
+                        onChange={(e) => handleUpdateFormData('data_emissao', e.target.value)}
                         required
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       />
@@ -2330,7 +2365,7 @@ export default function CTe() {
                       name="tomador_id"
                       id="tomador_id"
                       value={formData.tomador_id}
-                      onChange={(e) => updateFormData('tomador_id', e.target.value)}
+                      onChange={(e) => handleUpdateFormData('tomador_id', e.target.value)}
                       required
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
@@ -2366,7 +2401,7 @@ export default function CTe() {
                       name="remetente_id"
                       id="remetente_id"
                       value={formData.remetente_id}
-                      onChange={(e) => updateFormData('remetente_id', e.target.value)}
+                      onChange={(e) => handleUpdateFormData('remetente_id', e.target.value)}
                       required
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
@@ -2399,7 +2434,7 @@ export default function CTe() {
                       name="recebedor_id"
                       id="recebedor_id"
                       value={formData.recebedor_id}
-                      onChange={(e) => updateFormData('recebedor_id', e.target.value)}
+                      onChange={(e) => handleUpdateFormData('recebedor_id', e.target.value)}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
                       <option value="">❌ Sem Recebedor</option>
@@ -2433,7 +2468,7 @@ export default function CTe() {
                       name="destinatario_id"
                       id="destinatario_id"
                       value={formData.destinatario_id}
-                      onChange={(e) => updateFormData('destinatario_id', e.target.value)}
+                      onChange={(e) => handleUpdateFormData('destinatario_id', e.target.value)}
                       required
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
@@ -2486,7 +2521,7 @@ export default function CTe() {
                             min="0"
                             placeholder="0,00"
                             value={formData.valor_pedagio || ''}
-                            onChange={(e) => updateFormData('valor_pedagio', e.target.value)}
+                            onChange={(e) => handleUpdateFormData('valor_pedagio', e.target.value)}
                             className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
                         </div>
@@ -2511,7 +2546,7 @@ export default function CTe() {
                             min="0"
                             placeholder="0,00"
                             value={formData.valor_seguro || ''}
-                            onChange={(e) => updateFormData('valor_seguro', e.target.value)}
+                            onChange={(e) => handleUpdateFormData('valor_seguro', e.target.value)}
                             className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
                         </div>
@@ -2571,7 +2606,7 @@ export default function CTe() {
                           min="0"
                           placeholder="0,00"
                           value={formData.valor_prestacao || ''}
-                          onChange={(e) => updateFormData('valor_prestacao', e.target.value)}
+                          onChange={(e) => handleUpdateFormData('valor_prestacao', e.target.value)}
                           readOnly
                           className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
@@ -2597,7 +2632,7 @@ export default function CTe() {
                           min="0"
                           placeholder="0,00"
                           value={formData.valor_receber || ''}
-                          onChange={(e) => updateFormData('valor_receber', e.target.value)}
+                          onChange={(e) => handleUpdateFormData('valor_receber', e.target.value)}
                           readOnly
                           className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
@@ -2623,7 +2658,7 @@ export default function CTe() {
                           min="0"
                           placeholder="0,00"
                           value={formData.valor_tributos || ''}
-                          onChange={(e) => updateFormData('valor_tributos', e.target.value)}
+                          onChange={(e) => handleUpdateFormData('valor_tributos', e.target.value)}
                           readOnly
                           className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
@@ -2652,7 +2687,7 @@ export default function CTe() {
                         required
                         onChange={(e) => {
                           const situacao = e.target.value;
-                          updateFormData('icms_situacao_tributaria', situacao);
+                          handleUpdateFormData('icms_situacao_tributaria', situacao);
                           handleSituacaoTributariaChange(situacao);
                         }}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -2681,7 +2716,7 @@ export default function CTe() {
                             min="0"
                             placeholder="0,00"
                             value={formData.icms_bc_valor || ''}
-                            onChange={(e) => updateFormData('icms_bc_valor', e.target.value)}
+                            onChange={(e) => handleUpdateFormData('icms_bc_valor', e.target.value)}
                             className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
                         </div>
@@ -2704,7 +2739,7 @@ export default function CTe() {
                             max="100"
                             placeholder="0,00"
                             value={formData.icms_aliquota || ''}
-                            onChange={(e) => updateFormData('icms_aliquota', e.target.value)}
+                            onChange={(e) => handleUpdateFormData('icms_aliquota', e.target.value)}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -2732,7 +2767,7 @@ export default function CTe() {
                             min="0"
                             placeholder="0,00"
                             value={formData.icms_valor || ''}
-                            onChange={(e) => updateFormData('icms_valor', e.target.value)}
+                            onChange={(e) => handleUpdateFormData('icms_valor', e.target.value)}
                             readOnly
                             className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
@@ -2806,7 +2841,7 @@ export default function CTe() {
                             min="0"
                             placeholder="0,00"
                             defaultValue={selectedDocumento?.valor_carga || formData.valor_carga || ''}
-                            onChange={(e) => updateFormData('valor_carga', e.target.value)}
+                            onChange={(e) => handleUpdateFormData('valor_carga', e.target.value)}
                             className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
                         </div>
@@ -2825,7 +2860,7 @@ export default function CTe() {
                             min="0"
                             placeholder="0,000"
                             defaultValue={selectedDocumento?.quantidade_carga || formData.quantidade_carga || ''}
-                            onChange={(e) => updateFormData('quantidade_carga', e.target.value)}
+                            onChange={(e) => handleUpdateFormData('quantidade_carga', e.target.value)}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                           />
                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -2843,7 +2878,7 @@ export default function CTe() {
                         name="produto_predominante_id"
                         id="produto_predominante_id"
                         value={formData.produto_predominante_id}
-                        onChange={(e) => updateFormData('produto_predominante_id', e.target.value)}
+                        onChange={(e) => handleUpdateFormData('produto_predominante_id', e.target.value)}
                         required
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       >
@@ -2895,7 +2930,7 @@ export default function CTe() {
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, '')
                             e.target.value = value
-                            updateFormData('chave_acesso_1', value)
+                            handleUpdateFormData('chave_acesso_1', value)
                             validateChaveAcesso(value, 'chave_acesso_1')
                           }}
                           className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
@@ -2923,7 +2958,7 @@ export default function CTe() {
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, '')
                             e.target.value = value
-                            updateFormData('chave_acesso_2', value)
+                            handleUpdateFormData('chave_acesso_2', value)
                             validateChaveAcesso(value, 'chave_acesso_2')
                           }}
                           className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
@@ -2951,7 +2986,7 @@ export default function CTe() {
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, '')
                             e.target.value = value
-                            updateFormData('chave_acesso_3', value)
+                            handleUpdateFormData('chave_acesso_3', value)
                             validateChaveAcesso(value, 'chave_acesso_3')
                           }}
                           className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
@@ -2979,7 +3014,7 @@ export default function CTe() {
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, '')
                             e.target.value = value
-                            updateFormData('chave_acesso_4', value)
+                            handleUpdateFormData('chave_acesso_4', value)
                             validateChaveAcesso(value, 'chave_acesso_4')
                           }}
                           className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm font-mono ${
@@ -3161,7 +3196,7 @@ export default function CTe() {
                       id="observacoes"
                       rows={6}
                       defaultValue={selectedDocumento?.observacoes || formData.observacoes || ''}
-                      onChange={(e) => updateFormData('observacoes', e.target.value)}
+                      onChange={(e) => handleUpdateFormData('observacoes', e.target.value)}
                       placeholder="Observações sobre o documento CT-e..."
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     />
@@ -3240,7 +3275,6 @@ export default function CTe() {
                   {activeTab === 'observacoes' && (
                     <button
                       type="submit"
-                      disabled={createMutation.isPending || updateMutation.isPending}
                       className="inline-flex justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700 disabled:opacity-50"
                     >
                       {createMutation.isPending || updateMutation.isPending ? (
@@ -3282,7 +3316,7 @@ export default function CTe() {
             <div className="bg-green-50 p-4 rounded-lg mb-6">
               <h4 className="text-sm font-medium text-green-900 mb-2">💡 CT-e Rápido</h4>
               <p className="text-sm text-green-700">
-                Crie um CT-e rapidamente informando apenas os dados essenciais. 
+                Crie um CT-e rapidamente informando apenas os dados essenciais.
                 Os demais campos serão preenchidos automaticamente com valores padrão.
               </p>
             </div>
@@ -3310,11 +3344,11 @@ export default function CTe() {
                         veiculo_principal: associacao.veiculo_principal,
                         veiculo_implemento: associacao.veiculo_implemento
                       })
-                      
+
                       // Construir descrição do conjunto
-                      const motorista = associacao.funcionario?.nome || 'Motorista não informado'
+                      const motorista = associacao.funcionario?.nome || 'Nome não informado'
                       const veiculo = associacao.veiculo_principal?.placa || 'Sem placa'
-                      
+
                       // Coletar implementos/reboques
                       const implementos = []
                       if (associacao.veiculo_implemento?.placa) {
@@ -3326,11 +3360,11 @@ export default function CTe() {
                       if (associacao.veiculo_reboque2?.placa) {
                         implementos.push(`${associacao.veiculo_reboque2.placa} (${associacao.veiculo_reboque2.tipo || 'reboque'})`)
                       }
-                      
+
                       const implementosTexto = implementos.length > 0 ? ` + ${implementos.join(' + ')}` : ''
-                      
+
                       console.log('🔍 Descrição da opção:', `🚛 ${motorista} - ${veiculo}${implementosTexto}`)
-                      
+
                       return (
                         <option key={associacao.id} value={associacao.id}>
                           🚛 {motorista} - {veiculo}{implementosTexto}
@@ -3377,7 +3411,7 @@ export default function CTe() {
                         // Remove espaços e caracteres não numéricos
                         const value = e.target.value.replace(/\D/g, '').substring(0, 44)
                         setFormRapido(prev => ({ ...prev, chave_nfe: value }))
-                        
+
                         // Auto-preencher CNPJ do remetente se chave tiver 44 dígitos
                         if (value.length === 44) {
                           const cnpjExtraido = value.substring(6, 20)
@@ -3387,8 +3421,8 @@ export default function CTe() {
                       placeholder="Cole a chave da NF-e aqui (44 dígitos)"
                       required
                       className={`mt-1 block w-full rounded-md shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm font-mono ${
-                        formRapido.chave_nfe.length === 44 
-                          ? 'border-green-300 bg-green-50' 
+                        formRapido.chave_nfe.length === 44
+                          ? 'border-green-300 bg-green-50'
                           : formRapido.chave_nfe.length > 0 && formRapido.chave_nfe.length !== 44
                           ? 'border-red-300 bg-red-50'
                           : 'border-gray-300'
@@ -3591,7 +3625,7 @@ export default function CTe() {
                   </div>
                 </div>
 
-                
+
               </div>
 
               <div className="mt-8 flex justify-between">

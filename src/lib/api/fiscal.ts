@@ -872,17 +872,24 @@ export async function updateCTeDocumento(
     }
 
     // Validação das chaves de acesso (44 dígitos completos incluindo DV)
-    if (documento.chave_acesso_1 && documento.chave_acesso_1.trim() !== '' && documento.chave_acesso_1.length !== 44) {
-      throw new Error("Chave de Acesso 1 (NF-e) deve conter 44 dígitos.");
-    }
-    if (documento.chave_acesso_2 && documento.chave_acesso_2.trim() !== '' && documento.chave_acesso_2.length !== 44) {
-      throw new Error("Chave de Acesso 2 (NF-e) deve conter 44 dígitos.");
-    }
-    if (documento.chave_acesso_3 && documento.chave_acesso_3.trim() !== '' && documento.chave_acesso_3.length !== 44) {
-      throw new Error("Chave de Acesso 3 (NF-e) deve conter 44 dígitos.");
-    }
-    if (documento.chave_acesso_4 && documento.chave_acesso_4.trim() !== '' && documento.chave_acesso_4.length !== 44) {
-      throw new Error("Chave de Acesso 4 (NF-e) deve conter 44 dígitos.");
+    const validarChave = (chave: string | undefined | null, numero: number) => {
+      if (chave && typeof chave === 'string' && chave.trim() !== '') {
+        const chaveLimpa = chave.replace(/\D/g, ''); // Remove caracteres não numéricos
+        if (chaveLimpa.length !== 44) {
+          throw new Error(`Chave de Acesso ${numero} (NF-e) deve conter 44 dígitos. Encontrados: ${chaveLimpa.length}`);
+        }
+      }
+    };
+
+    try {
+      validarChave(documento.chave_acesso_1, 1);
+      validarChave(documento.chave_acesso_2, 2);
+      validarChave(documento.chave_acesso_3, 3);
+      validarChave(documento.chave_acesso_4, 4);
+      console.log('✅ Validação das chaves de acesso aprovada');
+    } catch (error) {
+      console.error('❌ Erro na validação das chaves:', error);
+      throw error;
     }
 
     // Construir query dinamicamente apenas com campos que têm valores válidos
@@ -995,35 +1002,51 @@ export async function updateCTeDocumento(
       paramIndex++;
     }
 
-    // Valores financeiros
-    if (documento.valor_prestacao !== undefined && documento.valor_prestacao !== null) {
+    // Valores financeiros com validação
+    const validarValorFinanceiro = (valor: any, nome: string) => {
+      if (valor !== undefined && valor !== null) {
+        const valorNum = typeof valor === 'string' ? parseFloat(valor) : valor;
+        if (isNaN(valorNum) || valorNum < 0) {
+          throw new Error(`Valor inválido para ${nome}: ${valor}`);
+        }
+        return valorNum;
+      }
+      return null;
+    };
+
+    const valorPrestacaoValidado = validarValorFinanceiro(documento.valor_prestacao, 'Valor da Prestação');
+    if (valorPrestacaoValidado !== null) {
       updates.push(`valor_prestacao = $${paramIndex}`);
-      values.push(documento.valor_prestacao);
+      values.push(valorPrestacaoValidado);
       paramIndex++;
     }
 
-    if (documento.valor_receber !== undefined && documento.valor_receber !== null) {
+    const valorReceberValidado = validarValorFinanceiro(documento.valor_receber, 'Valor a Receber');
+    if (valorReceberValidado !== null) {
       updates.push(`valor_receber = $${paramIndex}`);
-      values.push(documento.valor_receber);
+      values.push(valorReceberValidado);
       paramIndex++;
     }
 
-    if (documento.valor_tributos !== undefined && documento.valor_tributos !== null) {
+    const valorTributosValidado = validarValorFinanceiro(documento.valor_tributos, 'Valor dos Tributos');
+    if (valorTributosValidado !== null) {
       updates.push(`valor_tributos = $${paramIndex}`);
-      values.push(documento.valor_tributos);
+      values.push(valorTributosValidado);
       paramIndex++;
     }
 
-    // Adicionar os novos campos de pedágio e seguro
-    if (documento.valor_pedagio !== undefined && documento.valor_pedagio !== null) {
+    // Adicionar os novos campos de pedágio e seguro com validação
+    const valorPedagioValidado = validarValorFinanceiro(documento.valor_pedagio, 'Valor do Pedágio');
+    if (valorPedagioValidado !== null) {
       updates.push(`valor_pedagio = $${paramIndex}`);
-      values.push(documento.valor_pedagio);
+      values.push(valorPedagioValidado);
       paramIndex++;
     }
 
-    if (documento.valor_seguro !== undefined && documento.valor_seguro !== null) {
+    const valorSeguroValidado = validarValorFinanceiro(documento.valor_seguro, 'Valor do Seguro');
+    if (valorSeguroValidado !== null) {
       updates.push(`valor_seguro = $${paramIndex}`);
-      values.push(documento.valor_seguro);
+      values.push(valorSeguroValidado);
       paramIndex++;
     }
 
@@ -1151,6 +1174,14 @@ export async function updateCTeDocumento(
 
     console.log("🔍 Query de UPDATE:", updates);
     console.log("📋 Valores para UPDATE:", values);
+    console.log("🔍 Query completa:", `UPDATE cte_documentos SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING *`);
+
+    // Validar se todos os valores são válidos antes da query
+    values.forEach((value, index) => {
+      if (value !== null && value !== undefined) {
+        console.log(`📋 Parâmetro ${index + 1}:`, { tipo: typeof value, valor: value })
+      }
+    });
 
     const result = await queryOne(
       `
