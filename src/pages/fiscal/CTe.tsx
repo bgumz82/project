@@ -1796,6 +1796,19 @@ export default function CTe() {
           <div className="flex space-x-2">
             <button
               onClick={() => {
+                console.log('🔄 Atualizando lista de CT-e manualmente')
+                refetch()
+                toast.success('Lista de CT-e atualizada!')
+              }}
+              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+              Atualizar Dados
+            </button>
+            <button
+              onClick={() => {
                 resetForm()
                 setIsModalOpen(true)
               }}
