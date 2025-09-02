@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useMemo, use
 // Original code used this import: import { getUserModulePermissions } from '../lib/api/permissions'
 // The changes snippet uses the original query function, so we revert to that.
 import { query } from '@/lib/db'
+import { useAuth } from './AuthContext'
 
 export type ModuleKey = 'dashboard' | 'veiculos' | 'antt' | 'associacoes_frota' | 'abastecimentos' | 'cadastros' | 'manutencoes' | 'checklists' | 'funcionarios' | 'usuarios' | 'permissoes' | 'configuracoes_banco' | 'financeiro' | 'fiscal' | 'empresas_fiscais' | 'cte' | 'mdfe' | 'frete' | 'relatorios'
 
