@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateUserState = useCallback(async (authData: any) => {
     try {
       console.log('🔄 Atualizando estado do usuário:', authData)
-      
+
       if (!authData?.user) {
         console.log('❌ Dados de autenticação inválidos')
         clearAuthState()
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(authData.session)
       setUser(authData.user)
       setUserType(authData.user.tipo)
-      
+
       console.log('✅ Estado do usuário atualizado:', {
         id: authData.user.id,
         email: authData.user.email,
@@ -79,9 +79,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         if (initialized) return
         setLoading(true)
-        
+
         const token = localStorage.getItem('auth.token')
-        
+
         if (token) {
           const user = await getCurrentUser(token)
           if (user) {
@@ -126,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (cacheAge > 24 * 60 * 60 * 1000) {
             throw new Error('Cache expirado. É necessário conexão com a internet para fazer login.')
           }
-          
+
           setSession(cachedAuth.session)
           setUser(cachedAuth.user)
           setUserType(cachedAuth.userType)

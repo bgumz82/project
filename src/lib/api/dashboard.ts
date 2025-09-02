@@ -140,7 +140,7 @@ export async function getProximasManutencoes(): Promise<ProximasManutencoes[]> {
 export async function getConsumoMensal(): Promise<ConsumoMensal[]> {
   try {
     console.log('🔍 Buscando consumo mensal de combustível...')
-    
+
     const result = await query(`
       SELECT 
         DATE_TRUNC('month', data_abastecimento) as mes_date,
@@ -154,7 +154,7 @@ export async function getConsumoMensal(): Promise<ConsumoMensal[]> {
     `)
 
     console.log('✅ Consumo mensal encontrado:', result.length, 'registros')
-    
+
     return result.map(item => ({
       mes: item.mes_date ? format(new Date(item.mes_date), 'MMM/yyyy', { locale: ptBR }) : 'N/A',
       total_litros: parseFloat(item.total_litros),
