@@ -1271,8 +1271,8 @@ export default function CTe() {
         tipoReboque = associacao.veiculo_reboque2.tipo
       }
 
-      // Corrigir tipo bi_trem para bi-trem na consulta
-      if (tipoReboque === 'bi_trem') {
+      // Corrigir tipos bi_trem para bi-trem na consulta
+      if (tipoReboque === 'bi_trem' || tipoReboque === 'bi_trem_1_reboque' || tipoReboque === 'bi_trem_2_reboque') {
         tipoReboque = 'bi-trem'
       }
 
