@@ -711,8 +711,6 @@ export async function createCTeDocumento(
         valor_prestacao,
         valor_receber,
         valor_tributos,
-        valor_pedagio,
-        valor_seguro,
         icms_situacao_tributaria,
         icms_bc_valor,
         icms_aliquota,
@@ -745,8 +743,10 @@ export async function createCTeDocumento(
         xml_gerado_em,
         pdf_gerado_em,
         created_at,
-        updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, NOW(), NOW())
+        updated_at,
+        valor_pedagio,
+        valor_seguro
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, NOW(), NOW(), $54, $55)
       RETURNING *
     `,
       [
@@ -773,8 +773,6 @@ export async function createCTeDocumento(
         documento.valor_prestacao,
         documento.valor_receber,
         documento.valor_tributos,
-        documento.valor_pedagio || 0,
-        documento.valor_seguro || 0,
         documento.icms_situacao_tributaria,
         documento.icms_bc_valor,
         documento.icms_aliquota,
@@ -806,6 +804,8 @@ export async function createCTeDocumento(
         false, // pdf_gerado
         null, // xml_gerado_em
         null, // pdf_gerado_em
+        documento.valor_pedagio || 0,
+        documento.valor_seguro || 0
       ],
     );
 
