@@ -1271,6 +1271,13 @@ export default function CTe() {
         tipoReboque = associacao.veiculo_reboque2.tipo
       }
 
+      // Corrigir tipo bi_trem para bi-trem na consulta
+      if (tipoReboque === 'bi_trem') {
+        tipoReboque = 'bi-trem'
+      }
+
+      console.log('🚛 Tipo de reboque para consulta de frete:', tipoReboque)
+
       // Buscar informações completas do frete cadastrado (obrigatório)
       const informacoesFrete = await buscarFrete(
         cnpjRemetenteChave,
