@@ -88,17 +88,24 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
     if (!user?.id) {
       setPermissions(null)
       setLoading(false)
+      setIsLoadingPermissions(false)
       return
     }
 
-    const timeoutId = setTimeout(() => {
-      loadPermissions()
-    }, 300) // Aumentar debounce para 300ms
+    if (isLoadingPermissions) {
+      return
+    }
+
+    const timeoutId = setTimeout(async () => {
+      if (!isLoadingPermissions) {
+        await loadPermissions()
+      }
+    }, 100)
 
     return () => {
       clearTimeout(timeoutId)
     }
-  }, [user?.id, loadPermissions])
+  }, [user?.id])
 
   const hasPermission = useCallback((module: ModuleKey, action: 'access' | 'create' | 'edit' | 'delete' = 'access'): boolean => {
     if (!permissions || !permissions[module]) {
