@@ -248,9 +248,9 @@ export default function CTe() {
 
   // Query para buscar associações de frota ativas
   const { data: associacoesFrota, isLoading: isLoadingAssociacoes, error: associacoesError } = useQuery({
-    queryKey: ['associacoes-frota-ativas'],
+    queryKey: ['associacoes-frota-ativas-cte'],
     queryFn: getAssociacoesAtivasParaCTe,
-    retry: 2,
+    retry: 3,
     staleTime: 1000 * 60 * 5,
     onSuccess: (data) => {
       console.log('🎯 Associações carregadas no componente CT-e:', data?.length || 0)
@@ -428,7 +428,7 @@ export default function CTe() {
 
     console.log('🚀 Modal CT-e rápido aberto - invalidando cache das associações')
     // Invalidar cache das associações para garantir dados atualizados
-    queryClient.invalidateQueries({ queryKey: ['associacoes-frota-ativas'] })
+    queryClient.invalidateQueries({ queryKey: ['associacoes-frota-ativas-cte'] })
   }, [isModalRapidoOpen, queryClient])
 
   // useEffect para carregar dados quando modal abre ou documento selecionado muda
@@ -437,7 +437,7 @@ export default function CTe() {
 
     console.log('📝 Modal CT-e aberto - invalidando cache das associações')
     // Invalidar cache das associações para garantir dados atualizados
-    queryClient.invalidateQueries({ queryKey: ['associacoes-frota-ativas'] })
+    queryClient.invalidateQueries({ queryKey: ['associacoes-frota-ativas-cte'] })
 
     if (selectedDocumento && empresas) {
       console.log('📝 Carregando documento para edição:', selectedDocumento.id)
