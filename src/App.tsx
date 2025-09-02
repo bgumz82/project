@@ -11,7 +11,12 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <PermissionsProvider>
-          <Router>
+          <Router
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true
+            }}
+          >
             <AppRoutes />
             <Toaster 
               position="top-right"

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { signIn, getCurrentUser } from '../lib/auth'
 import { getVehicles } from '../lib/api/vehicles'
 import { clearAppCache, saveAuthToCache, getAuthFromCache } from '../lib/cache'
@@ -161,14 +161,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const value = {
+  const value = useMemo(() => ({
     session,
     user,
     userType,
     signIn: handleSignIn,
     signOut: handleSignOut,
     loading
-  }
+  }), [session, user, userType, handleSignIn, handleSignOut, loading])
 
   return (
     <AuthContext.Provider value={value}>

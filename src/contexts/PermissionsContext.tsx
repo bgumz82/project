@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { useAuth } from './AuthContext'
+import { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from 'react'
+// Original code used this import: import { getUserModulePermissions } from '../lib/api/permissions'
+// The changes snippet uses the original query function, so we revert to that.
 import { query } from '@/lib/db'
 
 export type ModuleKey = 'dashboard' | 'veiculos' | 'antt' | 'associacoes_frota' | 'abastecimentos' | 'cadastros' | 'manutencoes' | 'checklists' | 'funcionarios' | 'usuarios' | 'permissoes' | 'configuracoes_banco' | 'financeiro' | 'fiscal' | 'empresas_fiscais' | 'cte' | 'mdfe' | 'frete' | 'relatorios'
@@ -22,7 +23,7 @@ async function getUserModulePermissions(userId: string): Promise<Record<ModuleKe
     `, [userId])
 
     const modulePermissions: Record<string, ModulePermission> = {}
-    
+
     permissions.forEach((permission: any) => {
       modulePermissions[permission.module] = permission
     })
@@ -47,42 +48,64 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
   const [permissions, setPermissions] = useState<Record<ModuleKey, ModulePermission> | null>(null)
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
+  const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
 
-  const loadPermissions = async () => {
+  const loadPermissions = useCallback(async () => {
+    if (isLoadingPermissions) {
+      console.log('⏳ Carregamento de permissões já em andamento, ignorando...')
+      return
+    }
+
     console.log('🔐 Carregando permissões para usuário:', user?.id)
-    
+
     if (!user?.id) {
       console.log('❌ Usuário não encontrado, limpando permissões')
+      setPermissions(null)
+      setLoading(false)
+      setIsLoadingPermissions(false)
+      return
+    }
+
+    try {
+      setIsLoadingPermissions(true)
+      setLoading(true)
+      console.log('📡 Buscando permissões do usuário:', user.id)
+      const userPermissions = await getUserModulePermissions(user.id)
+
+      console.log('✅ Permissões carregadas:', userPermissions)
+      setPermissions(userPermissions)
+    } catch (error) {
+      console.error('Error loading permissions:', error)
+      setPermissions(null)
+    } finally {
+      setLoading(false)
+      setIsLoadingPermissions(false)
+    }
+  }, [user?.id, isLoadingPermissions])
+
+  useEffect(() => {
+    if (!user?.id) {
       setPermissions(null)
       setLoading(false)
       return
     }
 
-    try {
-      setLoading(true)
-      console.log('📡 Buscando permissões do usuário:', user.id)
-      const userPermissions = await getUserModulePermissions(user.id)
-      console.log('✅ Permissões carregadas:', userPermissions)
-      setPermissions(userPermissions)
-    } catch (error) {
-      console.error('❌ Erro ao carregar permissões:', error)
-      setPermissions(null)
-    } finally {
-      setLoading(false)
+    const timeoutId = setTimeout(() => {
+      loadPermissions()
+    }, 300) // Aumentar debounce para 300ms
+
+    return () => {
+      clearTimeout(timeoutId)
     }
-  }
+  }, [user?.id, loadPermissions])
 
-  useEffect(() => {
-    loadPermissions()
-  }, [user?.id])
-
-  const hasPermission = (module: ModuleKey, action: 'access' | 'create' | 'edit' | 'delete' = 'access'): boolean => {
+  const hasPermission = useCallback((module: ModuleKey, action: 'access' | 'create' | 'edit' | 'delete' = 'access'): boolean => {
     if (!permissions || !permissions[module]) {
       return false
     }
 
     const modulePermission = permissions[module]
-    
+
     switch (action) {
       case 'access':
         return modulePermission.can_access
@@ -95,18 +118,14 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
       default:
         return false
     }
-  }
+  }, [permissions])
 
-  const refreshPermissions = async () => {
-    await loadPermissions()
-  }
-
-  const value = {
+  const value = useMemo(() => ({
     permissions,
     loading,
     hasPermission,
-    refreshPermissions
-  }
+    loadPermissions
+  }), [permissions, loading, hasPermission, loadPermissions])
 
   return (
     <PermissionsContext.Provider value={value}>
