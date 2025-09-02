@@ -13,6 +13,7 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     strictPort: true,
+    allowedHosts: ["3f235b19-6883-4b3c-982d-a890f1dfbc20-00-3ewfbg3gbe34w.janeway.replit.dev"],
     hmr: {
       overlay: false,
     },
