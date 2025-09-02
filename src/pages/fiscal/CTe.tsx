@@ -1271,9 +1271,9 @@ export default function CTe() {
         tipoReboque = associacao.veiculo_reboque2.tipo
       }
 
-      // Corrigir tipos bi_trem para bi-trem na consulta
-      if (tipoReboque === 'bi_trem' || tipoReboque === 'bi_trem_1_reboque' || tipoReboque === 'bi_trem_2_reboque') {
-        tipoReboque = 'bi-trem'
+      // Manter tipos bi_trem conforme banco de dados
+      if (tipoReboque === 'bi_trem_1_reboque' || tipoReboque === 'bi_trem_2_reboque') {
+        tipoReboque = 'bi_trem'
       }
 
       console.log('🚛 Tipo de reboque para consulta de frete:', tipoReboque)
