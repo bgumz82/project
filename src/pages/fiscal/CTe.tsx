@@ -247,7 +247,7 @@ export default function CTe() {
   })
 
   // Query para buscar associações de frota ativas
-  const { data: associacoesFrota, isLoading: isLoadingAssociacoes, error: errorAssociacoes } = useQuery({
+  const { data: associacoesFrota, isLoading: isLoadingAssociacoes, error: associacoesError } = useQuery({
     queryKey: ['associacoes-frota-ativas'],
     queryFn: getAssociacoesAtivasParaCTe,
     retry: 2,
@@ -275,6 +275,12 @@ export default function CTe() {
       return response.json()
     }
   })
+
+  React.useEffect(() => {
+    if (associacoesError) {
+      console.error('❌ Erro ao carregar associações:', associacoesError)
+    }
+  }, [associacoesError])
 
   const createMutation = useMutation({
     mutationFn: createCTeDocumento,
@@ -3110,7 +3116,7 @@ export default function CTe() {
                     </select>
                     <p className="mt-1 text-xs text-gray-500">
                       {isLoadingAssociacoes ? 'Carregando...' : 'Lista apenas motoristas com associações ativas de frota'}
-                      {errorAssociacoes && (
+                      {associacoesError && (
                         <span className="text-red-600 ml-2">
                           ⚠️ Erro ao carregar dados
                         </span>
