@@ -1,40 +1,38 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
 
 export default defineConfig({
-  plugins: [
-    react()
-  ],
+  plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
-    }
+      "@": path.resolve(__dirname, "./src"),
+    },
   },
   server: {
-    host: '0.0.0.0',
+    host: "0.0.0.0",
     port: 5173,
     strictPort: true,
     hmr: {
-      overlay: false
+      overlay: false,
     },
     watch: {
       usePolling: false,
-      interval: 1000
-    }
+      interval: 1000,
+    },
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', '@tanstack/react-query'],
-    exclude: ['fsevents']
+    include: ["react", "react-dom", "@tanstack/react-query"],
+    exclude: ["fsevents"],
   },
   build: {
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          utils: ['@tanstack/react-query']
-        }
-      }
-    }
-  }
-})
+          vendor: ["react", "react-dom"],
+          utils: ["@tanstack/react-query"],
+        },
+      },
+    },
+  },
+});
