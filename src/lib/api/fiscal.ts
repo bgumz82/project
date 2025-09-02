@@ -1189,6 +1189,7 @@ export async function updateCTeDocumento(
       SET ${updates.join(", ")}
       WHERE id = $${paramIndex}
       RETURNING *
+    )
     `,
       values,
     );
@@ -1784,8 +1785,8 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
     }
 
     const xmlPath = `${basePath}/cte/${documento.chave_acesso}-cte.xml`;
-    const pdfPath = `${basePath}/cte/${documento.chave_acesso}-dacte.pdf`;
-    const xmlProcPath = `${basePath}/cte/${documento.chave_acesso}-procCTe.xml`;
+    const pdfPath = \`${basePath}/cte/${documento.chave_acesso}-dacte.pdf`;
+    const xmlProcPath = \`${basePath}/cte/${documento.chave_acesso}-procCTe.xml`;
 
     console.log("📁 Paths gerados:", {
       basePath,
@@ -1798,8 +1799,8 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
     try {
       console.log("💾 Tentando salvar arquivo XML fisicamente...");
 
-      const fileName = `${documento.chave_acesso}-cte.xml`;
-      const fullXmlPath = `${basePath}/cte/${fileName}`;
+      const fileName = \`${documento.chave_acesso}-cte.xml`;
+      const fullXmlPath = \`${basePath}/cte/${fileName}`;
 
       console.log("📁 Salvando arquivo em:", fullXmlPath);
       console.log("📄 Tamanho do conteúdo XML:", xmlContent.length, "caracteres");
@@ -2036,7 +2037,7 @@ export async function createFreteDocumento(
     console.log("👤 Verificando cliente de origem...");
     const clienteOrigem = await queryOne(
       `
-      SELECT id FROM cadastros WHERE id = $1 AND tipo = 'cliente' AND ativo = true
+      SELECT id FROM cadastros WHERE id = $1 AND tipo = 'cliente\' AND ativo = true
     `,
       [documento.cliente_origem_id],
     );
@@ -2050,7 +2051,7 @@ export async function createFreteDocumento(
     console.log("👤 Verificando cliente de destino...");
     const clienteDestino = await queryOne(
       `
-      SELECT id FROM cadastros WHERE id = $1 AND tipo = 'cliente' AND ativo = true
+      SELECT id FROM cadastros WHERE id = $1 AND tipo = 'cliente\' AND ativo = true
     `,
       [documento.cliente_destino_id],
     );
@@ -2512,5 +2513,7 @@ export function validarChaveAcesso(chave: string): boolean {
   } catch (error) {
     console.error("❌ Erro ao validar chave de acesso:", error);
     return false;
+  }
+}
   }
 }
