@@ -20,7 +20,17 @@ export default defineConfig({
         target: 'https://sistema.systemtruck.com.br:3000',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/api/, '/api')
+        timeout: 30000,
+        proxyTimeout: 30000,
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('Erro no proxy:', err.message);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('Proxy request para:', req.url);
+          });
+        }
       }
     },
     hmr: {

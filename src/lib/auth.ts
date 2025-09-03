@@ -8,7 +8,8 @@ export async function signIn(email: string, password: string) {
     }, {
       headers: {
         'Content-Type': 'application/json'
-      }
+      },
+      timeout: 15000
     })
     
     if (!response.data || !response.data.user) {
@@ -23,6 +24,18 @@ export async function signIn(email: string, password: string) {
       code: error.code,
       status: error.response?.status
     })
+    
+    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+      throw new Error('Timeout de conexão. O servidor não está respondendo.')
+    }
+    
+    if (error.code === 'ERR_NETWORK' || error.code === 'ENOTFOUND') {
+      throw new Error('Não foi possível conectar ao servidor. Verifique sua conexão.')
+    }
+    
+    if (error.response?.status === 500) {
+      throw new Error('Erro interno do servidor. Tente novamente em alguns minutos.')
+    }
     
     if (error.response?.status === 404) {
       throw new Error('Serviço de autenticação indisponível')
