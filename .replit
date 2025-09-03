@@ -14,3 +14,15 @@ exposeLocalhost = true
 
 [agent]
 expertMode = true
+
+[workflows]
+runButton = "Run"
+
+[[workflows.workflow]]
+name = "Run"
+author = 46653913
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
