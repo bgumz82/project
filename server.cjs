@@ -722,6 +722,29 @@ async function createTables(client) {
           created_at timestamptz DEFAULT now()
         )
       `
+    },
+    {
+      name: 'states',
+      query: `
+        CREATE TABLE IF NOT EXISTS states (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          uf varchar(2) UNIQUE NOT NULL,
+          name varchar(255) NOT NULL,
+          created_at timestamptz DEFAULT now()
+        )
+      `
+    },
+    {
+      name: 'cities',
+      query: `
+        CREATE TABLE IF NOT EXISTS cities (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          cod_city varchar(7) UNIQUE NOT NULL,
+          name varchar(255) NOT NULL,
+          state_id uuid NOT NULL,
+          created_at timestamptz DEFAULT now()
+        )
+      `
     }
   ];
 
@@ -795,6 +818,12 @@ async function createForeignKeys(client) {
       references: 'checklists(id)',
       name: 'checklist_fotos_checklist_id_fkey',
       onDelete: 'CASCADE'
+    },
+    {
+      table: 'cities',
+      column: 'state_id',
+      references: 'states(id)',
+      name: 'cities_state_id_fkey'
     }
   ];
 
@@ -988,6 +1017,69 @@ async function insertInitialData(client) {
     console.log('✅ Centros de custo criados');
   } catch (error) {
     console.log('⚠️ Erro ao criar centros de custo:', error.message);
+  }
+
+  // Inserir estados brasileiros
+  try {
+    await client.query(`
+      INSERT INTO states (uf, name) VALUES
+      ('AC', 'Acre'),
+      ('AL', 'Alagoas'),
+      ('AP', 'Amapá'),
+      ('AM', 'Amazonas'),
+      ('BA', 'Bahia'),
+      ('CE', 'Ceará'),
+      ('DF', 'Distrito Federal'),
+      ('ES', 'Espírito Santo'),
+      ('GO', 'Goiás'),
+      ('MA', 'Maranhão'),
+      ('MT', 'Mato Grosso'),
+      ('MS', 'Mato Grosso do Sul'),
+      ('MG', 'Minas Gerais'),
+      ('PA', 'Pará'),
+      ('PB', 'Paraíba'),
+      ('PR', 'Paraná'),
+      ('PE', 'Pernambuco'),
+      ('PI', 'Piauí'),
+      ('RJ', 'Rio de Janeiro'),
+      ('RN', 'Rio Grande do Norte'),
+      ('RS', 'Rio Grande do Sul'),
+      ('RO', 'Rondônia'),
+      ('RR', 'Roraima'),
+      ('SC', 'Santa Catarina'),
+      ('SP', 'São Paulo'),
+      ('SE', 'Sergipe'),
+      ('TO', 'Tocantins')
+      ON CONFLICT (uf) DO NOTHING
+    `);
+    console.log('✅ Estados brasileiros criados');
+  } catch (error) {
+    console.log('⚠️ Erro ao criar estados:', error.message);
+  }
+
+  // Inserir algumas cidades importantes
+  try {
+    // Primeiro buscar IDs dos estados
+    const spState = await client.query(`SELECT id FROM states WHERE uf = 'SP' LIMIT 1`);
+    const mgState = await client.query(`SELECT id FROM states WHERE uf = 'MG' LIMIT 1`);
+    const goState = await client.query(`SELECT id FROM states WHERE uf = 'GO' LIMIT 1`);
+    
+    if (spState.rows.length > 0 && mgState.rows.length > 0 && goState.rows.length > 0) {
+      await client.query(`
+        INSERT INTO cities (cod_city, name, state_id) VALUES
+        ('3550308', 'São Paulo', $1),
+        ('3518800', 'Guarulhos', $1),
+        ('3509502', 'Campinas', $1),
+        ('3106200', 'Belo Horizonte', $2),
+        ('3131604', 'Iraí de Minas', $2),
+        ('5208707', 'Goiânia', $3),
+        ('5203302', 'Bela Vista de Goiás', $3)
+        ON CONFLICT (cod_city) DO NOTHING
+      `, [spState.rows[0].id, mgState.rows[0].id, goState.rows[0].id]);
+      console.log('✅ Cidades importantes criadas');
+    }
+  } catch (error) {
+    console.log('⚠️ Erro ao criar cidades:', error.message);
   }
 }
 
