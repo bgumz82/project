@@ -1707,11 +1707,15 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
       // Obter próximo número se não fornecido
       let numeroFinal = data.numero_cte;
       if (!numeroFinal || numeroFinal === 'AUTO') {
-        const proximoNumeroResult = await client.query(
-          'SELECT get_next_cte_number($1) as numero',
-          [data.empresa_id]
-        );
-        numeroFinal = proximoNumeroResult.rows[0].numero.toString();
+        // Buscar último número da empresa
+        const ultimoNumeroResult = await client.query(`
+          SELECT COALESCE(MAX(CAST(numero_cte AS INTEGER)), 0) + 1 as proximo_numero
+          FROM cte_documentos 
+          WHERE empresa_id = $1 
+          AND numero_cte ~ '^[0-9]+$'
+        `, [data.empresa_id]);
+        
+        numeroFinal = ultimoNumeroResult.rows[0].proximo_numero.toString();
         console.log('📋 Próximo número CT-e:', numeroFinal);
       }
 
@@ -1768,7 +1772,11 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
           created_at,
           updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, NOW(), NOW()
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
+          $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
+          $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, 
+          $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, 
+          $41, $42, $43, NOW(), NOW()
         ) RETURNING *
       `, [
         data.empresa_id,
