@@ -711,6 +711,28 @@ export async function createCTeDocumento(
       chave_acesso_1: documento.chave_acesso_1 || null,
       chave_acesso_2: documento.chave_acesso_2 || null,
       chave_acesso_3: documento.chave_acesso_3 || null,
+      chave_acesso_4: documento.chave_acesso_4 || null,
+      tipo_servico: documento.tipo_servico || null,
+      finalidade_cte: documento.finalidade_cte || null,
+      cfop: documento.cfop || null,
+      cidade_inicio_ibge: documento.cidade_inicio_ibge || null,
+      cidade_termino_ibge: documento.cidade_termino_ibge || null,
+      uf_inicio: documento.uf_inicio || null,
+      uf_termino: documento.uf_termino || null,
+      cidade_inicio_nome: documento.cidade_inicio_nome || null,
+      cidade_termino_nome: documento.cidade_termino_nome || null,
+      rntrc: documento.rntrc || null,
+      motorista_nome: documento.motorista_nome || null,
+      motorista_cnh: documento.motorista_cnh || null,
+      motorista_matricula: documento.motorista_matricula || null,
+      motorista_validade_cnh: documento.motorista_validade_cnh || null,
+      placa_veiculo: documento.placa_veiculo || null,
+      placa_reboque: documento.placa_reboque || null,
+      associacao_frota_id: documento.associacao_frota_id || null,
+      valor_pedagio: documento.valor_pedagio || null,
+      valor_seguro: documento.valor_seguro || null
+    };
+
     // Usar API do servidor ao invés de query direta
     const response = await fetch('/api/cte-documentos', {
       method: 'POST',
@@ -719,25 +741,14 @@ export async function createCTeDocumento(
         'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
       },
       body: JSON.stringify(documento)
-    })
+    });
     
     if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || 'Erro ao criar documento CT-e')
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erro ao criar documento CT-e');
     }
     
-    const result = await response.json()
-        documentoLimpo.associacao_frota_id,
-        null, // xml_proc_path - será gerado pelo trigger
-        null, // xml_path - será gerado pelo trigger
-        null, // pdf_path - será gerado pelo trigger
-        false, // xml_gerado
-        false, // pdf_gerado
-        null, // xml_gerado_em
-        null, // pdf_gerado_em
-        
-      ],
-    );
+    const result = await response.json();
 
     // Verificar se a chave de acesso foi gerada e forçar regeneração se necessário
     if (!result.chave_acesso) {
@@ -1107,7 +1118,7 @@ export async function updateCTeDocumento(
     // Validar se todos os valores são válidos antes da query
     values.forEach((value, index) => {
       if (value !== null && value !== undefined) {
-        console.log(`📋 Parâmetro ${index + 1}:`, { tipo: typeof value, valor: value })
+        console.log(`📋 Parâmetro ${index + 1}:`, { tipo: typeof value, valor: value });
       }
     });
 
