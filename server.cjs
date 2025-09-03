@@ -1237,23 +1237,30 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
     const client = await userPool.connect();
     
     try {
-      // Gerar próximo número CT-e se não fornecido
-      if (!data.numero_cte || data.numero_cte === 'AUTO') {
-        const nextNumberResult = await client.query(
-          'SELECT get_next_cte_number($1) as next_number',
-          [data.empresa_id]
-        );
-        data.numero_cte = nextNumberResult.rows[0].next_number.toString();
+      // Validar empresa
+      const empresaResult = await client.query(
+        'SELECT * FROM empresas_fiscais WHERE id = $1 AND status = $2',
+        [data.empresa_id, 'ativo']
+      );
+      
+      if (empresaResult.rows.length === 0) {
+        return res.status(400).json({ error: 'Empresa fiscal não encontrada ou inativa' });
       }
       
-      // Definir série padrão se não fornecida
-      if (!data.serie) {
-        const empresaResult = await client.query(
-          'SELECT serie_padrao_cte FROM empresas_fiscais WHERE id = $1',
+      const empresa = empresaResult.rows[0];
+      
+      // Obter próximo número se não fornecido
+      let numeroFinal = data.numero_cte;
+      if (!numeroFinal || numeroFinal === 'AUTO') {
+        const proximoNumeroResult = await client.query(
+          'SELECT get_next_cte_number($1) as numero',
           [data.empresa_id]
         );
-        data.serie = empresaResult.rows[0]?.serie_padrao_cte || '001';
+        numeroFinal = proximoNumeroResult.rows[0].numero.toString();
       }
+      
+      // Usar série padrão se não fornecida
+      const serieFinal = data.serie || empresa.serie_padrao_cte || '001';
       
       // Inserir documento CT-e
       const result = await client.query(`
@@ -1262,6 +1269,8 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
           numero_cte,
           serie,
           data_emissao,
+          codigo_uf,
+          forma_emissao,
           status,
           observacoes,
           tomador_id,
@@ -1278,6 +1287,10 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
           valor_carga,
           quantidade_carga,
           produto_predominante_id,
+          chave_acesso_1,
+          chave_acesso_2,
+          chave_acesso_3,
+          chave_acesso_4,
           valor_pedagio,
           valor_seguro,
           tipo_servico,
@@ -1298,13 +1311,15 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
           placa_reboque,
           associacao_frota_id
         ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43
       ) RETURNING *
       `, [
         data.empresa_id,
-        data.numero_cte,
-        data.serie,
+        numeroFinal,
+        serieFinal,
         data.data_emissao,
+        data.codigo_uf || empresa.codigo_uf || '35',
+        data.forma_emissao || 1,
         data.status || 'pendente',
         data.observacoes,
         data.tomador_id,
@@ -1321,6 +1336,10 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
         data.valor_carga,
         data.quantidade_carga,
         data.produto_predominante_id,
+        data.chave_acesso_1,
+        data.chave_acesso_2,
+        data.chave_acesso_3,
+        data.chave_acesso_4,
         data.valor_pedagio,
         data.valor_seguro,
         data.tipo_servico,
