@@ -1336,6 +1336,8 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
         data.chave_acesso_2,
         data.chave_acesso_3,
         data.chave_acesso_4,
+        data.valor_pedagio,
+        data.valor_seguro,
         data.tipo_servico,
         data.finalidade_cte,
         data.cfop,
