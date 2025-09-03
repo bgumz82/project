@@ -745,6 +745,292 @@ async function createTables(client) {
           created_at timestamptz DEFAULT now()
         )
       `
+    },
+    {
+      name: 'empresas_fiscais',
+      query: `
+        CREATE TABLE IF NOT EXISTS empresas_fiscais (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          razao_social varchar(255) NOT NULL,
+          nome_fantasia varchar(255),
+          cnpj varchar(18) UNIQUE NOT NULL,
+          inscricao_estadual varchar(20),
+          inscricao_municipal varchar(20),
+          endereco varchar(255),
+          cidade varchar(100),
+          estado varchar(2),
+          cep varchar(10),
+          telefone varchar(20),
+          email varchar(255),
+          regime_tributario varchar(50) DEFAULT 'Simples Nacional',
+          certidao_ssl_path text,
+          certidao_ssl_password text,
+          certificado_a1_path text,
+          certificado_a1_password text,
+          certificado_a3_token text,
+          certificado_a3_pin text,
+          certificado_a3_password text,
+          uf_emissao_nfe varchar(2) DEFAULT 'SP',
+          ambiente_nfce varchar(10) DEFAULT '1' CHECK (ambiente_nfce IN ('1', '2')),
+          ambiente_cte varchar(10) DEFAULT '1' CHECK (ambiente_cte IN ('1', '2')),
+          numero_ult_nfce integer DEFAULT 0,
+          numero_ult_cte integer DEFAULT 0,
+          serie_padrao_nfce varchar(3) DEFAULT '1',
+          serie_padrao_cte varchar(3) DEFAULT '1',
+          status varchar(20) DEFAULT 'ativo' CHECK (status IN ('ativo', 'inativo', 'suspenso')),
+          created_at timestamptz DEFAULT now(),
+          updated_at timestamptz DEFAULT now()
+        )
+      `
+    },
+    {
+      name: 'cte_documentos',
+      query: `
+        CREATE TABLE IF NOT EXISTS cte_documentos (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          empresa_id uuid NOT NULL,
+          numero_cte varchar(10) NOT NULL,
+          serie varchar(3) NOT NULL,
+          data_emissao timestamptz NOT NULL DEFAULT now(),
+          status varchar(20) DEFAULT 'pendente' CHECK (status IN ('pendente', 'autorizado', 'cancelado', 'inutilizado')),
+          chave_acesso_completa varchar(44),
+          chave_acesso_1 varchar(11),
+          chave_acesso_2 varchar(11),
+          chave_acesso_3 varchar(11),
+          chave_acesso_4 varchar(11),
+          valor_total_prestacao decimal(12,2),
+          valor_receber decimal(12,2),
+          valor_tributos decimal(12,2),
+          valor_carga decimal(12,2),
+          quantidade_carga integer,
+          observacoes text,
+          tomador_id uuid,
+          remetente_id uuid,
+          recebedor_id uuid,
+          destinatario_id uuid,
+          icms_situacao_tributaria varchar(5),
+          icms_bc_valor decimal(12,2),
+          icms_aliquota decimal(5,2),
+          icms_valor decimal(12,2),
+          valor_pedagio decimal(10,2),
+          valor_seguro decimal(10,2),
+          tipo_servico varchar(2) DEFAULT '00',
+          finalidade_cte varchar(1) DEFAULT '0',
+          cfop varchar(4) DEFAULT '5352',
+          cidade_inicio_ibge varchar(7),
+          cidade_termino_ibge varchar(7),
+          uf_inicio varchar(2),
+          uf_termino varchar(2),
+          cidade_inicio_nome varchar(255),
+          cidade_termino_nome varchar(255),
+          rntrc varchar(20),
+          motorista_nome varchar(255),
+          motorista_cnh varchar(20),
+          motorista_matricula varchar(50),
+          motorista_validade_cnh date,
+          placa_veiculo varchar(10),
+          placa_reboque varchar(10),
+          associacao_frota_id uuid,
+          created_at timestamptz DEFAULT now(),
+          updated_at timestamptz DEFAULT now()
+        )
+      `
+    },
+    {
+      name: 'cte_produtos',
+      query: `
+        CREATE TABLE IF NOT EXISTS cte_produtos (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          cte_documento_id uuid NOT NULL,
+          sequencia integer NOT NULL,
+          codigo_produto varchar(50),
+          descricao_produto text NOT NULL,
+          ncm_produto varchar(15),
+          quantidade decimal(12,4),
+          unidade_medida varchar(10),
+          valor_bruto_kg decimal(12,2),
+          valor_carga decimal(12,2),
+          cfop varchar(4),
+          valor_seguro decimal(12,2),
+          valor_frete decimal(12,2),
+          CONSTRAINT fk_cte_documento
+            FOREIGN KEY(cte_documento_id) 
+            REFERENCES cte_documentos(id)
+            ON DELETE CASCADE
+        )
+      `
+    },
+    {
+      name: 'cte_nfe_relacionadas',
+      query: `
+        CREATE TABLE IF NOT EXISTS cte_nfe_relacionadas (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          cte_documento_id uuid NOT NULL,
+          chave_acesso varchar(44) NOT NULL,
+          CONSTRAINT fk_cte_documento
+            FOREIGNKEY(cte_documento_id) 
+            REFERENCES cte_documentos(id)
+            ON DELETE CASCADE
+        )
+      `
+    },
+    {
+      name: 'cte_outros_valores',
+      query: `
+        CREATE TABLE IF NOT EXISTS cte_outros_valores (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          cte_documento_id uuid NOT NULL,
+          tipo_valor varchar(50),
+          percentual decimal(5,2),
+          valor decimal(12,2) NOT NULL,
+          CONSTRAINT fk_cte_documento
+            FOREIGN KEY(cte_documento_id) 
+            REFERENCES cte_documentos(id)
+            ON DELETE CASCADE
+        )
+      `
+    },
+    {
+      name: 'cte_componentes_redespacho',
+      query: `
+        CREATE TABLE IF NOT EXISTS cte_componentes_redespacho (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          cte_documento_id uuid NOT NULL,
+          sequencia integer NOT NULL,
+          cidade_prestacao_id uuid,
+          cidade_prestacao_nome varchar(255),
+          uf_prestacao varchar(2),
+          valor_prestacao decimal(12,2),
+          CONSTRAINT fk_cte_documento
+            FOREIGN KEY(cte_documento_id) 
+            REFERENCES cte_documentos(id)
+            ON DELETE CASCADE
+        )
+      `
+    },
+    {
+      name: 'cte_remetente',
+      query: `
+        CREATE TABLE IF NOT EXISTS cte_remetente (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          cte_documento_id uuid NOT NULL,
+          nome_razao_social varchar(255) NOT NULL,
+          cnpj_cpf varchar(18) NOT NULL,
+          ie varchar(20),
+          telefone varchar(20),
+          email varchar(255),
+          endereco_logradouro varchar(255),
+          endereco_numero varchar(20),
+          endereco_complemento varchar(100),
+          endereco_bairro varchar(100),
+          endereco_cidade_id uuid,
+          endereco_cidade_nome varchar(255),
+          endereco_uf varchar(2),
+          endereco_cep varchar(10),
+          CONSTRAINT fk_cte_documento
+            FOREIGN KEY(cte_documento_id) 
+            REFERENCES cte_documentos(id)
+            ON DELETE CASCADE
+        )
+      `
+    },
+    {
+      name: 'cte_recebedor',
+      query: `
+        CREATE TABLE IF NOT EXISTS cte_recebedor (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          cte_documento_id uuid NOT NULL,
+          nome_razao_social varchar(255) NOT NULL,
+          cnpj_cpf varchar(18) NOT NULL,
+          ie varchar(20),
+          telefone varchar(20),
+          email varchar(255),
+          endereco_logradouro varchar(255),
+          endereco_numero varchar(20),
+          endereco_complemento varchar(100),
+          endereco_bairro varchar(100),
+          endereco_cidade_id uuid,
+          endereco_cidade_nome varchar(255),
+          endereco_uf varchar(2),
+          endereco_cep varchar(10),
+          CONSTRAINT fk_cte_documento
+            FOREIGN KEY(cte_documento_id) 
+            REFERENCES cte_documentos(id)
+            ON DELETE CASCADE
+        )
+      `
+    },
+    {
+      name: 'cte_destinatario',
+      query: `
+        CREATE TABLE IF NOT EXISTS cte_destinatario (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          cte_documento_id uuid NOT NULL,
+          nome_razao_social varchar(255) NOT NULL,
+          cnpj_cpf varchar(18) NOT NULL,
+          ie varchar(20),
+          telefone varchar(20),
+          email varchar(255),
+          endereco_logradouro varchar(255),
+          endereco_numero varchar(20),
+          endereco_complemento varchar(100),
+          endereco_bairro varchar(100),
+          endereco_cidade_id uuid,
+          endereco_cidade_nome varchar(255),
+          endereco_uf varchar(2),
+          endereco_cep varchar(10),
+          CONSTRAINT fk_cte_documento
+            FOREIGN KEY(cte_documento_id) 
+            REFERENCES cte_documentos(id)
+            ON DELETE CASCADE
+        )
+      `
+    },
+    {
+      name: 'cte_tomador',
+      query: `
+        CREATE TABLE IF NOT EXISTS cte_tomador (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          cte_documento_id uuid NOT NULL,
+          nome_razao_social varchar(255) NOT NULL,
+          cnpj_cpf varchar(18) NOT NULL,
+          ie varchar(20),
+          telefone varchar(20),
+          email varchar(255),
+          endereco_logradouro varchar(255),
+          endereco_numero varchar(20),
+          endereco_complemento varchar(100),
+          endereco_bairro varchar(100),
+          endereco_cidade_id uuid,
+          endereco_cidade_nome varchar(255),
+          endereco_uf varchar(2),
+          endereco_cep varchar(10),
+          CONSTRAINT fk_cte_documento
+            FOREIGN KEY(cte_documento_id) 
+            REFERENCES cte_documentos(id)
+            ON DELETE CASCADE
+        )
+      `
+    },
+    {
+      name: 'database_configurations',
+      query: `
+        CREATE TABLE IF NOT EXISTS database_configurations (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          nome_empresa varchar(255) NOT NULL,
+          host varchar(255) NOT NULL,
+          port integer NOT NULL DEFAULT 5432,
+          database_name varchar(255) NOT NULL,
+          username varchar(255) NOT NULL,
+          password text NOT NULL,
+          ssl_enabled boolean DEFAULT false,
+          max_connections integer DEFAULT 10,
+          timeout_seconds integer DEFAULT 30,
+          ativo boolean DEFAULT true,
+          created_at timestamptz DEFAULT now(),
+          updated_at timestamptz DEFAULT now()
+        )
+      `
     }
   ];
 
@@ -824,6 +1110,145 @@ async function createForeignKeys(client) {
       column: 'state_id',
       references: 'states(id)',
       name: 'cities_state_id_fkey'
+    },
+    {
+      table: 'usuarios',
+      column: 'database_config_id',
+      references: 'database_configurations(id)',
+      name: 'usuarios_database_config_id_fkey',
+      onDelete: 'SET NULL'
+    },
+    {
+      table: 'cte_documentos',
+      column: 'empresa_id',
+      references: 'empresas_fiscais(id)',
+      name: 'cte_documentos_empresa_id_fkey'
+    },
+    {
+      table: 'cte_documentos',
+      column: 'tomador_id',
+      references: 'cte_tomador(id)',
+      name: 'cte_documentos_tomador_id_fkey',
+      onDelete: 'SET NULL'
+    },
+    {
+      table: 'cte_documentos',
+      column: 'remetente_id',
+      references: 'cte_remetente(id)',
+      name: 'cte_documentos_remetente_id_fkey',
+      onDelete: 'SET NULL'
+    },
+    {
+      table: 'cte_documentos',
+      column: 'recebedor_id',
+      references: 'cte_recebedor(id)',
+      name: 'cte_documentos_recebedor_id_fkey',
+      onDelete: 'SET NULL'
+    },
+    {
+      table: 'cte_documentos',
+      column: 'destinatario_id',
+      references: 'cte_destinatario(id)',
+      name: 'cte_documentos_destinatario_id_fkey',
+      onDelete: 'SET NULL'
+    },
+    {
+      table: 'cte_documentos',
+      column: 'produto_predominante_id',
+      references: 'cte_produtos(id)',
+      name: 'cte_documentos_produto_predominante_id_fkey',
+      onDelete: 'SET NULL'
+    },
+    {
+      table: 'cte_produtos',
+      column: 'cte_documento_id',
+      references: 'cte_documentos(id)',
+      name: 'cte_produtos_cte_documento_id_fkey',
+      onDelete: 'CASCADE'
+    },
+    {
+      table: 'cte_nfe_relacionadas',
+      column: 'cte_documento_id',
+      references: 'cte_documentos(id)',
+      name: 'cte_nfe_relacionadas_cte_documento_id_fkey',
+      onDelete: 'CASCADE'
+    },
+    {
+      table: 'cte_outros_valores',
+      column: 'cte_documento_id',
+      references: 'cte_documentos(id)',
+      name: 'cte_outros_valores_cte_documento_id_fkey',
+      onDelete: 'CASCADE'
+    },
+    {
+      table: 'cte_componentes_redespacho',
+      column: 'cte_documento_id',
+      references: 'cte_documentos(id)',
+      name: 'cte_componentes_redespacho_cte_documento_id_fkey',
+      onDelete: 'CASCADE'
+    },
+    {
+      table: 'cte_componentes_redespacho',
+      column: 'cidade_prestacao_id',
+      references: 'cities(id)',
+      name: 'cte_componentes_redespacho_cidade_prestacao_id_fkey',
+      onDelete: 'SET NULL'
+    },
+    {
+      table: 'cte_remetente',
+      column: 'cte_documento_id',
+      references: 'cte_documentos(id)',
+      name: 'cte_remetente_cte_documento_id_fkey',
+      onDelete: 'CASCADE'
+    },
+    {
+      table: 'cte_remetente',
+      column: 'endereco_cidade_id',
+      references: 'cities(id)',
+      name: 'cte_remetente_endereco_cidade_id_fkey',
+      onDelete: 'SET NULL'
+    },
+    {
+      table: 'cte_recebedor',
+      column: 'cte_documento_id',
+      references: 'cte_documentos(id)',
+      name: 'cte_recebedor_cte_documento_id_fkey',
+      onDelete: 'CASCADE'
+    },
+    {
+      table: 'cte_recebedor',
+      column: 'endereco_cidade_id',
+      references: 'cities(id)',
+      name: 'cte_recebedor_endereco_cidade_id_fkey',
+      onDelete: 'SET NULL'
+    },
+    {
+      table: 'cte_destinatario',
+      column: 'cte_documento_id',
+      references: 'cte_documentos(id)',
+      name: 'cte_destinatario_cte_documento_id_fkey',
+      onDelete: 'CASCADE'
+    },
+    {
+      table: 'cte_destinatario',
+      column: 'endereco_cidade_id',
+      references: 'cities(id)',
+      name: 'cte_destinatario_endereco_cidade_id_fkey',
+      onDelete: 'SET NULL'
+    },
+    {
+      table: 'cte_tomador',
+      column: 'cte_documento_id',
+      references: 'cte_documentos(id)',
+      name: 'cte_tomador_cte_documento_id_fkey',
+      onDelete: 'CASCADE'
+    },
+    {
+      table: 'cte_tomador',
+      column: 'endereco_cidade_id',
+      references: 'cities(id)',
+      name: 'cte_tomador_endereco_cidade_id_fkey',
+      onDelete: 'SET NULL'
     }
   ];
 
@@ -863,7 +1288,19 @@ async function createIndexes(client) {
     'CREATE INDEX IF NOT EXISTS idx_cadastros_ativo ON cadastros(ativo)',
     'CREATE INDEX IF NOT EXISTS idx_abastecimentos_data ON abastecimentos(data_abastecimento)',
     'CREATE INDEX IF NOT EXISTS idx_user_permissions_user_id ON user_permissions(user_id)',
-    'CREATE INDEX IF NOT EXISTS idx_user_permissions_module ON user_permissions(module)'
+    'CREATE INDEX IF NOT EXISTS idx_user_permissions_module ON user_permissions(module)',
+    'CREATE INDEX IF NOT EXISTS idx_empresas_fiscais_cnpj ON empresas_fiscais(cnpj)',
+    'CREATE INDEX IF NOT EXISTS idx_cte_documentos_empresa_id ON cte_documentos(empresa_id)',
+    'CREATE INDEX IF NOT EXISTS idx_cte_documentos_numero_cte ON cte_documentos(numero_cte)',
+    'CREATE INDEX IF NOT EXISTS idx_cte_documentos_data_emissao ON cte_documentos(data_emissao)',
+    'CREATE INDEX IF NOT EXISTS idx_cte_produtos_cte_documento_id ON cte_produtos(cte_documento_id)',
+    'CREATE INDEX IF NOT EXISTS idx_cte_nfe_relacionadas_cte_documento_id ON cte_nfe_relacionadas(cte_documento_id)',
+    'CREATE INDEX IF NOT EXISTS idx_cte_outros_valores_cte_documento_id ON cte_outros_valores(cte_documento_id)',
+    'CREATE INDEX IF NOT EXISTS idx_cte_componentes_redespacho_cte_documento_id ON cte_componentes_redespacho(cte_documento_id)',
+    'CREATE INDEX IF NOT EXISTS idx_cte_remetente_cte_documento_id ON cte_remetente(cte_documento_id)',
+    'CREATE INDEX IF NOT EXISTS idx_cte_recebedor_cte_documento_id ON cte_recebedor(cte_documento_id)',
+    'CREATE INDEX IF NOT EXISTS idx_cte_destinatario_cte_documento_id ON cte_destinatario(cte_documento_id)',
+    'CREATE INDEX IF NOT EXISTS idx_cte_tomador_cte_documento_id ON cte_tomador(cte_documento_id)'
   ];
 
   for (const indexQuery of indexes) {
@@ -1063,7 +1500,7 @@ async function insertInitialData(client) {
     const spState = await client.query(`SELECT id FROM states WHERE uf = 'SP' LIMIT 1`);
     const mgState = await client.query(`SELECT id FROM states WHERE uf = 'MG' LIMIT 1`);
     const goState = await client.query(`SELECT id FROM states WHERE uf = 'GO' LIMIT 1`);
-    
+
     if (spState.rows.length > 0 && mgState.rows.length > 0 && goState.rows.length > 0) {
       await client.query(`
         INSERT INTO cities (cod_city, name, state_id) VALUES
@@ -1080,6 +1517,23 @@ async function insertInitialData(client) {
     }
   } catch (error) {
     console.log('⚠️ Erro ao criar cidades:', error.message);
+  }
+
+  // Inserir dados de exemplo para empresas fiscais
+  try {
+    await client.query(`
+      INSERT INTO empresas_fiscais (
+        razao_social, nome_fantasia, cnpj, inscricao_estadual, endereco, cidade, estado, 
+        uf_emissao_nfe, ambiente_nfce, ambiente_cte, serie_padrao_cte, status
+      ) VALUES (
+        'EMPRESA DE EXEMPLO LTDA', 'EXEMPLO LTDA', '00.000.000/0001-00', '123.456.789.012', 
+        'Rua das Amostras, 100', 'São Paulo', 'SP', 'SP', '1', '1', '001', 'ativo'
+      )
+      ON CONFLICT (cnpj) DO NOTHING
+    `);
+    console.log('✅ Empresa fiscal de exemplo criada');
+  } catch (error) {
+    console.log('⚠️ Erro ao criar empresa fiscal de exemplo:', error.message);
   }
 }
 
@@ -1230,25 +1684,26 @@ app.post('/api/db/query-main', authenticateToken, async (req, res) => {
 app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
   try {
     const data = req.body;
-    console.log('📝 Criando documento CT-e:', data);
-    
+    console.log('📝 Recebendo dados para criar CT-e:', data);
+
     // Obter pool correto para o usuário
     const userPool = await getUserDatabasePool(req.user.id);
     const client = await userPool.connect();
-    
+
     try {
       // Validar empresa
       const empresaResult = await client.query(
         'SELECT * FROM empresas_fiscais WHERE id = $1 AND status = $2',
         [data.empresa_id, 'ativo']
       );
-      
+
       if (empresaResult.rows.length === 0) {
         return res.status(400).json({ error: 'Empresa fiscal não encontrada ou inativa' });
       }
-      
+
       const empresa = empresaResult.rows[0];
-      
+      console.log('🏢 Empresa validada:', empresa.razao_social);
+
       // Obter próximo número se não fornecido
       let numeroFinal = data.numero_cte;
       if (!numeroFinal || numeroFinal === 'AUTO') {
@@ -1257,11 +1712,13 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
           [data.empresa_id]
         );
         numeroFinal = proximoNumeroResult.rows[0].numero.toString();
+        console.log('📋 Próximo número CT-e:', numeroFinal);
       }
-      
+
       // Usar série padrão se não fornecida
       const serieFinal = data.serie || empresa.serie_padrao_cte || '001';
-      
+      console.log('📋 Série final:', serieFinal);
+
       // Inserir documento CT-e
       const result = await client.query(`
         INSERT INTO cte_documentos (
@@ -1278,6 +1735,8 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
           valor_prestacao,
           valor_receber,
           valor_tributos,
+          valor_pedagio,
+          valor_seguro,
           icms_situacao_tributaria,
           icms_bc_valor,
           icms_aliquota,
@@ -1289,8 +1748,6 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
           chave_acesso_2,
           chave_acesso_3,
           chave_acesso_4,
-          valor_pedagio,
-          valor_seguro,
           tipo_servico,
           finalidade_cte,
           cfop,
@@ -1307,63 +1764,65 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
           motorista_validade_cnh,
           placa_veiculo,
           placa_reboque,
-          associacao_frota_id
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42
-      ) RETURNING *
+          associacao_frota_id,
+          created_at,
+          updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, NOW(), NOW()
+        ) RETURNING *
       `, [
         data.empresa_id,
-        data.numero_cte || 1,
-        data.serie || '001',
+        numeroFinal,
+        serieFinal,
         data.data_emissao,
         data.status || 'pendente',
-        data.observacoes,
-        data.tomador_id,
-        data.remetente_id,
-        data.recebedor_id,
-        data.destinatario_id,
-        data.valor_prestacao,
-        data.valor_receber,
-        data.valor_tributos,
-        data.icms_situacao_tributaria,
-        data.icms_bc_valor,
-        data.icms_aliquota,
-        data.icms_valor,
-        data.valor_carga,
-        data.quantidade_carga,
-        data.produto_predominante_id,
-        data.chave_acesso_1,
-        data.chave_acesso_2,
-        data.chave_acesso_3,
-        data.chave_acesso_4,
-        data.valor_pedagio,
-        data.valor_seguro,
-        data.tipo_servico,
-        data.finalidade_cte,
-        data.cfop,
-        data.cidade_inicio_ibge,
-        data.cidade_termino_ibge,
-        data.uf_inicio,
-        data.uf_termino,
-        data.cidade_inicio_nome,
-        data.cidade_termino_nome,
-        data.rntrc,
-        data.motorista_nome,
-        data.motorista_cnh,
-        data.motorista_matricula,
-        data.motorista_validade_cnh,
-        data.placa_veiculo,
-        data.placa_reboque,
-        data.associacao_frota_id
+        data.observacoes || null,
+        data.tomador_id || null,
+        data.remetente_id || null,
+        data.recebedor_id || null,
+        data.destinatario_id || null,
+        data.valor_prestacao || null,
+        data.valor_receber || null,
+        data.valor_tributos || null,
+        data.valor_pedagio || null,
+        data.valor_seguro || null,
+        data.icms_situacao_tributaria || null,
+        data.icms_bc_valor || null,
+        data.icms_aliquota || null,
+        data.icms_valor || null,
+        data.valor_carga || null,
+        data.quantidade_carga || null,
+        data.produto_predominante_id || null,
+        data.chave_acesso_1 || null,
+        data.chave_acesso_2 || null,
+        data.chave_acesso_3 || null,
+        data.chave_acesso_4 || null,
+        data.tipo_servico || '0',
+        data.finalidade_cte || '0',
+        data.cfop || '5352',
+        data.cidade_inicio_ibge || null,
+        data.cidade_termino_ibge || null,
+        data.uf_inicio || null,
+        data.uf_termino || null,
+        data.cidade_inicio_nome || null,
+        data.cidade_termino_nome || null,
+        data.rntrc || null,
+        data.motorista_nome || null,
+        data.motorista_cnh || null,
+        data.motorista_matricula || null,
+        data.motorista_validade_cnh || null,
+        data.placa_veiculo || null,
+        data.placa_reboque || null,
+        data.associacao_frota_id || null
       ]);
 
       console.log('✅ Documento CT-e criado com sucesso:', result.rows[0].id);
       res.status(201).json(result.rows[0]);
-      
+
     } finally {
       client.release();
     }
-    
+
   } catch (error) {
     console.error('❌ Erro ao criar documento CT-e:', error);
     res.status(500).json({ 
@@ -1402,7 +1861,8 @@ app.get('/api/postos', authenticateToken, async (req, res) => {
         COALESCE(ativo, true) as ativo,
         created_at,
         updated_at
-      FROM postos 
+      FROM cadastros 
+      WHERE tipo = 'abastecimento'
       ORDER BY nome
     `;
 
@@ -1533,13 +1993,41 @@ createCrudRoutes('manutencoes', 'manutenção');
 createCrudRoutes('checklists', 'checklist');
 createCrudRoutes('funcionarios', 'funcionário');
 createCrudRoutes('cadastros', 'cadastro');
+createCrudRoutes('empresas_fiscais', 'empresa fiscal');
 
 // Rotas específicas para o módulo financeiro
 createCrudRoutes('centros_custo', 'centro de custo');
 createCrudRoutes('contas_pagar', 'conta a pagar');
 createCrudRoutes('contas_receber', 'conta a receber');
 
-// Rota específica para limpar permissões órfãs
+// Rotas específicas para CT-e
+app.get('/api/cte-documentos', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT * FROM cte_documentos ORDER BY created_at DESC`);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get CT-e documents error:', error);
+    res.status(500).json({ error: 'Erro ao buscar documentos CT-e' });
+  }
+});
+
+app.get('/api/cte-documentos/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(`SELECT * FROM cte_documentos WHERE id = $1`, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Documento CT-e não encontrado' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Get CT-e document by ID error:', error);
+    res.status(500).json({ error: 'Erro ao buscar documento CT-e' });
+  }
+});
+
+// Rota para limpar permissões órfãs
 app.delete('/api/user-permissions/:userId', authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params;
@@ -1603,34 +2091,34 @@ app.get('*', (req, res) => {
 app.post('/api/upload-xml', async (req, res) => {
   try {
     const { content, path, filename } = req.body;
-    
+
     if (!content || !path || !filename) {
       return res.status(400).json({ error: 'Dados incompletos' });
     }
-    
+
     console.log("📁 Recebendo arquivo XML para salvar:", path);
-    
+
     // Criar diretório se não existir
     const fs = require('fs').promises;
     const pathLib = require('path');
-    
+
     const fullPath = pathLib.join(__dirname, path);
     const directory = pathLib.dirname(fullPath);
-    
+
     // Criar diretórios recursivamente
     await fs.mkdir(directory, { recursive: true });
-    
+
     // Salvar arquivo
     await fs.writeFile(fullPath, content, 'utf8');
-    
+
     console.log("✅ Arquivo XML salvo com sucesso:", fullPath);
-    
+
     res.json({ 
       success: true, 
       path: path,
       size: content.length 
     });
-    
+
   } catch (error) {
     console.error("❌ Erro ao salvar arquivo XML:", error);
     res.status(500).json({ 
@@ -1644,27 +2132,27 @@ app.post('/api/upload-xml', async (req, res) => {
 app.get('/uploads/*', (req, res) => {
   const fs = require('fs');
   const path = require('path');
-  
+
   const filePath = path.join(__dirname, req.path);
-  
+
   // Verificar se o arquivo existe
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: 'Arquivo não encontrado' });
   }
-  
+
   // Definir tipo de conteúdo baseado na extensão
   const ext = path.extname(filePath).toLowerCase();
   let contentType = 'application/octet-stream';
-  
+
   if (ext === '.xml') {
     contentType = 'application/xml';
   } else if (ext === '.pdf') {
     contentType = 'application/pdf';
   }
-  
+
   res.setHeader('Content-Type', contentType);
   res.setHeader('Content-Disposition', `inline; filename="${path.basename(filePath)}"`);
-  
+
   // Enviar arquivo
   res.sendFile(filePath);
 });
