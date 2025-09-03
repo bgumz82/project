@@ -456,6 +456,10 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
         valor_carga,
         quantidade_carga,
         produto_predominante_id,
+        chave_acesso_1,
+        chave_acesso_2,
+        chave_acesso_3,
+        chave_acesso_4,
         valor_pedagio,
         valor_seguro,
         tipo_servico,
@@ -476,7 +480,7 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
         placa_reboque,
         associacao_frota_id
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43
       ) RETURNING *`,
       [
         data.empresa_id,
@@ -499,6 +503,10 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
         data.valor_carga,
         data.quantidade_carga,
         data.produto_predominante_id,
+        data.chave_acesso_1,
+        data.chave_acesso_2,
+        data.chave_acesso_3,
+        data.chave_acesso_4,
         data.valor_pedagio,
         data.valor_seguro,
         data.tipo_servico,
