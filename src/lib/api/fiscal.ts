@@ -579,6 +579,254 @@ export async function getCTeDocumentos(): Promise<CTeDocumento[]> {
   }
 }
 
+export async function createCTeDocumento(data: CTeDocumentoCreate): Promise<CTeDocumento> {
+  try {
+    console.log('📝 Criando novo documento CT-e:', data)
+    
+    // Log detalhado dos dados recebidos
+    console.log('📊 Dados completos para CT-e:', {
+      empresa_id: data.empresa_id,
+      numero_cte: data.numero_cte,
+      serie: data.serie,
+      data_emissao: data.data_emissao,
+      status: data.status,
+      tomador_id: data.tomador_id,
+      remetente_id: data.remetente_id,
+      destinatario_id: data.destinatario_id,
+      recebedor_id: data.recebedor_id,
+      valor_prestacao: data.valor_prestacao,
+      valor_receber: data.valor_receber,
+      valor_tributos: data.valor_tributos,
+      icms_situacao_tributaria: data.icms_situacao_tributaria,
+      icms_bc_valor: data.icms_bc_valor,
+      icms_aliquota: data.icms_aliquota,
+      icms_valor: data.icms_valor,
+      valor_carga: data.valor_carga,
+      quantidade_carga: data.quantidade_carga,
+      produto_predominante_id: data.produto_predominante_id,
+      chave_acesso_1: data.chave_acesso_1,
+      chave_acesso_2: data.chave_acesso_2,
+      chave_acesso_3: data.chave_acesso_3,
+      chave_acesso_4: data.chave_acesso_4,
+      valor_pedagio: data.valor_pedagio,
+      valor_seguro: data.valor_seguro,
+      tipo_servico: data.tipo_servico,
+      finalidade_cte: data.finalidade_cte,
+      cfop: data.cfop,
+      cidade_inicio_ibge: data.cidade_inicio_ibge,
+      cidade_termino_ibge: data.cidade_termino_ibge,
+      uf_inicio: data.uf_inicio,
+      uf_termino: data.uf_termino,
+      cidade_inicio_nome: data.cidade_inicio_nome,
+      cidade_termino_nome: data.cidade_termino_nome,
+      rntrc: data.rntrc,
+      motorista_nome: data.motorista_nome,
+      motorista_cnh: data.motorista_cnh,
+      motorista_matricula: data.motorista_matricula,
+      motorista_validade_cnh: data.motorista_validade_cnh,
+      placa_veiculo: data.placa_veiculo,
+      placa_reboque: data.placa_reboque,
+      associacao_frota_id: data.associacao_frota_id,
+      observacoes: data.observacoes
+    })
+
+    // Buscar empresa para obter série padrão e próximo número
+    const empresa = await queryOne(`
+      SELECT serie_padrao_cte, proximo_numero_cte 
+      FROM empresas_fiscais 
+      WHERE id = $1
+    `, [data.empresa_id])
+
+    if (!empresa) {
+      throw new Error('Empresa não encontrada')
+    }
+
+    // Obter próximo número se não fornecido
+    const proximoNumero = await queryOne(`
+      SELECT get_next_cte_number($1) as numero
+    `, [data.empresa_id])
+
+    const numeroFinal = data.numero_cte === 'AUTO' || !data.numero_cte ? proximoNumero : data.numero_cte
+    const serieFinal = data.serie || empresa.serie_padrao_cte || '001'
+
+    // Preparar SQL e parâmetros
+    const sqlQuery = `
+      INSERT INTO cte_documentos (
+        empresa_id,
+        numero_cte,
+        serie,
+        data_emissao,
+        status,
+        observacoes,
+        tomador_id,
+        remetente_id,
+        recebedor_id,
+        destinatario_id,
+        valor_prestacao,
+        valor_receber,
+        valor_tributos,
+        icms_situacao_tributaria,
+        icms_bc_valor,
+        icms_aliquota,
+        icms_valor,
+        valor_carga,
+        quantidade_carga,
+        produto_predominante_id,
+        chave_acesso_1,
+        chave_acesso_2,
+        chave_acesso_3,
+        chave_acesso_4,
+        valor_pedagio,
+        valor_seguro,
+        tipo_servico,
+        finalidade_cte,
+        cfop,
+        cidade_inicio_ibge,
+        cidade_termino_ibge,
+        uf_inicio,
+        uf_termino,
+        cidade_inicio_nome,
+        cidade_termino_nome,
+        rntrc,
+        motorista_nome,
+        motorista_cnh,
+        motorista_matricula,
+        motorista_validade_cnh,
+        placa_veiculo,
+        placa_reboque,
+        associacao_frota_id
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42
+      ) RETURNING *
+    `
+    
+    const sqlParams = [
+      data.empresa_id,
+      numeroFinal,
+      serieFinal,
+      data.data_emissao,
+      data.status || 'pendente',
+      data.observacoes,
+      data.tomador_id,
+      data.remetente_id,
+      data.recebedor_id,
+      data.destinatario_id,
+      data.valor_prestacao,
+      data.valor_receber,
+      data.valor_tributos,
+      data.icms_situacao_tributaria,
+      data.icms_bc_valor,
+      data.icms_aliquota,
+      data.icms_valor,
+      data.valor_carga,
+      data.quantidade_carga,
+      data.produto_predominante_id,
+      data.chave_acesso_1,
+      data.chave_acesso_2,
+      data.chave_acesso_3,
+      data.chave_acesso_4,
+      data.valor_pedagio,
+      data.valor_seguro,
+      data.tipo_servico,
+      data.finalidade_cte,
+      data.cfop,
+      data.cidade_inicio_ibge,
+      data.cidade_termino_ibge,
+      data.uf_inicio,
+      data.uf_termino,
+      data.cidade_inicio_nome,
+      data.cidade_termino_nome,
+      data.rntrc,
+      data.motorista_nome,
+      data.motorista_cnh,
+      data.motorista_matricula,
+      data.motorista_validade_cnh,
+      data.placa_veiculo,
+      data.placa_reboque,
+      data.associacao_frota_id
+    ]
+    
+    // Log detalhado do SQL que será executado
+    console.log('🔍 SQL Query para CT-e:')
+    console.log(sqlQuery)
+    console.log('📋 Parâmetros SQL (total:', sqlParams.length, '):')
+    sqlParams.forEach((param, index) => {
+      console.log(`  $${index + 1}:`, param, `(${typeof param})`)
+    })
+    
+    const result = await queryOne(`
+      INSERT INTO cte_documentos (
+        empresa_id,
+        numero_cte,
+        serie,
+        data_emissao,
+        status,
+        observacoes,
+        tomador_id,
+        remetente_id,
+        recebedor_id,
+        destinatario_id,
+        valor_prestacao,
+        valor_receber,
+        valor_tributos,
+        icms_situacao_tributaria,
+        icms_bc_valor,
+        icms_aliquota,
+        icms_valor,
+        valor_carga,
+        quantidade_carga,
+        produto_predominante_id,
+        chave_acesso_1,
+        chave_acesso_2,
+        chave_acesso_3,
+        chave_acesso_4,
+        valor_pedagio,
+        valor_seguro,
+        tipo_servico,
+        finalidade_cte,
+        cfop,
+        cidade_inicio_ibge,
+        cidade_termino_ibge,
+        uf_inicio,
+        uf_termino,
+        cidade_inicio_nome,
+        cidade_termino_nome,
+        rntrc,
+        motorista_nome,
+        motorista_cnh,
+        motorista_matricula,
+        motorista_validade_cnh,
+        placa_veiculo,
+        placa_reboque,
+        associacao_frota_id
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42
+      ) RETURNING *
+    `, sqlParams)
+
+    if (!result) {
+      throw new Error('Erro ao criar documento CT-e')
+    }
+
+    console.log('✅ Documento CT-e criado com sucesso:', result.id)
+    
+    // Log do resultado final
+    console.log('📄 Documento CT-e criado:', {
+      id: result.id,
+      numero_cte: result.numero_cte,
+      serie: result.serie,
+      chave_acesso: result.chave_acesso,
+      status: result.status
+    })
+    
+    return result
+  } catch (error) {
+    console.error('❌ Erro ao criar documento CT-e:', error)
+    console.error('📊 Dados que causaram o erro:', data)
+    throw error
+  }
+}
+
 export async function createCTeDocumento(
   documento: CTeDocumentoCreate,
 ): Promise<CTeDocumento> {
@@ -712,9 +960,9 @@ export async function createCTeDocumento(
       chave_acesso_2: documento.chave_acesso_2 || null,
       chave_acesso_3: documento.chave_acesso_3 || null,
       chave_acesso_4: documento.chave_acesso_4 || null,
-      tipo_servico: documento.tipo_servico || '0',
-      finalidade_cte: documento.finalidade_cte || '0',
-      cfop: documento.cfop || '5352',
+      tipo_servico: documento.tipo_servico || null,
+      finalidade_cte: documento.finalidade_cte || null,
+      cfop: documento.cfop || null,
       cidade_inicio_ibge: documento.cidade_inicio_ibge || null,
       cidade_termino_ibge: documento.cidade_termino_ibge || null,
       uf_inicio: documento.uf_inicio || null,
@@ -728,134 +976,27 @@ export async function createCTeDocumento(
       motorista_validade_cnh: documento.motorista_validade_cnh || null,
       placa_veiculo: documento.placa_veiculo || null,
       placa_reboque: documento.placa_reboque || null,
-      associacao_frota_id: documento.associacao_frota_id || null
+      associacao_frota_id: documento.associacao_frota_id || null,
+      valor_pedagio: documento.valor_pedagio || null,
+      valor_seguro: documento.valor_seguro || null
     };
 
-    const result = await queryOne(
-      `
-      INSERT INTO cte_documentos (
-        id,
-        empresa_id,
-        numero_cte,
-        serie,
-        data_emissao,
-        chave_acesso,
-        chave_acesso_1,
-        chave_acesso_2,
-        chave_acesso_3,
-        chave_acesso_4,
-        codigo_uf,
-        forma_emissao,
-        codigo_numerico,
-        dv,
-        status,
-        observacoes,
-        tomador_id,
-        remetente_id,
-        recebedor_id,
-        destinatario_id,
-        valor_prestacao,
-        valor_receber,
-        valor_tributos,
-        icms_situacao_tributaria,
-        icms_bc_valor,
-        icms_aliquota,
-        icms_valor,
-        valor_carga,
-        quantidade_carga,
-        produto_predominante_id,
-        tipo_servico,
-        finalidade_cte,
-        cfop,
-        cidade_inicio_ibge,
-        cidade_termino_ibge,
-        uf_inicio,
-        uf_termino,
-        cidade_inicio_nome,
-        cidade_termino_nome,
-        rntrc,
-        motorista_nome,
-        motorista_cnh,
-        motorista_matricula,
-        motorista_validade_cnh,
-        placa_veiculo,
-        placa_reboque,
-        associacao_frota_id,
-        xml_proc_path,
-        xml_path,
-        pdf_path,
-        xml_gerado,
-        pdf_gerado,
-        xml_gerado_em,
-        pdf_gerado_em,
-        valor_pedagio,
-        valor_seguro,
-        created_at,
-        updated_at
-      ) VALUES (
-        gen_random_uuid(),
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, NOW(), NOW()
-      )
-      RETURNING *
-    `,
-      [
-        documentoLimpo.empresa_id,
-        numeroFinal,
-        serieFinal,
-        documentoLimpo.data_emissao,
-        null, // chave_acesso - será gerada pelo trigger
-        documentoLimpo.chave_acesso_1,
-        documentoLimpo.chave_acesso_2,
-        documentoLimpo.chave_acesso_3,
-        documentoLimpo.chave_acesso_4,
-        codigoUFFinal,
-        documentoLimpo.forma_emissao,
-        null, // codigo_numerico - será gerado pelo trigger
-        null, // dv - será gerado pelo trigger
-        documentoLimpo.status,
-        documentoLimpo.observacoes,
-        documentoLimpo.tomador_id,
-        documentoLimpo.remetente_id,
-        documentoLimpo.recebedor_id,
-        documentoLimpo.destinatario_id,
-        documentoLimpo.valor_prestacao,
-        documentoLimpo.valor_receber,
-        documentoLimpo.valor_tributos,
-        documentoLimpo.icms_situacao_tributaria,
-        documentoLimpo.icms_bc_valor,
-        documentoLimpo.icms_aliquota,
-        documentoLimpo.icms_valor,
-        documentoLimpo.valor_carga,
-        documentoLimpo.quantidade_carga,
-        documentoLimpo.produto_predominante_id,
-        documentoLimpo.tipo_servico,
-        documentoLimpo.finalidade_cte,
-        documentoLimpo.cfop,
-        documentoLimpo.cidade_inicio_ibge,
-        documentoLimpo.cidade_termino_ibge,
-        documentoLimpo.uf_inicio,
-        documentoLimpo.uf_termino,
-        documentoLimpo.cidade_inicio_nome,
-        documentoLimpo.cidade_termino_nome,
-        documentoLimpo.rntrc,
-        documentoLimpo.motorista_nome,
-        documentoLimpo.motorista_cnh,
-        documentoLimpo.motorista_matricula,
-        documentoLimpo.motorista_validade_cnh,
-        documentoLimpo.placa_veiculo,
-        documentoLimpo.placa_reboque,
-        documentoLimpo.associacao_frota_id,
-        null, // xml_proc_path - será gerado pelo trigger
-        null, // xml_path - será gerado pelo trigger
-        null, // pdf_path - será gerado pelo trigger
-        false, // xml_gerado
-        false, // pdf_gerado
-        null, // xml_gerado_em
-        null, // pdf_gerado_em
-        documentoLimpo.valor_pedagio || 0,
-        documentoLimpo.valor_seguro || 0
-      ],
-    );
+    // Usar API do servidor ao invés de query direta
+    const response = await fetch('/api/cte-documentos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
+      },
+      body: JSON.stringify(documento)
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erro ao criar documento CT-e');
+    }
+    
+    const result = await response.json();
 
     // Verificar se a chave de acesso foi gerada e forçar regeneração se necessário
     if (!result.chave_acesso) {
@@ -868,9 +1009,7 @@ export async function createCTeDocumento(
             updated_at = NOW()
         WHERE id = $1
         RETURNING *
-        `,
-        [result.id]
-      );
+        `, [result.id]);
 
       if (updatedResult) {
         console.log("✅ Chave de acesso regenerada:", updatedResult.chave_acesso);

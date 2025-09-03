@@ -118,7 +118,7 @@ export function AppRoutes() {
       return <Navigate to="/m/login" replace />
     }
     if (!isMobile && location.pathname.startsWith('/m/')) {
-      return <Navigate to="/login\" replace />
+      return <Navigate to="/login" replace />
     }
 
     return (

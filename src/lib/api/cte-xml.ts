@@ -1,4 +1,6 @@
 import { CTeDocumento } from './fiscal'
+import { query } from '@/lib/db'
+import { getCityCodeFromFallback } from './cities-fallback'
 
 // Função para remover acentuação
 function removeAccents(str: string): string {
@@ -307,10 +309,6 @@ function parseEndereco(enderecoCompleto: string | undefined | null, cidade?: str
 // Função para buscar código IBGE da cidade
 async function getCityCode(cityName: string, uf: string): Promise<string> {
   try {
-    // Importar funções necessárias
-    const { query } = await import('@/lib/db')
-    const { getCityCodeFromFallback } = await import('./cities-fallback')
-
     console.log('🔍 Buscando código IBGE para cidade:', cityName, 'UF:', uf)
 
     // Normalizar nome da cidade (remover acentos manualmente)
@@ -415,8 +413,6 @@ async function getUFFromCityCode(cityCode: string): Promise<string> {
 
     // Se não conseguiu mapear ou é código padrão, tentar buscar no banco
     try {
-      const { query } = await import('@/lib/db')
-
       // Buscar com JOIN correto entre cities e states
       const result = await query(`
         SELECT s.uf, s.name as uf_name

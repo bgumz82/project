@@ -62,15 +62,15 @@ app.get('/api/health', (req, res) => {
 // Auth routes
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { email, password, name, role = 'user' } = req.body;
+    const { email, password, nome, tipo = 'user' } = req.body;
 
-    if (!email || !password || !name) {
+    if (!email || !password || !nome) {
       return res.status(400).json({ error: 'Email, senha e nome são obrigatórios' });
     }
 
     // Check if user already exists
     const existingUser = await pool.query(
-      'SELECT id FROM auth.users WHERE email = $1',
+      'SELECT id FROM usuarios WHERE email = $1',
       [email]
     );
 
@@ -85,7 +85,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
 
 // Endpoint para upload de arquivos XML
-app.post('/api/upload-xml', async (req, res) => {
+app.post('/api/upload-xml', authenticateToken, async (req, res) => {
   try {
     const { content, path, filename } = req.body;
     
@@ -122,7 +122,8 @@ app.post('/api/upload-xml', async (req, res) => {
       error: 'Erro interno do servidor',
       details: error.message 
     });
-
+  }
+});
 
 // Servir arquivos XML estáticos
 app.get('/uploads/*', (req, res) => {
@@ -153,15 +154,12 @@ app.get('/uploads/*', (req, res) => {
   res.sendFile(filePath);
 });
 
-  }
-});
-
     // Create user
     const result = await pool.query(
-      `INSERT INTO auth.users (email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_user_meta_data)
-       VALUES ($1, $2, NOW(), NOW(), NOW(), $3)
-       RETURNING id, email, created_at`,
-      [email, hashedPassword, JSON.stringify({ name, role })]
+      `INSERT INTO usuarios (email, senha, nome, tipo, ativo, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, true, NOW(), NOW())
+       RETURNING id, email, nome, tipo, created_at`,
+      [email, hashedPassword, nome, tipo]
     );
 
     const user = result.rows[0];
@@ -171,8 +169,8 @@ app.get('/uploads/*', (req, res) => {
       { 
         id: user.id, 
         email: user.email,
-        name,
-        role
+        nome: user.nome,
+        tipo: user.tipo
       },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -182,8 +180,8 @@ app.get('/uploads/*', (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        name,
-        role,
+        nome: user.nome,
+        tipo: user.tipo,
         created_at: user.created_at
       },
       token
@@ -205,7 +203,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     // Find user
     const result = await pool.query(
-      'SELECT id, email, encrypted_password, raw_user_meta_data FROM auth.users WHERE email = $1',
+      'SELECT id, email, senha, nome, tipo FROM usuarios WHERE email = $1 AND ativo = true',
       [email]
     );
 
@@ -214,10 +212,9 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const user = result.rows[0];
-    const userData = JSON.parse(user.raw_user_meta_data || '{}');
 
     // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.encrypted_password);
+    const isValidPassword = await bcrypt.compare(password, user.senha);
 
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Credenciais inválidas' });
@@ -228,8 +225,8 @@ app.post('/api/auth/login', async (req, res) => {
       { 
         id: user.id, 
         email: user.email,
-        name: userData.name,
-        role: userData.role || 'user'
+        nome: user.nome,
+        tipo: user.tipo
       },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -239,8 +236,8 @@ app.post('/api/auth/login', async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        name: userData.name,
-        role: userData.role || 'user'
+        nome: user.nome,
+        tipo: user.tipo
       },
       token
     });
@@ -414,6 +411,128 @@ createCrudRoutes('maintenance', 'manutenção');
 createCrudRoutes('checklists', 'checklist');
 createCrudRoutes('funcionarios', 'funcionário');
 createCrudRoutes('reports', 'relatório');
+
+// CT-e documentos route
+app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
+  try {
+    const data = req.body;
+    
+    // Get next CT-e number if not provided
+    if (!data.numero_cte) {
+      const lastCte = await pool.query(
+        'SELECT numero_cte FROM cte_documentos WHERE empresa_id = $1 ORDER BY numero_cte DESC LIMIT 1',
+        [data.empresa_id]
+      );
+      data.numero_cte = lastCte.rows.length > 0 ? lastCte.rows[0].numero_cte + 1 : 1;
+    }
+    
+    // Set default series if not provided
+    if (!data.serie) {
+      data.serie = 1;
+    }
+    
+    const result = await pool.query(
+      `INSERT INTO cte_documentos (
+        empresa_id,
+        numero_cte,
+        serie,
+        data_emissao,
+        status,
+        observacoes,
+        tomador_id,
+        remetente_id,
+        recebedor_id,
+        destinatario_id,
+        valor_prestacao,
+        valor_receber,
+        valor_tributos,
+        icms_situacao_tributaria,
+        icms_bc_valor,
+        icms_aliquota,
+        icms_valor,
+        valor_carga,
+        quantidade_carga,
+        produto_predominante_id,
+        chave_acesso_1,
+        chave_acesso_2,
+        chave_acesso_3,
+        chave_acesso_4,
+        valor_pedagio,
+        valor_seguro,
+        tipo_servico,
+        finalidade_cte,
+        cfop,
+        cidade_inicio_ibge,
+        cidade_termino_ibge,
+        uf_inicio,
+        uf_termino,
+        cidade_inicio_nome,
+        cidade_termino_nome,
+        rntrc,
+        motorista_nome,
+        motorista_cnh,
+        motorista_matricula,
+        motorista_validade_cnh,
+        placa_veiculo,
+        placa_reboque,
+        associacao_frota_id
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43
+      ) RETURNING *`,
+      [
+        data.empresa_id,
+        data.numero_cte,
+        data.serie,
+        data.data_emissao,
+        data.status || 'rascunho',
+        data.observacoes,
+        data.tomador_id,
+        data.remetente_id,
+        data.recebedor_id,
+        data.destinatario_id,
+        data.valor_prestacao,
+        data.valor_receber,
+        data.valor_tributos,
+        data.icms_situacao_tributaria,
+        data.icms_bc_valor,
+        data.icms_aliquota,
+        data.icms_valor,
+        data.valor_carga,
+        data.quantidade_carga,
+        data.produto_predominante_id,
+        data.chave_acesso_1,
+        data.chave_acesso_2,
+        data.chave_acesso_3,
+        data.chave_acesso_4,
+        data.valor_pedagio,
+        data.valor_seguro,
+        data.tipo_servico,
+        data.finalidade_cte,
+        data.cfop,
+        data.cidade_inicio_ibge,
+        data.cidade_termino_ibge,
+        data.uf_inicio,
+        data.uf_termino,
+        data.cidade_inicio_nome,
+        data.cidade_termino_nome,
+        data.rntrc,
+        data.motorista_nome,
+        data.motorista_cnh,
+        data.motorista_matricula,
+        data.motorista_validade_cnh,
+        data.placa_veiculo,
+        data.placa_reboque,
+        data.associacao_frota_id
+      ]
+    );
+
+    res.status(201).json(result.rows[0]);
+
+  } catch (error) {
+    console.error('Create CT-e error:', error);
+    res.status(500).json({ error: 'Erro ao criar documento CT-e' });
+  }
+});
 
 // Cache para arquivos estáticos
 app.use(express.static('dist', {

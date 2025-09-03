@@ -722,6 +722,29 @@ async function createTables(client) {
           created_at timestamptz DEFAULT now()
         )
       `
+    },
+    {
+      name: 'states',
+      query: `
+        CREATE TABLE IF NOT EXISTS states (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          uf varchar(2) UNIQUE NOT NULL,
+          name varchar(255) NOT NULL,
+          created_at timestamptz DEFAULT now()
+        )
+      `
+    },
+    {
+      name: 'cities',
+      query: `
+        CREATE TABLE IF NOT EXISTS cities (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          cod_city varchar(7) UNIQUE NOT NULL,
+          name varchar(255) NOT NULL,
+          state_id uuid NOT NULL,
+          created_at timestamptz DEFAULT now()
+        )
+      `
     }
   ];
 
@@ -795,6 +818,12 @@ async function createForeignKeys(client) {
       references: 'checklists(id)',
       name: 'checklist_fotos_checklist_id_fkey',
       onDelete: 'CASCADE'
+    },
+    {
+      table: 'cities',
+      column: 'state_id',
+      references: 'states(id)',
+      name: 'cities_state_id_fkey'
     }
   ];
 
@@ -989,6 +1018,69 @@ async function insertInitialData(client) {
   } catch (error) {
     console.log('⚠️ Erro ao criar centros de custo:', error.message);
   }
+
+  // Inserir estados brasileiros
+  try {
+    await client.query(`
+      INSERT INTO states (uf, name) VALUES
+      ('AC', 'Acre'),
+      ('AL', 'Alagoas'),
+      ('AP', 'Amapá'),
+      ('AM', 'Amazonas'),
+      ('BA', 'Bahia'),
+      ('CE', 'Ceará'),
+      ('DF', 'Distrito Federal'),
+      ('ES', 'Espírito Santo'),
+      ('GO', 'Goiás'),
+      ('MA', 'Maranhão'),
+      ('MT', 'Mato Grosso'),
+      ('MS', 'Mato Grosso do Sul'),
+      ('MG', 'Minas Gerais'),
+      ('PA', 'Pará'),
+      ('PB', 'Paraíba'),
+      ('PR', 'Paraná'),
+      ('PE', 'Pernambuco'),
+      ('PI', 'Piauí'),
+      ('RJ', 'Rio de Janeiro'),
+      ('RN', 'Rio Grande do Norte'),
+      ('RS', 'Rio Grande do Sul'),
+      ('RO', 'Rondônia'),
+      ('RR', 'Roraima'),
+      ('SC', 'Santa Catarina'),
+      ('SP', 'São Paulo'),
+      ('SE', 'Sergipe'),
+      ('TO', 'Tocantins')
+      ON CONFLICT (uf) DO NOTHING
+    `);
+    console.log('✅ Estados brasileiros criados');
+  } catch (error) {
+    console.log('⚠️ Erro ao criar estados:', error.message);
+  }
+
+  // Inserir algumas cidades importantes
+  try {
+    // Primeiro buscar IDs dos estados
+    const spState = await client.query(`SELECT id FROM states WHERE uf = 'SP' LIMIT 1`);
+    const mgState = await client.query(`SELECT id FROM states WHERE uf = 'MG' LIMIT 1`);
+    const goState = await client.query(`SELECT id FROM states WHERE uf = 'GO' LIMIT 1`);
+    
+    if (spState.rows.length > 0 && mgState.rows.length > 0 && goState.rows.length > 0) {
+      await client.query(`
+        INSERT INTO cities (cod_city, name, state_id) VALUES
+        ('3550308', 'São Paulo', $1),
+        ('3518800', 'Guarulhos', $1),
+        ('3509502', 'Campinas', $1),
+        ('3106200', 'Belo Horizonte', $2),
+        ('3131604', 'Iraí de Minas', $2),
+        ('5208707', 'Goiânia', $3),
+        ('5203302', 'Bela Vista de Goiás', $3)
+        ON CONFLICT (cod_city) DO NOTHING
+      `, [spState.rows[0].id, mgState.rows[0].id, goState.rows[0].id]);
+      console.log('✅ Cidades importantes criadas');
+    }
+  } catch (error) {
+    console.log('⚠️ Erro ao criar cidades:', error.message);
+  }
 }
 
 // Função para obter pool de conexão baseado no usuário
@@ -1131,6 +1223,153 @@ app.post('/api/db/query-main', authenticateToken, async (req, res) => {
     if (client) {
       client.release();
     }
+  }
+});
+
+// Rota específica para CT-e documentos
+app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
+  try {
+    const data = req.body;
+    console.log('📝 Criando documento CT-e:', data);
+    
+    // Obter pool correto para o usuário
+    const userPool = await getUserDatabasePool(req.user.id);
+    const client = await userPool.connect();
+    
+    try {
+      // Validar empresa
+      const empresaResult = await client.query(
+        'SELECT * FROM empresas_fiscais WHERE id = $1 AND status = $2',
+        [data.empresa_id, 'ativo']
+      );
+      
+      if (empresaResult.rows.length === 0) {
+        return res.status(400).json({ error: 'Empresa fiscal não encontrada ou inativa' });
+      }
+      
+      const empresa = empresaResult.rows[0];
+      
+      // Obter próximo número se não fornecido
+      let numeroFinal = data.numero_cte;
+      if (!numeroFinal || numeroFinal === 'AUTO') {
+        const proximoNumeroResult = await client.query(
+          'SELECT get_next_cte_number($1) as numero',
+          [data.empresa_id]
+        );
+        numeroFinal = proximoNumeroResult.rows[0].numero.toString();
+      }
+      
+      // Usar série padrão se não fornecida
+      const serieFinal = data.serie || empresa.serie_padrao_cte || '001';
+      
+      // Inserir documento CT-e
+      const result = await client.query(`
+        INSERT INTO cte_documentos (
+          empresa_id,
+          numero_cte,
+          serie,
+          data_emissao,
+          status,
+          observacoes,
+          tomador_id,
+          remetente_id,
+          recebedor_id,
+          destinatario_id,
+          valor_prestacao,
+          valor_receber,
+          valor_tributos,
+          icms_situacao_tributaria,
+          icms_bc_valor,
+          icms_aliquota,
+          icms_valor,
+          valor_carga,
+          quantidade_carga,
+          produto_predominante_id,
+          chave_acesso_1,
+          chave_acesso_2,
+          chave_acesso_3,
+          chave_acesso_4,
+          valor_pedagio,
+          valor_seguro,
+          tipo_servico,
+          finalidade_cte,
+          cfop,
+          cidade_inicio_ibge,
+          cidade_termino_ibge,
+          uf_inicio,
+          uf_termino,
+          cidade_inicio_nome,
+          cidade_termino_nome,
+          rntrc,
+          motorista_nome,
+          motorista_cnh,
+          motorista_matricula,
+          motorista_validade_cnh,
+          placa_veiculo,
+          placa_reboque,
+          associacao_frota_id
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42
+      ) RETURNING *
+      `, [
+        data.empresa_id,
+        data.numero_cte || 1,
+        data.serie || '001',
+        data.data_emissao,
+        data.status || 'pendente',
+        data.observacoes,
+        data.tomador_id,
+        data.remetente_id,
+        data.recebedor_id,
+        data.destinatario_id,
+        data.valor_prestacao,
+        data.valor_receber,
+        data.valor_tributos,
+        data.icms_situacao_tributaria,
+        data.icms_bc_valor,
+        data.icms_aliquota,
+        data.icms_valor,
+        data.valor_carga,
+        data.quantidade_carga,
+        data.produto_predominante_id,
+        data.chave_acesso_1,
+        data.chave_acesso_2,
+        data.chave_acesso_3,
+        data.chave_acesso_4,
+        data.valor_pedagio,
+        data.valor_seguro,
+        data.tipo_servico,
+        data.finalidade_cte,
+        data.cfop,
+        data.cidade_inicio_ibge,
+        data.cidade_termino_ibge,
+        data.uf_inicio,
+        data.uf_termino,
+        data.cidade_inicio_nome,
+        data.cidade_termino_nome,
+        data.rntrc,
+        data.motorista_nome,
+        data.motorista_cnh,
+        data.motorista_matricula,
+        data.motorista_validade_cnh,
+        data.placa_veiculo,
+        data.placa_reboque,
+        data.associacao_frota_id
+      ]);
+
+      console.log('✅ Documento CT-e criado com sucesso:', result.rows[0].id);
+      res.status(201).json(result.rows[0]);
+      
+    } finally {
+      client.release();
+    }
+    
+  } catch (error) {
+    console.error('❌ Erro ao criar documento CT-e:', error);
+    res.status(500).json({ 
+      error: 'Erro ao criar documento CT-e',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
