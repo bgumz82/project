@@ -712,6 +712,8 @@ export async function createCTeDocumento(
       chave_acesso_2: documento.chave_acesso_2 || null,
       chave_acesso_3: documento.chave_acesso_3 || null,
       chave_acesso_4: documento.chave_acesso_4 || null,
+      valor_pedagio: documento.valor_pedagio || null,
+      valor_seguro: documento.valor_seguro || null,
       tipo_servico: documento.tipo_servico || '0',
       finalidade_cte: documento.finalidade_cte || '0',
       cfop: documento.cfop || '5352',
@@ -729,7 +731,7 @@ export async function createCTeDocumento(
       placa_veiculo: documento.placa_veiculo || null,
       placa_reboque: documento.placa_reboque || null,
       associacao_frota_id: documento.associacao_frota_id || null
-    };
+    }
 
     const result = await queryOne(
       `
@@ -764,6 +766,8 @@ export async function createCTeDocumento(
         valor_carga,
         quantidade_carga,
         produto_predominante_id,
+        valor_pedagio,
+        valor_seguro,
         tipo_servico,
         finalidade_cte,
         cfop,
@@ -788,13 +792,11 @@ export async function createCTeDocumento(
         pdf_gerado,
         xml_gerado_em,
         pdf_gerado_em,
-        valor_pedagio,
-        valor_seguro,
         created_at,
         updated_at
       ) VALUES (
         gen_random_uuid(),
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, NOW(), NOW()
+        $1, $2, $3, $4, NULL, $5, $6, $7, $8, $9, $10, NULL, NULL, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, NOW(), NOW()
       )
       RETURNING *
     `,
@@ -803,15 +805,12 @@ export async function createCTeDocumento(
         numeroFinal,
         serieFinal,
         documentoLimpo.data_emissao,
-        null, // chave_acesso - será gerada pelo trigger
         documentoLimpo.chave_acesso_1,
         documentoLimpo.chave_acesso_2,
         documentoLimpo.chave_acesso_3,
         documentoLimpo.chave_acesso_4,
         codigoUFFinal,
         documentoLimpo.forma_emissao,
-        null, // codigo_numerico - será gerado pelo trigger
-        null, // dv - será gerado pelo trigger
         documentoLimpo.status,
         documentoLimpo.observacoes,
         documentoLimpo.tomador_id,
@@ -828,6 +827,8 @@ export async function createCTeDocumento(
         documentoLimpo.valor_carga,
         documentoLimpo.quantidade_carga,
         documentoLimpo.produto_predominante_id,
+        documentoLimpo.valor_pedagio,
+        documentoLimpo.valor_seguro,
         documentoLimpo.tipo_servico,
         documentoLimpo.finalidade_cte,
         documentoLimpo.cfop,
@@ -852,8 +853,6 @@ export async function createCTeDocumento(
         false, // pdf_gerado
         null, // xml_gerado_em
         null, // pdf_gerado_em
-        documentoLimpo.valor_pedagio || 0,
-        documentoLimpo.valor_seguro || 0
       ],
     );
 
@@ -868,9 +867,7 @@ export async function createCTeDocumento(
             updated_at = NOW()
         WHERE id = $1
         RETURNING *
-        `,
-        [result.id]
-      );
+        `, [result.id]);
 
       if (updatedResult) {
         console.log("✅ Chave de acesso regenerada:", updatedResult.chave_acesso);
@@ -1227,7 +1224,7 @@ export async function updateCTeDocumento(
     // Validar se todos os valores são válidos antes da query
     values.forEach((value, index) => {
       if (value !== null && value !== undefined) {
-        console.log(`📋 Parâmetro ${index + 1}:`, { tipo: typeof value, valor: value });
+        console.log(`📋 Parâmetro ${index + 1}:`, { tipo: typeof value, valor: value })
       }
     });
 
@@ -1581,9 +1578,9 @@ export function getUFFromCode(codigo: string): string {
     "12": "AC",
     "27": "AL",
     "16": "AP",
-    "13": "AM",
+    "23": "AM",
     "29": "BA",
-    "23": "CE",
+    "13": "CE",
     "53": "DF",
     "32": "ES",
     "52": "GO",
