@@ -736,36 +736,14 @@ export async function createCTeDocumento(
     const result = await queryOne(
       `
       INSERT INTO cte_documentos (
-        id,
         empresa_id,
         numero_cte,
         serie,
         data_emissao,
-        chave_acesso,
         chave_acesso_1,
         chave_acesso_2,
         chave_acesso_3,
         chave_acesso_4,
-        codigo_uf,
-        forma_emissao,
-        codigo_numerico,
-        dv,
-        status,
-      INSERT INTO cte_documentos (
-        id,
-        empresa_id,
-        numero_cte,
-        serie,
-        data_emissao,
-        chave_acesso,
-        chave_acesso_1,
-        chave_acesso_2,
-        chave_acesso_3,
-        chave_acesso_4,
-        codigo_uf,
-        forma_emissao,
-        codigo_numerico,
-        dv,
         status,
         observacoes,
         tomador_id,
@@ -800,20 +778,11 @@ export async function createCTeDocumento(
         motorista_validade_cnh,
         placa_veiculo,
         placa_reboque,
-        associacao_frota_id,
-        xml_proc_path,
-        xml_path,
-        pdf_path,
-        xml_gerado,
-        pdf_gerado,
-        xml_gerado_em,
-        pdf_gerado_em,
-        created_at,
-        updated_at
+        associacao_frota_id
       ) VALUES (
-        gen_random_uuid(),
-        $1, $2, $3, $4, NULL, $5, $6, $7, $8, $9, $10, NULL, NULL, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, NULL, NULL, NULL, false, false, NULL, NULL, NOW(), NOW()
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45
       )
+      RETURNING *
       RETURNING *
     `,
       [
