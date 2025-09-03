@@ -685,6 +685,52 @@ export async function createCTeDocumento(
 
     // A chave de acesso do CT-e será gerada automaticamente pelo trigger do banco
 
+    // Converter undefined para null para evitar erros SQL
+    const documentoLimpo = {
+      ...documento,
+      serie: documento.serie || '001',
+      codigo_uf: documento.codigo_uf || '35',
+      forma_emissao: documento.forma_emissao || 1,
+      status: documento.status || 'pendente',
+      // Converter undefined para null em todos os campos opcionais
+      observacoes: documento.observacoes || null,
+      tomador_id: documento.tomador_id || null,
+      remetente_id: documento.remetente_id || null,
+      recebedor_id: documento.recebedor_id || null,
+      destinatario_id: documento.destinatario_id || null,
+      valor_prestacao: documento.valor_prestacao || null,
+      valor_receber: documento.valor_receber || null,
+      valor_tributos: documento.valor_tributos || null,
+      icms_situacao_tributaria: documento.icms_situacao_tributaria || null,
+      icms_bc_valor: documento.icms_bc_valor || null,
+      icms_aliquota: documento.icms_aliquota || null,
+      icms_valor: documento.icms_valor || null,
+      valor_carga: documento.valor_carga || null,
+      quantidade_carga: documento.quantidade_carga || null,
+      produto_predominante_id: documento.produto_predominante_id || null,
+      chave_acesso_1: documento.chave_acesso_1 || null,
+      chave_acesso_2: documento.chave_acesso_2 || null,
+      chave_acesso_3: documento.chave_acesso_3 || null,
+      chave_acesso_4: documento.chave_acesso_4 || null,
+      tipo_servico: documento.tipo_servico || '0',
+      finalidade_cte: documento.finalidade_cte || '0',
+      cfop: documento.cfop || '5352',
+      cidade_inicio_ibge: documento.cidade_inicio_ibge || null,
+      cidade_termino_ibge: documento.cidade_termino_ibge || null,
+      uf_inicio: documento.uf_inicio || null,
+      uf_termino: documento.uf_termino || null,
+      cidade_inicio_nome: documento.cidade_inicio_nome || null,
+      cidade_termino_nome: documento.cidade_termino_nome || null,
+      rntrc: documento.rntrc || null,
+      motorista_nome: documento.motorista_nome || null,
+      motorista_cnh: documento.motorista_cnh || null,
+      motorista_matricula: documento.motorista_matricula || null,
+      motorista_validade_cnh: documento.motorista_validade_cnh || null,
+      placa_veiculo: documento.placa_veiculo || null,
+      placa_reboque: documento.placa_reboque || null,
+      associacao_frota_id: documento.associacao_frota_id || null
+    }
+
     const result = await queryOne(
       `
       INSERT INTO cte_documentos (
@@ -742,61 +788,60 @@ export async function createCTeDocumento(
         pdf_gerado,
         xml_gerado_em,
         pdf_gerado_em,
-      documentoLimpo.empresa_id,
-      documentoLimpo.numero_cte,
-      documentoLimpo.serie,
-      documentoLimpo.data_emissao,
-      documentoLimpo.codigo_uf,
-      documentoLimpo.forma_emissao,
-      documentoLimpo.status,
-      documentoLimpo.observacoes,
-      documentoLimpo.tomador_id,
-      documentoLimpo.remetente_id,
-      documentoLimpo.recebedor_id,
-      documentoLimpo.destinatario_id,
-      documentoLimpo.valor_prestacao,
-      documentoLimpo.valor_receber,
-      documentoLimpo.valor_tributos,
-      documentoLimpo.icms_situacao_tributaria,
-      documentoLimpo.icms_bc_valor,
-      documentoLimpo.icms_aliquota,
-      documentoLimpo.icms_valor,
-      documentoLimpo.valor_carga,
-      documentoLimpo.quantidade_carga,
-      documentoLimpo.produto_predominante_id,
-      documentoLimpo.chave_acesso_1,
-      documentoLimpo.chave_acesso_2,
-      documentoLimpo.chave_acesso_3,
-      documentoLimpo.chave_acesso_4,
-      documentoLimpo.tipo_servico,
-      documentoLimpo.finalidade_cte,
-      documentoLimpo.cfop,
-      documentoLimpo.cidade_inicio_ibge,
-      documentoLimpo.cidade_termino_ibge,
-      documentoLimpo.uf_inicio,
-      documentoLimpo.uf_termino,
-      documentoLimpo.cidade_inicio_nome,
-      documentoLimpo.cidade_termino_nome,
-      documentoLimpo.rntrc,
-      documentoLimpo.motorista_nome,
-      documentoLimpo.motorista_cnh,
-      documentoLimpo.motorista_matricula,
-      documentoLimpo.motorista_validade_cnh,
-      documentoLimpo.placa_veiculo,
-      documentoLimpo.placa_reboque,
-      documentoLimpo.associacao_frota_id
-        documento.uf_inicio,
-        documento.uf_termino,
-        documento.cidade_inicio_nome,
-        documento.cidade_termino_nome,
-        documento.rntrc,
-        documento.motorista_nome,
-        documento.motorista_cnh,
-        documento.motorista_matricula,
-        documento.motorista_validade_cnh,
-        documento.placa_veiculo,
-        documento.placa_reboque,
-        documento.associacao_frota_id,
+        valor_pedagio,
+        valor_seguro,
+        created_at,
+        updated_at
+      ) VALUES (
+        gen_random_uuid(),
+        $1, $2, $3, $4, NULL, $5, $6, $7, $8, $9, $10, NULL, NULL, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, NOW(), NOW()
+      )
+      RETURNING *
+    `,
+      [
+        documentoLimpo.empresa_id,
+        numeroFinal,
+        serieFinal,
+        documentoLimpo.data_emissao,
+        documentoLimpo.chave_acesso_1,
+        documentoLimpo.chave_acesso_2,
+        documentoLimpo.chave_acesso_3,
+        documentoLimpo.chave_acesso_4,
+        codigoUFFinal,
+        documentoLimpo.forma_emissao,
+        documentoLimpo.status,
+        documentoLimpo.observacoes,
+        documentoLimpo.tomador_id,
+        documentoLimpo.remetente_id,
+        documentoLimpo.recebedor_id,
+        documentoLimpo.destinatario_id,
+        documentoLimpo.valor_prestacao,
+        documentoLimpo.valor_receber,
+        documentoLimpo.valor_tributos,
+        documentoLimpo.icms_situacao_tributaria,
+        documentoLimpo.icms_bc_valor,
+        documentoLimpo.icms_aliquota,
+        documentoLimpo.icms_valor,
+        documentoLimpo.valor_carga,
+        documentoLimpo.quantidade_carga,
+        documentoLimpo.produto_predominante_id,
+        documentoLimpo.tipo_servico,
+        documentoLimpo.finalidade_cte,
+        documentoLimpo.cfop,
+        documentoLimpo.cidade_inicio_ibge,
+        documentoLimpo.cidade_termino_ibge,
+        documentoLimpo.uf_inicio,
+        documentoLimpo.uf_termino,
+        documentoLimpo.cidade_inicio_nome,
+        documentoLimpo.cidade_termino_nome,
+        documentoLimpo.rntrc,
+        documentoLimpo.motorista_nome,
+        documentoLimpo.motorista_cnh,
+        documentoLimpo.motorista_matricula,
+        documentoLimpo.motorista_validade_cnh,
+        documentoLimpo.placa_veiculo,
+        documentoLimpo.placa_reboque,
+        documentoLimpo.associacao_frota_id,
         null, // xml_proc_path - será gerado pelo trigger
         null, // xml_path - será gerado pelo trigger
         null, // pdf_path - será gerado pelo trigger
@@ -820,9 +865,7 @@ export async function createCTeDocumento(
             updated_at = NOW()
         WHERE id = $1
         RETURNING *
-        `,
-        [result.id]
-      );
+        `, [result.id]);
 
       if (updatedResult) {
         console.log("✅ Chave de acesso regenerada:", updatedResult.chave_acesso);
@@ -1189,7 +1232,6 @@ export async function updateCTeDocumento(
       SET ${updates.join(", ")}
       WHERE id = $${paramIndex}
       RETURNING *
-    )
     `,
       values,
     );
@@ -1785,8 +1827,8 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
     }
 
     const xmlPath = `${basePath}/cte/${documento.chave_acesso}-cte.xml`;
-    const pdfPath = \`${basePath}/cte/${documento.chave_acesso}-dacte.pdf`;
-    const xmlProcPath = \`${basePath}/cte/${documento.chave_acesso}-procCTe.xml`;
+    const pdfPath = `${basePath}/cte/${documento.chave_acesso}-dacte.pdf`;
+    const xmlProcPath = `${basePath}/cte/${documento.chave_acesso}-procCTe.xml`;
 
     console.log("📁 Paths gerados:", {
       basePath,
@@ -1799,8 +1841,8 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
     try {
       console.log("💾 Tentando salvar arquivo XML fisicamente...");
 
-      const fileName = \`${documento.chave_acesso}-cte.xml`;
-      const fullXmlPath = \`${basePath}/cte/${fileName}`;
+      const fileName = `${documento.chave_acesso}-cte.xml`;
+      const fullXmlPath = `${basePath}/cte/${fileName}`;
 
       console.log("📁 Salvando arquivo em:", fullXmlPath);
       console.log("📄 Tamanho do conteúdo XML:", xmlContent.length, "caracteres");
@@ -2037,7 +2079,7 @@ export async function createFreteDocumento(
     console.log("👤 Verificando cliente de origem...");
     const clienteOrigem = await queryOne(
       `
-      SELECT id FROM cadastros WHERE id = $1 AND tipo = 'cliente\' AND ativo = true
+      SELECT id FROM cadastros WHERE id = $1 AND tipo = 'cliente' AND ativo = true
     `,
       [documento.cliente_origem_id],
     );
@@ -2051,7 +2093,7 @@ export async function createFreteDocumento(
     console.log("👤 Verificando cliente de destino...");
     const clienteDestino = await queryOne(
       `
-      SELECT id FROM cadastros WHERE id = $1 AND tipo = 'cliente\' AND ativo = true
+      SELECT id FROM cadastros WHERE id = $1 AND tipo = 'cliente' AND ativo = true
     `,
       [documento.cliente_destino_id],
     );
@@ -2374,51 +2416,6 @@ export async function getCidadePorCodigo(codigo: string): Promise<Cidade | null>
     }
 
     console.log("🔍 Buscando cidade por código:", codigo);
-    // Converter undefined para null para evitar erros SQL
-    const documentoLimpo = {
-      ...documento,
-      serie: documento.serie || '001',
-      codigo_uf: documento.codigo_uf || '35',
-      forma_emissao: documento.forma_emissao || 1,
-      status: documento.status || 'pendente',
-      // Converter undefined para null em todos os campos opcionais
-      observacoes: documento.observacoes || null,
-      tomador_id: documento.tomador_id || null,
-      remetente_id: documento.remetente_id || null,
-      recebedor_id: documento.recebedor_id || null,
-      destinatario_id: documento.destinatario_id || null,
-      valor_prestacao: documento.valor_prestacao || null,
-      valor_receber: documento.valor_receber || null,
-      valor_tributos: documento.valor_tributos || null,
-      icms_situacao_tributaria: documento.icms_situacao_tributaria || null,
-      icms_bc_valor: documento.icms_bc_valor || null,
-      icms_aliquota: documento.icms_aliquota || null,
-      icms_valor: documento.icms_valor || null,
-      valor_carga: documento.valor_carga || null,
-      quantidade_carga: documento.quantidade_carga || null,
-      produto_predominante_id: documento.produto_predominante_id || null,
-      chave_acesso_1: documento.chave_acesso_1 || null,
-      chave_acesso_2: documento.chave_acesso_2 || null,
-      chave_acesso_3: documento.chave_acesso_3 || null,
-      chave_acesso_4: documento.chave_acesso_4 || null,
-      tipo_servico: documento.tipo_servico || '0',
-      finalidade_cte: documento.finalidade_cte || '0',
-      cfop: documento.cfop || '5352',
-      cidade_inicio_ibge: documento.cidade_inicio_ibge || null,
-      cidade_termino_ibge: documento.cidade_termino_ibge || null,
-      uf_inicio: documento.uf_inicio || null,
-      uf_termino: documento.uf_termino || null,
-      cidade_inicio_nome: documento.cidade_inicio_nome || null,
-      cidade_termino_nome: documento.cidade_termino_nome || null,
-      rntrc: documento.rntrc || null,
-      motorista_nome: documento.motorista_nome || null,
-      motorista_cnh: documento.motorista_cnh || null,
-      motorista_matricula: documento.motorista_matricula || null,
-      motorista_validade_cnh: documento.motorista_validade_cnh || null,
-      placa_veiculo: documento.placa_veiculo || null,
-      placa_reboque: documento.placa_reboque || null,
-      associacao_frota_id: documento.associacao_frota_id || null
-    }
 
     const result = await queryOne(`
       SELECT 
@@ -2513,7 +2510,5 @@ export function validarChaveAcesso(chave: string): boolean {
   } catch (error) {
     console.error("❌ Erro ao validar chave de acesso:", error);
     return false;
-  }
-}
   }
 }
