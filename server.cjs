@@ -1298,7 +1298,7 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
           placa_reboque,
           associacao_frota_id
         ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41
       ) RETURNING *
       `, [
         data.empresa_id,
@@ -1339,7 +1339,9 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
         data.motorista_validade_cnh,
         data.placa_veiculo,
         data.placa_reboque,
-        data.associacao_frota_id
+        data.associacao_frota_id,
+        data.valor_pedagio,
+        data.valor_seguro
       ]);
 
       console.log('✅ Documento CT-e criado com sucesso:', result.rows[0].id);
