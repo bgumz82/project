@@ -62,15 +62,15 @@ app.get('/api/health', (req, res) => {
 // Auth routes
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { email, password, name, role = 'user' } = req.body;
+    const { email, password, nome, tipo = 'user' } = req.body;
 
-    if (!email || !password || !name) {
+    if (!email || !password || !nome) {
       return res.status(400).json({ error: 'Email, senha e nome são obrigatórios' });
     }
 
     // Check if user already exists
     const existingUser = await pool.query(
-      'SELECT id FROM auth.users WHERE email = $1',
+      'SELECT id FROM usuarios WHERE email = $1',
       [email]
     );
 
@@ -85,7 +85,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
 
 // Endpoint para upload de arquivos XML
-app.post('/api/upload-xml', async (req, res) => {
+app.post('/api/upload-xml', authenticateToken, async (req, res) => {
   try {
     const { content, path, filename } = req.body;
     
@@ -122,7 +122,8 @@ app.post('/api/upload-xml', async (req, res) => {
       error: 'Erro interno do servidor',
       details: error.message 
     });
-
+  }
+});
 
 // Servir arquivos XML estáticos
 app.get('/uploads/*', (req, res) => {
@@ -153,15 +154,12 @@ app.get('/uploads/*', (req, res) => {
   res.sendFile(filePath);
 });
 
-  }
-});
-
     // Create user
     const result = await pool.query(
-      `INSERT INTO auth.users (email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_user_meta_data)
-       VALUES ($1, $2, NOW(), NOW(), NOW(), $3)
-       RETURNING id, email, created_at`,
-      [email, hashedPassword, JSON.stringify({ name, role })]
+      `INSERT INTO usuarios (email, senha, nome, tipo, ativo, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, true, NOW(), NOW())
+       RETURNING id, email, nome, tipo, created_at`,
+      [email, hashedPassword, nome, tipo]
     );
 
     const user = result.rows[0];
@@ -171,8 +169,8 @@ app.get('/uploads/*', (req, res) => {
       { 
         id: user.id, 
         email: user.email,
-        name,
-        role
+        nome: user.nome,
+        tipo: user.tipo
       },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -182,8 +180,8 @@ app.get('/uploads/*', (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        name,
-        role,
+        nome: user.nome,
+        tipo: user.tipo,
         created_at: user.created_at
       },
       token
@@ -205,7 +203,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     // Find user
     const result = await pool.query(
-      'SELECT id, email, encrypted_password, raw_user_meta_data FROM auth.users WHERE email = $1',
+      'SELECT id, email, senha, nome, tipo FROM usuarios WHERE email = $1 AND ativo = true',
       [email]
     );
 
@@ -214,10 +212,9 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const user = result.rows[0];
-    const userData = JSON.parse(user.raw_user_meta_data || '{}');
 
     // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.encrypted_password);
+    const isValidPassword = await bcrypt.compare(password, user.senha);
 
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Credenciais inválidas' });
@@ -228,8 +225,8 @@ app.post('/api/auth/login', async (req, res) => {
       { 
         id: user.id, 
         email: user.email,
-        name: userData.name,
-        role: userData.role || 'user'
+        nome: user.nome,
+        tipo: user.tipo
       },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -239,8 +236,8 @@ app.post('/api/auth/login', async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        name: userData.name,
-        role: userData.role || 'user'
+        nome: user.nome,
+        tipo: user.tipo
       },
       token
     });
