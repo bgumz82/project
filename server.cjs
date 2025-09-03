@@ -1226,6 +1226,138 @@ app.post('/api/db/query-main', authenticateToken, async (req, res) => {
   }
 });
 
+// Rota específica para CT-e documentos
+app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
+  try {
+    const data = req.body;
+    console.log('📝 Criando documento CT-e:', data);
+    
+    // Obter pool correto para o usuário
+    const userPool = await getUserDatabasePool(req.user.id);
+    const client = await userPool.connect();
+    
+    try {
+      // Gerar próximo número CT-e se não fornecido
+      if (!data.numero_cte || data.numero_cte === 'AUTO') {
+        const nextNumberResult = await client.query(
+          'SELECT get_next_cte_number($1) as next_number',
+          [data.empresa_id]
+        );
+        data.numero_cte = nextNumberResult.rows[0].next_number.toString();
+      }
+      
+      // Definir série padrão se não fornecida
+      if (!data.serie) {
+        const empresaResult = await client.query(
+          'SELECT serie_padrao_cte FROM empresas_fiscais WHERE id = $1',
+          [data.empresa_id]
+        );
+        data.serie = empresaResult.rows[0]?.serie_padrao_cte || '001';
+      }
+      
+      // Inserir documento CT-e
+      const result = await client.query(`
+        INSERT INTO cte_documentos (
+          empresa_id,
+          numero_cte,
+          serie,
+          data_emissao,
+          status,
+          observacoes,
+          tomador_id,
+          remetente_id,
+          recebedor_id,
+          destinatario_id,
+          valor_prestacao,
+          valor_receber,
+          valor_tributos,
+          icms_situacao_tributaria,
+          icms_bc_valor,
+          icms_aliquota,
+          icms_valor,
+          valor_carga,
+          quantidade_carga,
+          produto_predominante_id,
+          valor_pedagio,
+          valor_seguro,
+          tipo_servico,
+          finalidade_cte,
+          cfop,
+          cidade_inicio_ibge,
+          cidade_termino_ibge,
+          uf_inicio,
+          uf_termino,
+          cidade_inicio_nome,
+          cidade_termino_nome,
+          rntrc,
+          motorista_nome,
+          motorista_cnh,
+          motorista_matricula,
+          motorista_validade_cnh,
+          placa_veiculo,
+          placa_reboque,
+          associacao_frota_id
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39
+        ) RETURNING *
+      `, [
+        data.empresa_id,
+        data.numero_cte,
+        data.serie,
+        data.data_emissao,
+        data.status || 'pendente',
+        data.observacoes,
+        data.tomador_id,
+        data.remetente_id,
+        data.recebedor_id,
+        data.destinatario_id,
+        data.valor_prestacao,
+        data.valor_receber,
+        data.valor_tributos,
+        data.icms_situacao_tributaria,
+        data.icms_bc_valor,
+        data.icms_aliquota,
+        data.icms_valor,
+        data.valor_carga,
+        data.quantidade_carga,
+        data.produto_predominante_id,
+        data.valor_pedagio,
+        data.valor_seguro,
+        data.tipo_servico,
+        data.finalidade_cte,
+        data.cfop,
+        data.cidade_inicio_ibge,
+        data.cidade_termino_ibge,
+        data.uf_inicio,
+        data.uf_termino,
+        data.cidade_inicio_nome,
+        data.cidade_termino_nome,
+        data.rntrc,
+        data.motorista_nome,
+        data.motorista_cnh,
+        data.motorista_matricula,
+        data.motorista_validade_cnh,
+        data.placa_veiculo,
+        data.placa_reboque,
+        data.associacao_frota_id
+      ]);
+
+      console.log('✅ Documento CT-e criado com sucesso:', result.rows[0].id);
+      res.status(201).json(result.rows[0]);
+      
+    } finally {
+      client.release();
+    }
+    
+  } catch (error) {
+    console.error('❌ Erro ao criar documento CT-e:', error);
+    res.status(500).json({ 
+      error: 'Erro ao criar documento CT-e',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 // Rota de teste do banco
 app.get('/api/health', async (req, res) => {
   try {
