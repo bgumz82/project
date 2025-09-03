@@ -412,6 +412,7 @@ async function getUFFromCityCode(cityCode: string): Promise<string> {
     }
 
     // Se não conseguiu mapear ou é código padrão, tentar buscar no banco
+    try {
       // Buscar com JOIN correto entre cities e states
       const result = await query(`
         SELECT s.uf, s.name as uf_name
