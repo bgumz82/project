@@ -1724,6 +1724,15 @@ export default function CTe() {
   const handleGenerateFiles = async (id: string) => {
     setIsGeneratingFiles(true)
     try {
+      // Verifica se o documento já tem XML gerado
+      const documento = documentos?.find(d => d.id === id)
+      
+      if (documento?.xml_gerado) {
+        // Se já tem XML gerado, altera status para pendente antes de gerar novamente
+        await updateCTeDocumento(id, { status: 'pendente' })
+        console.log('📝 Status alterado para pendente - regenerando arquivos para documento:', id)
+      }
+      
       // Chama a função para gerar os arquivos
       await generateCTeFiles(id)
       // Invalida a query para atualizar a lista de documentos com os novos status
