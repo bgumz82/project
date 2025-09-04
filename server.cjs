@@ -254,6 +254,35 @@ app.post('/api/cadastrar-cliente-nfe', async (req, res) => {
       return res.status(400).json({ error: 'Cliente já cadastrado no sistema' });
     }
     
+    // Preparar dados para inserção
+    const insertData = [
+      'cliente',
+      dadosCliente.razao_social,
+      dadosCliente.cnpj,
+      dadosCliente.endereco || '',
+      dadosCliente.cidade || '',
+      dadosCliente.estado || 'GO',
+      dadosCliente.cep || '',
+      JSON.stringify([]), // Array vazio para emails
+      true
+    ];
+    
+    console.log('📝 SQL INSERT que será executado:');
+    console.log(`INSERT INTO cadastros (
+      tipo,
+      razao_social,
+      cnpj,
+      endereco,
+      cidade,
+      estado,
+      cep,
+      emails,
+      ativo,
+      created_at,
+      updated_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())`);
+    console.log('📊 Dados do INSERT:', insertData);
+    
     // Cadastrar novo cliente
     const result = await pool.query(`
       INSERT INTO cadastros (
@@ -270,17 +299,7 @@ app.post('/api/cadastrar-cliente-nfe', async (req, res) => {
         updated_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
       RETURNING *
-    `, [
-      'cliente',
-      dadosCliente.razao_social,
-      dadosCliente.cnpj,
-      dadosCliente.endereco || '',
-      dadosCliente.cidade || '',
-      dadosCliente.estado || 'GO',
-      dadosCliente.cep || '',
-      JSON.stringify([]), // Array vazio para emails
-      true
-    ]);
+    `, insertData);
     
     if (result.rows.length > 0) {
       console.log('✅ Cliente cadastrado automaticamente:', result.rows[0].razao_social);
