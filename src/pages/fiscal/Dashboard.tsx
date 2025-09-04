@@ -112,7 +112,7 @@ export default function DashboardFiscal() {
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
         <div className="mt-8">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {/* Card - Empresas Fiscais */}
             <div className="bg-white overflow-hidden shadow rounded-lg">
               <div className="p-5">
@@ -266,39 +266,6 @@ export default function DashboardFiscal() {
                 </div>
               </div>
             </div>
-
-            {/* Card - Total de Documentos */}
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <ChartBarIcon className="h-6 w-6 text-indigo-400" aria-hidden="true" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Total de Documentos
-                      </dt>
-                      <dd className="flex items-baseline">
-                        <div className="text-2xl font-semibold text-gray-900">
-                          {totalDocumentos}
-                        </div>
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-50 px-5 py-3">
-                <div className="text-sm">
-                  <Link
-                    to="/fiscal/relatorios"
-                    className="font-medium text-indigo-600 hover:text-indigo-900"
-                  >
-                    Ver relatórios
-                  </Link>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Documentos Recentes */}
@@ -319,7 +286,7 @@ export default function DashboardFiscal() {
               </div>
               {cteDocumentos && cteDocumentos.length > 0 ? (
                 <div className="space-y-3">
-                  {cteDocumentos.slice(0, 5).map((cte) => (
+                  {cteDocumentos.slice(0, 3).map((cte) => (
                     <div key={cte.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
                         <p className="text-sm font-medium text-gray-900">
@@ -366,7 +333,7 @@ export default function DashboardFiscal() {
               </div>
               {mdfeDocumentos && mdfeDocumentos.length > 0 ? (
                 <div className="space-y-3">
-                  {mdfeDocumentos.slice(0, 5).map((mdfe) => (
+                  {mdfeDocumentos.slice(0, 3).map((mdfe) => (
                     <div key={mdfe.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
                         <p className="text-sm font-medium text-gray-900">
