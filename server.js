@@ -267,153 +267,90 @@ app.post('/api/consultar-nfe', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Chave de acesso NF-e deve ter 44 dígitos' });
     }
 
-    console.log('🔍 Consultando NF-e:', chaveNFE);
+    console.log('🔍 Consultando NF-e via HTTP:', chaveNFE);
 
-    const wsdlUrl = 'https://www.roveri.inf.br/ws/nfe.php?wsdl';
     const token = '44B4845C-05F4-7E99-2DFF-8EAE5746E9BA';
-
-    // Criar cliente SOAP
-    const client = await soap.createClientAsync(wsdlUrl);
+    const url = `https://www.roveri.inf.br/consultas/nfe.php?token=${token}&chave=${chaveNFE}`;
     
-    // Fazer a chamada ao webservice
-    const result = await new Promise((resolve, reject) => {
-      client.getNFe({ TOKEN_DE_ACESSO: token, CHAVE_NFE: chaveNFE }, (err, result) => {
-        if (err) {
-          console.error('❌ Erro na consulta SOAP:', err);
-          console.error('❌ Detalhes do erro SOAP:', {
-            message: err.message,
-            code: err.code,
-            stack: err.stack
-          });
-          reject(err);
-        } else {
-          console.log('✅ Resposta SOAP recebida:', JSON.stringify(result, null, 2));
-          resolve(result);
-        }
-      });
+    console.log('📡 URL da consulta:', url);
+
+    // Fazer requisição HTTP GET
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Fleet-Management-System/1.0',
+        'Accept': 'application/json, text/plain, */*'
+      }
     });
 
-    console.log('📄 Resposta do webservice:', JSON.stringify(result, null, 2));
-
-    // Verificar se a resposta está vazia ou nula
-    if (!result) {
-      throw new Error('Resposta vazia do webservice');
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
     }
 
-    // A resposta do webservice vem dentro do campo 'return'
-    const responseData = result.return || result;
-    console.log('📄 Dados da resposta:', responseData);
+    const responseText = await response.text();
+    console.log('📄 Resposta do webservice:', responseText);
 
-    // Verificar se é uma mensagem de erro
-    if (typeof responseData === 'string' && responseData.includes('<mensagem>')) {
-      const mensagem = responseData.match(/<mensagem>(.*?)<\/mensagem>/);
-      if (mensagem) {
-        throw new Error(`Erro do webservice: ${mensagem[1]}`);
-      }
+    // Verificar se é um erro em formato de mensagem
+    if (responseText.includes('Chave inválida') || responseText.includes('erro') || responseText.includes('error')) {
+      throw new Error(`Erro do webservice: ${responseText}`);
     }
 
-    // Verificar se houve erro na resposta
-    if (responseData.erro || responseData.error) {
-      console.error('❌ Erro reportado pelo webservice:', responseData.erro || responseData.error);
-      throw new Error(responseData.erro || responseData.error || 'Erro na consulta da NF-e');
-    }
-
-    // Verificar se o webservice retornou dados válidos
-    if (responseData.status === 'error' || responseData.success === false) {
-      console.error('❌ Status de erro no webservice:', responseData);
-      throw new Error(responseData.message || 'Webservice retornou status de erro');
-    }
-
-    // Parse do XML da NF-e se necessário
-    let nfeData = responseData;
-    if (typeof responseData === 'string' && responseData.includes('<?xml')) {
-      // Se responseData é uma string XML, fazer o parse
-      const parser = new xml2js.Parser({ explicitArray: false });
-      const parsed = await parser.parseStringPromise(responseData);
-      
-      // Extrair dados principais da NF-e
-      const infNFe = parsed?.nfeProc?.NFe?.infNFe || parsed?.NFe?.infNFe;
-      
-      if (infNFe) {
-        nfeData = {
-          remetente: {
-            razao_social: infNFe.emit?.xNome || '',
-            cnpj: infNFe.emit?.CNPJ || '',
-            endereco: `${infNFe.emit?.enderEmit?.xLgr || ''}, ${infNFe.emit?.enderEmit?.nro || ''}`,
-            cidade: infNFe.emit?.enderEmit?.xMun || '',
-            estado: infNFe.emit?.enderEmit?.UF || '',
-            cep: infNFe.emit?.enderEmit?.CEP || ''
-          },
-          destinatario: {
-            razao_social: infNFe.dest?.xNome || '',
-            cnpj: infNFe.dest?.CNPJ || '',
-            endereco: `${infNFe.dest?.enderDest?.xLgr || ''}, ${infNFe.dest?.enderDest?.nro || ''}`,
-            cidade: infNFe.dest?.enderDest?.xMun || '',
-            estado: infNFe.dest?.enderDest?.UF || '',
-            cep: infNFe.dest?.enderDest?.CEP || ''
-          },
-          produto: {
-            descricao: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.xProd : infNFe.det?.prod?.xProd || '',
-            codigo_ncm: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.NCM : infNFe.det?.prod?.NCM || '',
-            valor_total: parseFloat(infNFe.total?.ICMSTot?.vNF || 0),
-            peso_total: parseFloat(infNFe.total?.ICMSTot?.vPeso || 0),
-            quantidade_total: Array.isArray(infNFe.det) ? 
-              infNFe.det.reduce((acc, item) => acc + parseFloat(item.prod?.qCom || 0), 0) :
-              parseFloat(infNFe.det?.prod?.qCom || 0)
-          },
-          transporte: {
-            valor_frete: parseFloat(infNFe.total?.ICMSTot?.vFrete || 0),
-            modal_transporte: infNFe.transp?.modFrete || '1'
-          },
-          numero_nfe: infNFe.ide?.nNF || '',
-          serie: infNFe.ide?.serie || '',
-          data_emissao: infNFe.ide?.dhEmi || infNFe.ide?.dEmi || '',
-          chave_acesso: chaveNFE
-        };
-      }
-    } else if (typeof responseData === 'object' && responseData.xml) {
-      const parser = new xml2js.Parser({ explicitArray: false });
-      const parsed = await parser.parseStringPromise(result.xml);
-      
-      // Extrair dados principais da NF-e
-      const infNFe = parsed?.nfeProc?.NFe?.infNFe || parsed?.NFe?.infNFe;
-      
-      if (infNFe) {
-        nfeData = {
-          remetente: {
-            razao_social: infNFe.emit?.xNome || '',
-            cnpj: infNFe.emit?.CNPJ || '',
-            endereco: `${infNFe.emit?.enderEmit?.xLgr || ''}, ${infNFe.emit?.enderEmit?.nro || ''}`,
-            cidade: infNFe.emit?.enderEmit?.xMun || '',
-            estado: infNFe.emit?.enderEmit?.UF || '',
-            cep: infNFe.emit?.enderEmit?.CEP || ''
-          },
-          destinatario: {
-            razao_social: infNFe.dest?.xNome || '',
-            cnpj: infNFe.dest?.CNPJ || '',
-            endereco: `${infNFe.dest?.enderDest?.xLgr || ''}, ${infNFe.dest?.enderDest?.nro || ''}`,
-            cidade: infNFe.dest?.enderDest?.xMun || '',
-            estado: infNFe.dest?.enderDest?.UF || '',
-            cep: infNFe.dest?.enderDest?.CEP || ''
-          },
-          produto: {
-            descricao: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.xProd : infNFe.det?.prod?.xProd || '',
-            codigo_ncm: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.NCM : infNFe.det?.prod?.NCM || '',
-            valor_total: parseFloat(infNFe.total?.ICMSTot?.vNF || 0),
-            peso_total: parseFloat(infNFe.total?.ICMSTot?.vPeso || 0),
-            quantidade_total: Array.isArray(infNFe.det) ? 
-              infNFe.det.reduce((acc, item) => acc + parseFloat(item.prod?.qCom || 0), 0) :
-              parseFloat(infNFe.det?.prod?.qCom || 0)
-          },
-          transporte: {
-            valor_frete: parseFloat(infNFe.total?.ICMSTot?.vFrete || 0),
-            modal_transporte: infNFe.transp?.modFrete || '1'
-          },
-          numero_nfe: infNFe.ide?.nNF || '',
-          serie: infNFe.ide?.serie || '',
-          data_emissao: infNFe.ide?.dhEmi || infNFe.ide?.dEmi || '',
-          chave_acesso: chaveNFE
-        };
+    // Tentar fazer parse como JSON
+    let nfeData;
+    try {
+      nfeData = JSON.parse(responseText);
+      console.log('✅ Dados JSON recebidos:', nfeData);
+    } catch (jsonError) {
+      // Se não for JSON válido, pode ser XML ou texto plano
+      if (responseText.includes('<?xml')) {
+        console.log('📄 Resposta em formato XML, fazendo parse...');
+        const parser = new xml2js.Parser({ explicitArray: false });
+        const parsed = await parser.parseStringPromise(responseText);
+        
+        // Extrair dados principais da NF-e
+        const infNFe = parsed?.nfeProc?.NFe?.infNFe || parsed?.NFe?.infNFe;
+        
+        if (infNFe) {
+          nfeData = {
+            remetente: {
+              razao_social: infNFe.emit?.xNome || '',
+              cnpj: infNFe.emit?.CNPJ || '',
+              endereco: `${infNFe.emit?.enderEmit?.xLgr || ''}, ${infNFe.emit?.enderEmit?.nro || ''}`,
+              cidade: infNFe.emit?.enderEmit?.xMun || '',
+              estado: infNFe.emit?.enderEmit?.UF || '',
+              cep: infNFe.emit?.enderEmit?.CEP || ''
+            },
+            destinatario: {
+              razao_social: infNFe.dest?.xNome || '',
+              cnpj: infNFe.dest?.CNPJ || '',
+              endereco: `${infNFe.dest?.enderDest?.xLgr || ''}, ${infNFe.dest?.enderDest?.nro || ''}`,
+              cidade: infNFe.dest?.enderDest?.xMun || '',
+              estado: infNFe.dest?.enderDest?.UF || '',
+              cep: infNFe.dest?.enderDest?.CEP || ''
+            },
+            produto: {
+              descricao: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.xProd : infNFe.det?.prod?.xProd || '',
+              codigo_ncm: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.NCM : infNFe.det?.prod?.NCM || '',
+              valor_total: parseFloat(infNFe.total?.ICMSTot?.vNF || 0),
+              peso_total: parseFloat(infNFe.total?.ICMSTot?.vPeso || 0),
+              quantidade_total: Array.isArray(infNFe.det) ? 
+                infNFe.det.reduce((acc, item) => acc + parseFloat(item.prod?.qCom || 0), 0) :
+                parseFloat(infNFe.det?.prod?.qCom || 0)
+            },
+            transporte: {
+              valor_frete: parseFloat(infNFe.total?.ICMSTot?.vFrete || 0),
+              modal_transporte: infNFe.transp?.modFrete || '1'
+            },
+            numero_nfe: infNFe.ide?.nNF || '',
+            serie: infNFe.ide?.serie || '',
+            data_emissao: infNFe.ide?.dhEmi || infNFe.ide?.dEmi || '',
+            chave_acesso: chaveNFE
+          };
+        } else {
+          throw new Error('XML da NF-e não possui estrutura válida');
+        }
+      } else {
+        throw new Error(`Resposta não é JSON nem XML válido: ${responseText}`);
       }
     }
 
