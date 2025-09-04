@@ -135,7 +135,18 @@ export default function NovoCtEAuto() {
         }
       }
     } catch (error) {
-      console.error('Erro ao consultar NF-e:', error)
+      console.error('❌ Erro completo ao consultar NF-e:', {
+        message: error?.message || 'Erro desconhecido',
+        name: error?.name || 'N/A',
+        stack: error?.stack || 'N/A',
+        error: error
+      })
+      
+      // Verificar se é erro de CORS específico
+      if (error?.name === 'TypeError' && error?.message?.includes('fetch')) {
+        throw new Error('Erro de CORS: O webservice não permite requisições diretas do navegador. Contate o administrador para configurar o servidor intermediário.')
+      }
+      
       throw error
     }
   }
