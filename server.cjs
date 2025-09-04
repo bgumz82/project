@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const xml2js = require('xml2js');
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -96,6 +97,41 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+
+// Depois adicionar o endpoint:
+app.post('/api/consultar-nfe', authenticateToken, async (req, res) => {
+  try {
+    const { chaveNFE } = req.body;
+
+    if (!chaveNFE || chaveNFE.length !== 44) {
+      return res.status(400).json({ error: 'Chave de acesso NF-e deve ter 44 dígitos' });
+    }
+    const token = '44B4845C-05F4-7E99-2DFF-8EAE5746E9BA';
+    const url = `https://www.roveri.inf.br/consultas/nfe.php?token=${token}&chave=${chaveNFE}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Fleet-Management-System/1.0',
+        'Accept': 'application/json, text/plain, */*'
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
+    }
+    const responseText = await response.text();
+
+    // Parse do XML retornado e estruturação dos dados da NF-e
+    // [resto do código de processamento...]
+
+    res.json(nfeData);
+  } catch (error) {
+    res.status(500).json({
+      error: 'Erro ao consultar NF-e no webservice',
+      details: error.message
+    });
+  }
+});
 
 // Rotas de autenticação
 app.post('/api/auth/login', async (req, res) => {
