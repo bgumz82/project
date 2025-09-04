@@ -78,10 +78,21 @@ export default function NovoCtEAuto() {
       // Fazer requisição direta ao webservice
       const response = await fetch(url, {
         method: 'GET',
-        mode: 'cors',
+        mode: 'no-cors', // Tentar sem CORS primeiro
         headers: {
           'Accept': 'application/json, text/plain, */*'
         }
+      }).catch(async (corsError) => {
+        console.log('❌ Erro CORS, tentando com proxy...', corsError)
+        // Se falhar por CORS, tentar através de um proxy CORS público
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
+        console.log('📡 Tentando via proxy:', proxyUrl)
+        return fetch(proxyUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        })
       })
 
       if (!response.ok) {
@@ -91,21 +102,34 @@ export default function NovoCtEAuto() {
       const responseText = await response.text()
       console.log('📄 Resposta do webservice:', responseText)
 
+      // Verificar se a resposta veio do proxy CORS
+      let actualResponseText = responseText
+      try {
+        const proxyResponse = JSON.parse(responseText)
+        if (proxyResponse.contents) {
+          // Resposta veio do proxy allorigins
+          actualResponseText = proxyResponse.contents
+          console.log('📄 Resposta extraída do proxy:', actualResponseText)
+        }
+      } catch (e) {
+        // Se não for JSON do proxy, usar a resposta original
+      }
+
       // Verificar se é um erro
-      if (responseText.includes('Chave inválida') || responseText.includes('erro') || responseText.includes('error')) {
-        throw new Error(`Erro do webservice: ${responseText}`)
+      if (actualResponseText.includes('Chave inválida') || actualResponseText.includes('erro') || actualResponseText.includes('error')) {
+        throw new Error(`Erro do webservice: ${actualResponseText}`)
       }
 
       // Tentar fazer parse como JSON
       let nfeData
       try {
-        nfeData = JSON.parse(responseText)
+        nfeData = JSON.parse(actualResponseText)
         console.log('✅ Dados JSON recebidos:', nfeData)
         return nfeData
       } catch (jsonError) {
         // Se não for JSON, assumir que é uma mensagem de erro em texto
-        if (responseText.trim()) {
-          throw new Error(`Resposta do webservice: ${responseText}`)
+        if (actualResponseText.trim()) {
+          throw new Error(`Resposta do webservice: ${actualResponseText}`)
         } else {
           throw new Error('Resposta vazia do webservice')
         }
