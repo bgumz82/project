@@ -328,19 +328,27 @@ export default function NovoCtEAuto() {
                     <h4 className="font-medium text-gray-700">Produto</h4>
                     <p className="text-sm text-gray-600">{nfeData.produto.descricao}</p>
                     <p className="text-sm text-gray-600">
-                      Peso: {nfeData.produto.peso_total}kg | 
+                      Quantidade: {nfeData.produto.quantidade_total} Litros | 
                       Valor: R$ {nfeData.produto.valor_total.toFixed(2)}
                     </p>
                   </div>
+
+                  {/* Observações da NF-e */}
+                  {nfeData.observacoes && (
+                    <div>
+                      <h4 className="font-medium text-gray-700">Observações da NF-e</h4>
+                      <p className="text-sm text-gray-600">{nfeData.observacoes}</p>
+                    </div>
+                  )}
 
                   {associacao && (
                     <div>
                       <h4 className="font-medium text-gray-700">Motorista/Veículo</h4>
                       <p className="text-sm text-gray-600">
-                        {associacao.funcionario?.nome}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {associacao.veiculo_principal?.placa} - {associacao.veiculo_principal?.modelo}
+                        {associacao.funcionario?.nome} - {associacao.veiculo_principal?.placa}
+                        {associacao.veiculo_implemento?.placa && ` + ${associacao.veiculo_implemento.placa}`}
+                        {associacao.veiculo_reboque1?.placa && ` + ${associacao.veiculo_reboque1.placa}`}
+                        {associacao.veiculo_reboque2?.placa && ` + ${associacao.veiculo_reboque2.placa}`}
                       </p>
                     </div>
                   )}
