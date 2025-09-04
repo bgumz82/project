@@ -99,7 +99,7 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Depois adicionar o endpoint:
-app.post('/api/consultar-nfe', authenticateToken, async (req, res) => {
+app.post('/api/consultar-nfe', async (req, res) => {
   try {
     const { chaveNFE } = req.body;
 
