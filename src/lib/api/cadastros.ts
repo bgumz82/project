@@ -51,18 +51,29 @@ export async function getCadastros(): Promise<Cadastro[]> {
   try {
     console.log('🔍 Buscando todos os cadastros')
     
-    // Usar endpoint local para buscar cadastros
-    const response = await fetch('/cadastros-publico')
-    
-    if (!response.ok) {
-      throw new Error(`Erro HTTP: ${response.status}`)
-    }
-    
-    const result = await response.json()
+    const result = await query(`
+      SELECT 
+        id,
+        tipo,
+        razao_social,
+        cnpj,
+        ie,
+        endereco,
+        cidade,
+        estado,
+        cep,
+        telefone,
+        emails,
+        ativo,
+        created_at,
+        updated_at
+      FROM cadastros 
+      ORDER BY razao_social
+    `)
     
     console.log('✅ Cadastros encontrados:', result.length)
     
-    return result.map((cadastro: any) => ({
+    return result.map(cadastro => ({
       ...cadastro,
       emails: Array.isArray(cadastro.emails) ? cadastro.emails : []
     }))
