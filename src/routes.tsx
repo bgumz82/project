@@ -336,11 +336,7 @@ export function AppRoutes() {
         
         <Route
           path="/fiscal/cte-auto"
-          element={
-            <ProtectedRoute moduleKey="cte">
-              <NovoCtEAuto />
-            </ProtectedRoute>
-          }
+          element={<NovoCtEAuto />}
         />
 
         <Route
