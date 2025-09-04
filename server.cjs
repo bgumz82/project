@@ -176,7 +176,8 @@ app.post('/api/consultar-nfe', async (req, res) => {
             numero_nfe: infNFe.ide?.nNF || '',
             serie: infNFe.ide?.serie || '',
             data_emissao: infNFe.ide?.dhEmi || infNFe.ide?.dEmi || '',
-            chave_acesso: chaveNFE
+            chave_acesso: chaveNFE,
+            observacoes: infNFe.infAdic?.infCpl || '' // Extrair observações da NF-e
           };
         } else {
           throw new Error('XML da NF-e não possui estrutura válida');

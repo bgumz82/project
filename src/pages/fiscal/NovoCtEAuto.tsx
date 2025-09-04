@@ -45,6 +45,7 @@ interface NFEData {
   serie: string
   data_emissao: string
   chave_acesso: string
+  observacoes?: string // Campo para observações da NF-e
 }
 
 export default function NovoCtEAuto() {
@@ -57,6 +58,32 @@ export default function NovoCtEAuto() {
   const [nfeData, setNfeData] = useState<NFEData | null>(null)
   const [consultandoNFE, setConsultandoNFE] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Função para formatar nome do motorista com placa do último reboque
+  const formatarNomeMotorista = (associacao: any) => {
+    if (!associacao?.funcionario?.nome) return 'Motorista não informado'
+    
+    const primeiroNome = associacao.funcionario.nome.split(' ')[0]
+    
+    // Determinar placa do último reboque (priorizando reboque2 para Bi-Trem)
+    let placaUltimoReboque = ''
+    
+    if (associacao.veiculo_reboque2?.placa) {
+      // Se tem reboque2, é Bi-Trem - usar sempre o 2º reboque
+      placaUltimoReboque = associacao.veiculo_reboque2.placa
+    } else if (associacao.veiculo_reboque1?.placa) {
+      // Se só tem reboque1, usar reboque1
+      placaUltimoReboque = associacao.veiculo_reboque1.placa
+    } else if (associacao.veiculo_implemento?.placa) {
+      // Se tem implemento, usar implemento
+      placaUltimoReboque = associacao.veiculo_implemento.placa
+    } else {
+      // Se não tem reboque, usar placa do veículo principal
+      placaUltimoReboque = associacao.veiculo_principal?.placa || 'SEM_PLACA'
+    }
+    
+    return `${primeiroNome} - ${placaUltimoReboque}`
+  }
 
   // Buscar associações (motorista/reboque)
   const { data: associacoes } = useQuery({
@@ -256,8 +283,7 @@ export default function NovoCtEAuto() {
                   <option value="">Selecione...</option>
                   {associacoes?.map((assoc) => (
                     <option key={assoc.id} value={assoc.id}>
-                      {assoc.funcionario?.nome} - {assoc.veiculo_principal?.placa}
-                      {assoc.veiculo_reboque1 && ` + ${assoc.veiculo_reboque1.placa}`}
+                      {formatarNomeMotorista(assoc)}
                     </option>
                   ))}
                 </select>
