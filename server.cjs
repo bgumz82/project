@@ -197,6 +197,110 @@ app.post('/api/consultar-nfe', async (req, res) => {
   }
 });
 
+// Endpoint para verificar se cliente existe por CNPJ
+app.get('/api/verificar-cliente/:cnpj', async (req, res) => {
+  try {
+    const { cnpj } = req.params;
+    
+    if (!cnpj) {
+      return res.status(400).json({ error: 'CNPJ é obrigatório' });
+    }
+    
+    const result = await pool.query(`
+      SELECT 
+        id,
+        tipo,
+        razao_social,
+        cnpj,
+        endereco,
+        cidade,
+        estado,
+        cep
+      FROM cadastros 
+      WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
+    `, [cnpj]);
+    
+    if (result.rows.length > 0) {
+      console.log('✅ Cliente encontrado:', result.rows[0].razao_social);
+      res.json({ exists: true, cliente: result.rows[0] });
+    } else {
+      console.log('❌ Cliente não encontrado para CNPJ:', cnpj);
+      res.json({ exists: false });
+    }
+  } catch (error) {
+    console.error('❌ Erro ao verificar cliente:', error);
+    res.status(500).json({ 
+      error: 'Erro ao verificar cliente no banco de dados',
+      details: error.message 
+    });
+  }
+});
+
+// Endpoint para cadastrar cliente automaticamente da NF-e
+app.post('/api/cadastrar-cliente-nfe', async (req, res) => {
+  try {
+    const { dadosCliente } = req.body;
+    
+    if (!dadosCliente || !dadosCliente.razao_social || !dadosCliente.cnpj) {
+      return res.status(400).json({ error: 'Dados do cliente são obrigatórios' });
+    }
+    
+    // Verificar se já existe
+    const existingResult = await pool.query(`
+      SELECT id FROM cadastros WHERE cnpj = $1
+    `, [dadosCliente.cnpj]);
+    
+    if (existingResult.rows.length > 0) {
+      return res.status(400).json({ error: 'Cliente já cadastrado no sistema' });
+    }
+    
+    // Cadastrar novo cliente
+    const result = await pool.query(`
+      INSERT INTO cadastros (
+        tipo,
+        razao_social,
+        cnpj,
+        endereco,
+        cidade,
+        estado,
+        cep,
+        emails,
+        ativo,
+        created_at,
+        updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+      RETURNING *
+    `, [
+      'cliente',
+      dadosCliente.razao_social,
+      dadosCliente.cnpj,
+      dadosCliente.endereco || '',
+      dadosCliente.cidade || '',
+      dadosCliente.estado || 'GO',
+      dadosCliente.cep || '',
+      JSON.stringify([]), // Array vazio para emails
+      true
+    ]);
+    
+    if (result.rows.length > 0) {
+      console.log('✅ Cliente cadastrado automaticamente:', result.rows[0].razao_social);
+      res.json({ 
+        success: true, 
+        cliente: result.rows[0],
+        message: 'Cliente cadastrado com sucesso a partir da NF-e'
+      });
+    } else {
+      throw new Error('Falha ao inserir cliente no banco de dados');
+    }
+  } catch (error) {
+    console.error('❌ Erro ao cadastrar cliente:', error);
+    res.status(500).json({ 
+      error: 'Erro ao cadastrar cliente automaticamente',
+      details: error.message 
+    });
+  }
+});
+
 // Rotas de autenticação
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;

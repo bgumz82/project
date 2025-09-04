@@ -58,6 +58,9 @@ export default function NovoCtEAuto() {
   const [nfeData, setNfeData] = useState<NFEData | null>(null)
   const [consultandoNFE, setConsultandoNFE] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [remetenteExiste, setRemetenteExiste] = useState<boolean | null>(null)
+  const [destinatarioExiste, setDestinatarioExiste] = useState<boolean | null>(null)
+  const [cadastrandoCliente, setCadastrandoCliente] = useState<'remetente' | 'destinatario' | null>(null)
 
   // Função para formatar nome do motorista com placa do último reboque
   const formatarNomeMotorista = (associacao: any) => {
@@ -122,12 +125,74 @@ export default function NovoCtEAuto() {
     }
   }
 
+  // Função para verificar se cliente existe por CNPJ
+  const verificarCliente = async (cnpj: string) => {
+    try {
+      const response = await fetch(`/api/verificar-cliente/${cnpj}`)
+      const result = await response.json()
+      
+      if (response.ok) {
+        return result.exists
+      } else {
+        console.error('Erro ao verificar cliente:', result.error)
+        return false
+      }
+    } catch (error) {
+      console.error('Erro ao verificar cliente:', error)
+      return false
+    }
+  }
+
+  // Função para cadastrar cliente automaticamente
+  const cadastrarClienteNFE = async (tipo: 'remetente' | 'destinatario') => {
+    if (!nfeData) return
+    
+    setCadastrandoCliente(tipo)
+    
+    try {
+      const dadosCliente = tipo === 'remetente' ? nfeData.remetente : nfeData.destinatario
+      
+      const response = await fetch('/api/cadastrar-cliente-nfe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dadosCliente })
+      })
+      
+      const result = await response.json()
+      
+      if (response.ok) {
+        toast.success(`${tipo === 'remetente' ? 'Remetente' : 'Destinatário'} cadastrado com sucesso!`)
+        
+        // Atualizar status
+        if (tipo === 'remetente') {
+          setRemetenteExiste(true)
+        } else {
+          setDestinatarioExiste(true)
+        }
+      } else {
+        toast.error(result.error || 'Erro ao cadastrar cliente')
+      }
+    } catch (error) {
+      console.error('Erro ao cadastrar cliente:', error)
+      toast.error('Erro ao cadastrar cliente')
+    } finally {
+      setCadastrandoCliente(null)
+    }
+  }
+
   // Mutation para consultar NF-e
   const consultarNFEMutation = useMutation({
     mutationFn: consultarNFE,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setNfeData(data)
       toast.success('NF-e consultada com sucesso!')
+      
+      // Verificar se remetente e destinatário existem
+      const remetenteExists = await verificarCliente(data.remetente.cnpj)
+      const destinatarioExists = await verificarCliente(data.destinatario.cnpj)
+      
+      setRemetenteExiste(remetenteExists)
+      setDestinatarioExiste(destinatarioExists)
     },
     onError: (error) => {
       console.error('Erro na consulta:', error)
@@ -313,13 +378,45 @@ export default function NovoCtEAuto() {
                 
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-medium text-gray-700">Remetente</h4>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-700">Remetente</h4>
+                      {remetenteExiste === false && (
+                        <button
+                          onClick={() => cadastrarClienteNFE('remetente')}
+                          disabled={cadastrandoCliente === 'remetente'}
+                          className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+                        >
+                          {cadastrandoCliente === 'remetente' ? 'Cadastrando...' : 'Cadastrar Cliente'}
+                        </button>
+                      )}
+                      {remetenteExiste === true && (
+                        <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">
+                          ✓ Cliente já cadastrado
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-600">{nfeData.remetente.razao_social}</p>
                     <p className="text-sm text-gray-600">{nfeData.remetente.cnpj}</p>
                   </div>
 
                   <div>
-                    <h4 className="font-medium text-gray-700">Destinatário</h4>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-700">Destinatário</h4>
+                      {destinatarioExiste === false && (
+                        <button
+                          onClick={() => cadastrarClienteNFE('destinatario')}
+                          disabled={cadastrandoCliente === 'destinatario'}
+                          className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+                        >
+                          {cadastrandoCliente === 'destinatario' ? 'Cadastrando...' : 'Cadastrar Cliente'}
+                        </button>
+                      )}
+                      {destinatarioExiste === true && (
+                        <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">
+                          ✓ Cliente já cadastrado
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-600">{nfeData.destinatario.razao_social}</p>
                     <p className="text-sm text-gray-600">{nfeData.destinatario.cnpj}</p>
                   </div>
@@ -344,8 +441,9 @@ export default function NovoCtEAuto() {
                   {associacao && (
                     <div>
                       <h4 className="font-medium text-gray-700">Motorista/Veículo</h4>
+                      <p className="text-sm text-gray-600">{associacao.funcionario?.nome}</p>
                       <p className="text-sm text-gray-600">
-                        {associacao.funcionario?.nome} - {associacao.veiculo_principal?.placa}
+                        {associacao.veiculo_principal?.placa}
                         {associacao.veiculo_implemento?.placa && ` + ${associacao.veiculo_implemento.placa}`}
                         {associacao.veiculo_reboque1?.placa && ` + ${associacao.veiculo_reboque1.placa}`}
                         {associacao.veiculo_reboque2?.placa && ` + ${associacao.veiculo_reboque2.placa}`}

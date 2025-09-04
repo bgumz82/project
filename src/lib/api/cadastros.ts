@@ -83,6 +83,47 @@ export async function getCadastros(): Promise<Cadastro[]> {
   }
 }
 
+// Função para verificar se cliente existe por CNPJ
+export async function verificarClientePorCNPJ(cnpj: string): Promise<Cadastro | null> {
+  try {
+    console.log('🔍 Verificando cliente por CNPJ:', cnpj)
+    
+    const result = await queryOne(`
+      SELECT 
+        id,
+        tipo,
+        razao_social,
+        cnpj,
+        ie,
+        endereco,
+        cidade,
+        estado,
+        cep,
+        telefone,
+        emails,
+        ativo,
+        created_at,
+        updated_at
+      FROM cadastros 
+      WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
+    `, [cnpj])
+    
+    if (result) {
+      console.log('✅ Cliente encontrado:', result.razao_social)
+      return {
+        ...result,
+        emails: Array.isArray(result.emails) ? result.emails : []
+      }
+    }
+    
+    console.log('❌ Cliente não encontrado para CNPJ:', cnpj)
+    return null
+  } catch (error) {
+    console.error('❌ Erro ao verificar cliente por CNPJ:', error)
+    throw error
+  }
+}
+
 export async function getCadastrosByTipo(tipo: CadastroTipo): Promise<Cadastro[]> {
   try {
     console.log('🔍 Buscando cadastros por tipo:', tipo)
