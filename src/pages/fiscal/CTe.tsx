@@ -2064,7 +2064,7 @@ export default function CTe() {
                                   ✗ Cancelar
                                 </button>
                               )}
-                              {documento.status === 'cancelado' && (
+                              {(documento.status === 'cancelado' || documento.status === 'emitido') && (
                                 <button
                                   onClick={() => handleStatusChange(documento.id, 'pendente')}
                                   className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
