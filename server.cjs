@@ -150,7 +150,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     // Gerar token
     const token = jwt.sign(
-      { 
+      {
         id: user.id,
         email: user.email,
         tipo: user.tipo
@@ -173,7 +173,7 @@ app.post('/api/auth/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Erro no login:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro interno do servidor',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -230,7 +230,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
   } catch (error) {
     console.error('Erro na criação do usuário:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro interno do servidor',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -331,14 +331,14 @@ app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
 
     console.log('✅ Senha alterada com sucesso para usuário:', user.email);
 
-    res.json({ 
-      success: true, 
-      message: 'Senha alterada com sucesso' 
+    res.json({
+      success: true,
+      message: 'Senha alterada com sucesso'
     });
 
   } catch (error) {
     console.error('❌ Erro ao alterar senha:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro interno do servidor',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     }
@@ -380,16 +380,16 @@ app.post('/api/database-config/test-connection', authenticateToken, async (req, 
       client.release();
 
       console.log('✅ Estrutura do banco criada com sucesso');
-      res.json({ 
-        success: true, 
-        message: 'Conexão testada e estrutura criada com sucesso' 
+      res.json({
+        success: true,
+        message: 'Conexão testada e estrutura criada com sucesso'
       });
     } finally {
       await testPool.end();
     }
   } catch (error) {
     console.error('❌ Erro no teste de conexão:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: 'Erro ao testar conexão com banco de dados',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -455,7 +455,7 @@ async function createEnums(client) {
       values: ['admin', 'operador_checklist', 'operador_abastecimento']
     },
     {
-      name: 'cadastro_tipo', 
+      name: 'cadastro_tipo',
       values: ['cliente', 'fornecedor', 'abastecimento']
     },
     {
@@ -1056,7 +1056,7 @@ async function createForeignKeys(client) {
     },
     {
       table: 'abastecimentos',
-      column: 'operador_id', 
+      column: 'operador_id',
       references: 'usuarios(id)',
       name: 'abastecimentos_operador_id_fkey'
     },
@@ -1629,7 +1629,7 @@ app.post('/api/db/query', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Erro na query:', error.message);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro ao executar query',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -1669,7 +1669,7 @@ app.post('/api/db/query-main', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Erro na query do banco principal:', error.message);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro ao executar query no banco principal',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -1858,7 +1858,7 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Erro ao criar documento CT-e:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro ao criar documento CT-e',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -2044,6 +2044,52 @@ app.get('/api/cte-documentos', authenticateToken, async (req, res) => {
   }
 });
 
+// Rota para buscar documentos CT-e pendentes
+app.get('/api/cte-documentos/pendentes', authenticateToken, async (req, res) => {
+  try {
+    console.log('🔍 Buscando documentos CT-e pendentes...');
+
+    const result = await pool.query(`
+      SELECT * FROM cte_documentos 
+      WHERE status = 'pendente' AND xml_gerado = 'true'
+      ORDER BY created_at ASC
+    `);
+
+    console.log(`✅ Encontrados ${result.rows.length} documentos pendentes`);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('❌ Erro ao buscar documentos CT-e pendentes:', error);
+    res.status(500).json({ error: 'Erro ao buscar documento CT-e' });
+  }
+});
+
+// Rota para atualizar status de um CT-e
+app.put('/api/cte-documentos/:id/status', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, processado } = req.body;
+
+    console.log(`🔄 Atualizando status do CT-e ${id} para: ${status}`);
+
+    const result = await pool.query(`
+      UPDATE cte_documentos 
+      SET status = $1, updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `, [status, id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Documento CT-e não encontrado' });
+    }
+
+    console.log(`✅ Status do CT-e ${id} atualizado com sucesso`);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('❌ Erro ao atualizar status do CT-e:', error);
+    res.status(500).json({ error: 'Erro ao atualizar status do documento CT-e' });
+  }
+});
+
 app.get('/api/cte-documentos/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -2075,7 +2121,7 @@ app.delete('/api/user-permissions/:userId', authenticateToken, async (req, res) 
     // Remover permissões órfãs
     const result = await pool.query('DELETE FROM user_permissions WHERE user_id = $1', [userId]);
 
-    res.json({ 
+    res.json({
       message: 'Permissões órfãs removidas com sucesso',
       deletedCount: result.rowCount
     });
@@ -2146,17 +2192,17 @@ app.post('/api/upload-xml', async (req, res) => {
 
     console.log("✅ Arquivo XML salvo com sucesso:", fullPath);
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       path: path,
-      size: content.length 
+      size: content.length
     });
 
   } catch (error) {
     console.error("❌ Erro ao salvar arquivo XML:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro interno do servidor',
-      details: error.message 
+      details: error.message
     });
   }
 });

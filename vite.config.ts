@@ -10,9 +10,9 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: [
-      "f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev",
-    ],
+    host: "0.0.0.0",
+    port: 5000,
+    allowedHosts: true,
     proxy: {
       "/api": {
         target: "https://sistema.systemtruck.com.br",

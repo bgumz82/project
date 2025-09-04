@@ -868,6 +868,12 @@ export async function updateCTeDocumento(
       paramIndex++;
     }
 
+    if (documento.status) {
+      updates.push(`status = $${paramIndex}`);
+      values.push(documento.status);
+      paramIndex++;
+    }
+
     if (documento.observacoes !== undefined) {
       updates.push(`observacoes = $${paramIndex}`);
       values.push(documento.observacoes);
