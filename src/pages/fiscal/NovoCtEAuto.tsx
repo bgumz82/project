@@ -68,23 +68,28 @@ export default function NovoCtEAuto() {
   // Função para consultar NFE no webservice
   const consultarNFE = async (chave: string) => {
     try {
-      const response = await fetch('/api/fiscal/consultar-nfe', {
+      console.log('🔍 Consultando NF-e no frontend:', chave)
+      
+      const response = await fetch('/api/consultar-nfe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chaveAcesso: chave })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({ chaveNFE: chave })
       })
 
       if (!response.ok) {
-        throw new Error('Erro na consulta da NF-e')
+        const errorText = await response.text()
+        console.error('❌ Erro na resposta:', response.status, errorText)
+        throw new Error(`Erro na consulta da NF-e: ${response.status}`)
       }
 
       const result = await response.json()
+      console.log('✅ Resposta recebida no frontend:', result)
       
-      if (!result.success) {
-        throw new Error(result.error || 'Erro ao consultar NF-e')
-      }
-      
-      return result.data
+      // O servidor retorna os dados diretamente, não em result.data
+      return result
     } catch (error) {
       console.error('Erro ao consultar NF-e:', error)
       throw error
