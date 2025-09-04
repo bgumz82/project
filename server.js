@@ -280,18 +280,36 @@ app.post('/api/consultar-nfe', authenticateToken, async (req, res) => {
       client.getNFe({ TOKEN_DE_ACESSO: token, CHAVE_NFE: chaveNFE }, (err, result) => {
         if (err) {
           console.error('❌ Erro na consulta SOAP:', err);
+          console.error('❌ Detalhes do erro SOAP:', {
+            message: err.message,
+            code: err.code,
+            stack: err.stack
+          });
           reject(err);
         } else {
+          console.log('✅ Resposta SOAP recebida:', JSON.stringify(result, null, 2));
           resolve(result);
         }
       });
     });
 
-    console.log('📄 Resposta do webservice:', result);
+    console.log('📄 Resposta do webservice:', JSON.stringify(result, null, 2));
+
+    // Verificar se a resposta está vazia ou nula
+    if (!result) {
+      throw new Error('Resposta vazia do webservice');
+    }
 
     // Verificar se houve erro na resposta
     if (result.erro || result.error) {
+      console.error('❌ Erro reportado pelo webservice:', result.erro || result.error);
       throw new Error(result.erro || result.error || 'Erro na consulta da NF-e');
+    }
+
+    // Verificar se o webservice retornou dados válidos
+    if (result.status === 'error' || result.success === false) {
+      console.error('❌ Status de erro no webservice:', result);
+      throw new Error(result.message || 'Webservice retornou status de erro');
     }
 
     // Parse do XML da NF-e se necessário
