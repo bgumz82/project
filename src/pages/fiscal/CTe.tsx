@@ -1887,6 +1887,13 @@ export default function CTe() {
               <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
               Novo CT-e Rápido
             </button>
+            <button
+              onClick={() => navigate('/fiscal/cte-auto')}
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700"
+            >
+              <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+              Novo CT-e Auto
+            </button>
           </div>
         </div>
 

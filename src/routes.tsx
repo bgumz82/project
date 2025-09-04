@@ -28,6 +28,7 @@ import RelatoriosFinanceiros from './pages/financeiro/Relatorios'
 import DashboardFiscal from './pages/fiscal/Dashboard'
 import EmpresasFiscais from './pages/fiscal/EmpresasFiscais'
 import CTe from './pages/fiscal/CTe'
+import NovoCtEAuto from './pages/fiscal/NovoCtEAuto'
 import MDFe from './pages/fiscal/MDFe'
 import Frete from './pages/fiscal/Frete'
 
@@ -329,6 +330,15 @@ export function AppRoutes() {
           element={
             <ProtectedRoute moduleKey="cte">
               <CTe />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/fiscal/cte-auto"
+          element={
+            <ProtectedRoute moduleKey="cte">
+              <NovoCtEAuto />
             </ProtectedRoute>
           }
         />

@@ -8,6 +8,8 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
+const soap = require('soap');
+const xml2js = require('xml2js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -254,6 +256,102 @@ app.get('/api/auth/verify', authenticateToken, (req, res) => {
 
 app.post('/api/auth/logout', (req, res) => {
   res.json({ message: 'Logout realizado com sucesso' });
+});
+
+// Endpoint para consultar NF-e no webservice terceirizado
+app.post('/api/consultar-nfe', authenticateToken, async (req, res) => {
+  try {
+    const { chaveNFE } = req.body;
+    
+    if (!chaveNFE || chaveNFE.length !== 44) {
+      return res.status(400).json({ error: 'Chave de acesso NF-e deve ter 44 dígitos' });
+    }
+
+    console.log('🔍 Consultando NF-e:', chaveNFE);
+
+    const wsdlUrl = 'https://www.roveri.inf.br/ws/nfe.php?wsdl';
+    const token = '44B4845C-05F4-7E99-2DFF-8EAE5746E9BA';
+
+    // Criar cliente SOAP
+    const client = await soap.createClientAsync(wsdlUrl);
+    
+    // Fazer a chamada ao webservice
+    const result = await new Promise((resolve, reject) => {
+      client.getNFe({ TOKEN_DE_ACESSO: token, CHAVE_NFE: chaveNFE }, (err, result) => {
+        if (err) {
+          console.error('❌ Erro na consulta SOAP:', err);
+          reject(err);
+        } else {
+          resolve(result);
+        }
+      });
+    });
+
+    console.log('📄 Resposta do webservice:', result);
+
+    // Verificar se houve erro na resposta
+    if (result.erro || result.error) {
+      throw new Error(result.erro || result.error || 'Erro na consulta da NF-e');
+    }
+
+    // Parse do XML da NF-e se necessário
+    let nfeData = result;
+    if (typeof result.xml === 'string') {
+      const parser = new xml2js.Parser({ explicitArray: false });
+      const parsed = await parser.parseStringPromise(result.xml);
+      
+      // Extrair dados principais da NF-e
+      const infNFe = parsed?.nfeProc?.NFe?.infNFe || parsed?.NFe?.infNFe;
+      
+      if (infNFe) {
+        nfeData = {
+          remetente: {
+            razao_social: infNFe.emit?.xNome || '',
+            cnpj: infNFe.emit?.CNPJ || '',
+            endereco: `${infNFe.emit?.enderEmit?.xLgr || ''}, ${infNFe.emit?.enderEmit?.nro || ''}`,
+            cidade: infNFe.emit?.enderEmit?.xMun || '',
+            estado: infNFe.emit?.enderEmit?.UF || '',
+            cep: infNFe.emit?.enderEmit?.CEP || ''
+          },
+          destinatario: {
+            razao_social: infNFe.dest?.xNome || '',
+            cnpj: infNFe.dest?.CNPJ || '',
+            endereco: `${infNFe.dest?.enderDest?.xLgr || ''}, ${infNFe.dest?.enderDest?.nro || ''}`,
+            cidade: infNFe.dest?.enderDest?.xMun || '',
+            estado: infNFe.dest?.enderDest?.UF || '',
+            cep: infNFe.dest?.enderDest?.CEP || ''
+          },
+          produto: {
+            descricao: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.xProd : infNFe.det?.prod?.xProd || '',
+            codigo_ncm: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.NCM : infNFe.det?.prod?.NCM || '',
+            valor_total: parseFloat(infNFe.total?.ICMSTot?.vNF || 0),
+            peso_total: parseFloat(infNFe.total?.ICMSTot?.vPeso || 0),
+            quantidade_total: Array.isArray(infNFe.det) ? 
+              infNFe.det.reduce((acc, item) => acc + parseFloat(item.prod?.qCom || 0), 0) :
+              parseFloat(infNFe.det?.prod?.qCom || 0)
+          },
+          transporte: {
+            valor_frete: parseFloat(infNFe.total?.ICMSTot?.vFrete || 0),
+            modal_transporte: infNFe.transp?.modFrete || '1'
+          },
+          numero_nfe: infNFe.ide?.nNF || '',
+          serie: infNFe.ide?.serie || '',
+          data_emissao: infNFe.ide?.dhEmi || infNFe.ide?.dEmi || '',
+          chave_acesso: chaveNFE
+        };
+      }
+    }
+
+    console.log('✅ Dados da NF-e processados:', nfeData);
+    res.json(nfeData);
+
+  } catch (error) {
+    console.error('❌ Erro ao consultar NF-e:', error);
+    res.status(500).json({ 
+      error: 'Erro ao consultar NF-e no webservice',
+      details: error.message 
+    });
+  }
 });
 
 // Database query endpoint
@@ -533,6 +631,95 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Erro ao criar documento CT-e' });
   }
 });
+
+// Endpoint para consultar NF-e no webservice terceiro
+app.post('/api/fiscal/consultar-nfe', async (req, res) => {
+  const { chaveAcesso } = req.body
+  
+  if (!chaveAcesso || chaveAcesso.length !== 44) {
+    return res.status(400).json({
+      success: false,
+      error: 'Chave de acesso inválida. Deve ter 44 dígitos.'
+    })
+  }
+
+  try {
+    console.log('🌐 Consultando NF-e no webservice:', chaveAcesso)
+    
+    const wsdlUrl = 'https://www.roveri.inf.br/ws/nfe.php?wsdl'
+    const token = '44B4845C-05F4-7E99-2DFF-8EAE5746E9BA'
+    
+    const client = await soap.createClientAsync(wsdlUrl)
+    const result = await client.consultarNFeAsync({
+      token: token,
+      chave: chaveAcesso
+    })
+    
+    console.log('📥 Resposta do webservice:', JSON.stringify(result, null, 2))
+    
+    if (result && result[0] && result[0].return) {
+      const xmlData = result[0].return
+      
+      // Parse do XML da NF-e
+      const parser = new xml2js.Parser({ explicitArray: false })
+      const parsedData = await parser.parseStringPromise(xmlData)
+      
+      // Extrair dados relevantes da NF-e
+      const nfe = parsedData.nfeProc.NFe.infNFe
+      const emit = nfe.emit // Remetente
+      const dest = nfe.dest // Destinatário
+      
+      const nfeData = {
+        remetente: {
+          razao_social: emit.xNome,
+          cnpj: emit.CNPJ,
+          endereco: {
+            logradouro: emit.enderEmit.xLgr,
+            numero: emit.enderEmit.nro,
+            bairro: emit.enderEmit.xBairro,
+            cidade: emit.enderEmit.xMun,
+            uf: emit.enderEmit.UF,
+            cep: emit.enderEmit.CEP
+          }
+        },
+        destinatario: {
+          razao_social: dest.xNome,
+          cnpj: dest.CNPJ,
+          endereco: {
+            logradouro: dest.enderDest.xLgr,
+            numero: dest.enderDest.nro,
+            bairro: dest.enderDest.xBairro,
+            cidade: dest.enderDest.xMun,
+            uf: dest.enderDest.UF,
+            cep: dest.enderDest.CEP
+          }
+        },
+        valor_total: parseFloat(nfe.total.ICMSTot.vNF),
+        data_emissao: nfe.ide.dhEmi,
+        numero: nfe.ide.nNF,
+        serie: nfe.ide.serie
+      }
+      
+      console.log('✅ Dados da NF-e processados:', nfeData)
+      
+      res.json({
+        success: true,
+        data: nfeData
+      })
+    } else {
+      res.status(404).json({
+        success: false,
+        error: 'NF-e não encontrada ou dados inválidos'
+      })
+    }
+  } catch (error) {
+    console.error('❌ Erro ao consultar NF-e:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao consultar webservice: ' + error.message
+    })
+  }
+})
 
 // Cache para arquivos estáticos
 app.use(express.static('dist', {
