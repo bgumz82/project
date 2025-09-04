@@ -120,10 +120,73 @@ app.post('/api/consultar-nfe', authenticateToken, async (req, res) => {
       throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
     }
     const responseText = await response.text();
+    console.log('📄 Resposta do webservice:', responseText);
 
-    // Parse do XML retornado e estruturação dos dados da NF-e
-    // [resto do código de processamento...]
+    // Verificar se é um erro em formato de mensagem
+    if (responseText.includes('Chave inválida') || responseText.includes('erro') || responseText.includes('error')) {
+      throw new Error(`Erro do webservice: ${responseText}`);
+    }
 
+    // Tentar fazer parse como JSON primeiro
+    let nfeData;
+    try {
+      nfeData = JSON.parse(responseText);
+      console.log('✅ Dados JSON recebidos:', nfeData);
+    } catch (jsonError) {
+      // Se não for JSON válido, assumir que é XML
+      if (responseText.includes('<?xml')) {
+        console.log('📄 Resposta em formato XML, fazendo parse...');
+        const parser = new xml2js.Parser({ explicitArray: false });
+        const parsed = await parser.parseStringPromise(responseText);
+        
+        // Extrair dados principais da NF-e
+        const infNFe = parsed?.nfeProc?.NFe?.infNFe || parsed?.NFe?.infNFe;
+        
+        if (infNFe) {
+          nfeData = {
+            remetente: {
+              razao_social: infNFe.emit?.xNome || '',
+              cnpj: infNFe.emit?.CNPJ || '',
+              endereco: `${infNFe.emit?.enderEmit?.xLgr || ''}, ${infNFe.emit?.enderEmit?.nro || ''}`,
+              cidade: infNFe.emit?.enderEmit?.xMun || '',
+              estado: infNFe.emit?.enderEmit?.UF || '',
+              cep: infNFe.emit?.enderEmit?.CEP || ''
+            },
+            destinatario: {
+              razao_social: infNFe.dest?.xNome || '',
+              cnpj: infNFe.dest?.CNPJ || '',
+              endereco: `${infNFe.dest?.enderDest?.xLgr || ''}, ${infNFe.dest?.enderDest?.nro || ''}`,
+              cidade: infNFe.dest?.enderDest?.xMun || '',
+              estado: infNFe.dest?.enderDest?.UF || '',
+              cep: infNFe.dest?.enderDest?.CEP || ''
+            },
+            produto: {
+              descricao: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.xProd : infNFe.det?.prod?.xProd || '',
+              codigo_ncm: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.NCM : infNFe.det?.prod?.NCM || '',
+              valor_total: parseFloat(infNFe.total?.ICMSTot?.vNF || 0),
+              peso_total: parseFloat(infNFe.total?.ICMSTot?.vPeso || 0),
+              quantidade_total: Array.isArray(infNFe.det) ? 
+                infNFe.det.reduce((acc, item) => acc + parseFloat(item.prod?.qCom || 0), 0) :
+                parseFloat(infNFe.det?.prod?.qCom || 0)
+            },
+            transporte: {
+              valor_frete: parseFloat(infNFe.total?.ICMSTot?.vFrete || 0),
+              modal_transporte: infNFe.transp?.modFrete || '1'
+            },
+            numero_nfe: infNFe.ide?.nNF || '',
+            serie: infNFe.ide?.serie || '',
+            data_emissao: infNFe.ide?.dhEmi || infNFe.ide?.dEmi || '',
+            chave_acesso: chaveNFE
+          };
+        } else {
+          throw new Error('XML da NF-e não possui estrutura válida');
+        }
+      } else {
+        throw new Error(`Resposta não é JSON nem XML válido: ${responseText}`);
+      }
+    }
+
+    console.log('✅ Dados da NF-e processados:', nfeData);
     res.json(nfeData);
   } catch (error) {
     res.status(500).json({
