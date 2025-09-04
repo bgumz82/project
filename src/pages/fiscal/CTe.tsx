@@ -2061,7 +2061,7 @@ export default function CTe() {
                                   className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-800 hover:bg-red-200"
                                   title="Cancelar CT-e"
                                 >
-                                  ✗ Cancelar
+                                  ❌ Cancelar
                                 </button>
                               )}
                               {(documento.status === 'cancelado' || documento.status === 'emitido') && (
@@ -2070,7 +2070,7 @@ export default function CTe() {
                                   className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
                                   title="Marcar como pendente"
                                 >
-                                  ⏳ Pendente
+                                  ⚠️ Pendente
                                 </button>
                               )}
                             </div>
@@ -2434,21 +2434,6 @@ export default function CTe() {
                     </div>
                   </div>
 
-                  <div>
-                    <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                      Status
-                    </label>
-                    <select
-                      name="status"
-                      id="status"
-                      defaultValue={selectedDocumento?.status || 'pendente'}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    >
-                      <option value="pendente">Pendente</option>
-                      <option value="emitido">Emitido</option>
-                      <option value="cancelado">Cancelado</option>
-                    </select>
-                  </div>
                 </div>
               )}
 
