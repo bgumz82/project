@@ -316,6 +316,19 @@ export default function CTe() {
     }
   })
 
+  const statusUpdateMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: 'pendente' | 'emitido' | 'cancelado' }) =>
+      updateCTeDocumento(id, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cte-documentos'] })
+      toast.success('Status do CT-e atualizado com sucesso!')
+    },
+    onError: (error: any) => {
+      console.error('Error updating CT-e status:', error)
+      toast.error(error.message || 'Erro ao atualizar status do CT-e')
+    }
+  })
+
   const deleteMutation = useMutation({
     mutationFn: deleteCTeDocumento,
     onSuccess: () => {
@@ -1695,6 +1708,19 @@ export default function CTe() {
     deleteMutation.mutate(id)
   }
 
+  const handleStatusChange = (id: string, newStatus: 'pendente' | 'emitido' | 'cancelado') => {
+    const statusLabels = {
+      pendente: 'Pendente',
+      emitido: 'Emitido',
+      cancelado: 'Cancelado'
+    }
+    
+    const confirmed = confirm(`Tem certeza que deseja alterar o status para "${statusLabels[newStatus]}"?`)
+    if (confirmed) {
+      statusUpdateMutation.mutate({ id, status: newStatus })
+    }
+  }
+
   const handleGenerateFiles = async (id: string) => {
     setIsGeneratingFiles(true)
     try {
@@ -1992,37 +2018,71 @@ export default function CTe() {
                           )}
                         </td>
                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                          {documento.pdf_gerado && documento.pdf_path && (
+                          <div className="flex items-center justify-end gap-2">
+                            {documento.pdf_gerado && documento.pdf_path && (
+                              <button
+                                onClick={() => handleViewPDF(documento)}
+                                className="text-blue-600 hover:text-blue-900"
+                                title="Visualizar PDF"
+                              >
+                                <EyeIcon className="h-5 w-5" />
+                              </button>
+                            )}
                             <button
-                              onClick={() => handleViewPDF(documento)}
-                              className="text-blue-600 hover:text-blue-900 mr-4"
-                              title="Visualizar PDF"
+                              onClick={() => handleGenerateFiles(documento.id)}
+                              className="text-green-600 hover:text-green-900"
+                              title="Gerar arquivos"
+                              disabled={isGeneratingFiles}
                             >
-                              <EyeIcon className="h-5 w-5" />
+                              <DocumentArrowDownIcon className="h-5 w-5" />
                             </button>
-                          )}
-                          <button
-                            onClick={() => handleGenerateFiles(documento.id)}
-                            className="text-green-600 hover:text-green-900 mr-4"
-                            title="Gerar arquivos"
-                            disabled={isGeneratingFiles}
-                          >
-                            <DocumentArrowDownIcon className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={() => handleEdit(documento)}
-                            className="text-indigo-600 hover:text-indigo-900 mr-4"
-                            title="Editar"
-                          >
-                            <PencilIcon className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(documento.id)}
-                            className="text-red-600 hover:text-red-900"
-                            title="Excluir"
-                          >
-                            <TrashIcon className="h-5 w-5" />
-                          </button>
+                            <button
+                              onClick={() => handleEdit(documento)}
+                              className="text-indigo-600 hover:text-indigo-900"
+                              title="Editar"
+                            >
+                              <PencilIcon className="h-5 w-5" />
+                            </button>
+                            
+                            {/* Status Change Buttons */}
+                            <div className="flex items-center gap-1 ml-2 border-l pl-2">
+                              {documento.status === 'rascunho' && (
+                                <button
+                                  onClick={() => handleStatusChange(documento.id, 'emitido')}
+                                  className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-800 hover:bg-green-200"
+                                  title="Emitir CT-e"
+                                >
+                                  ✓ Emitir
+                                </button>
+                              )}
+                              {(documento.status === 'emitido' || documento.status === 'rascunho') && (
+                                <button
+                                  onClick={() => handleStatusChange(documento.id, 'cancelado')}
+                                  className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-800 hover:bg-red-200"
+                                  title="Cancelar CT-e"
+                                >
+                                  ✗ Cancelar
+                                </button>
+                              )}
+                              {documento.status === 'cancelado' && (
+                                <button
+                                  onClick={() => handleStatusChange(documento.id, 'pendente')}
+                                  className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                                  title="Marcar como pendente"
+                                >
+                                  ⏳ Pendente
+                                </button>
+                              )}
+                            </div>
+                            
+                            <button
+                              onClick={() => handleDelete(documento.id)}
+                              className="text-red-600 hover:text-red-900 ml-2"
+                              title="Excluir"
+                            >
+                              <TrashIcon className="h-5 w-5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
