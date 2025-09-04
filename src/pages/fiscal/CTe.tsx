@@ -1386,6 +1386,8 @@ export default function CTe() {
       const documentoData: CTeDocumentoCreate = {
         empresa_id: empresaSelecionada.id,
         data_emissao: format(new Date(), 'yyyy-MM-dd'),
+        codigo_uf: empresaSelecionada.codigo_uf,
+        serie: empresaSelecionada.serie_padrao_cte,
         cidade_inicio_ibge: rapidoSelectedInicio.codigo,
         cidade_termino_ibge: rapidoSelectedTermino.codigo,
         uf_inicio: rapidoSelectedInicio.uf,

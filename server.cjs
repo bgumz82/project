@@ -1714,7 +1714,7 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
           WHERE empresa_id = $1 
           AND numero_cte ~ '^[0-9]+$'
         `, [data.empresa_id]);
-        
+
         numeroFinal = ultimoNumeroResult.rows[0].proximo_numero.toString();
         console.log('📋 Próximo número CT-e:', numeroFinal);
       }
@@ -1722,6 +1722,29 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
       // Usar série padrão se não fornecida
       const serieFinal = data.serie || empresa.serie_padrao_cte || '001';
       console.log('📋 Série final:', serieFinal);
+
+      // Obter código da UF de emissão com base na empresa fiscal
+      let codigoUFFinal = data.codigo_uf;
+      if (!codigoUFFinal) {
+        const ufResult = await client.query(
+          'SELECT cod_city FROM cities WHERE name ILIKE $1 AND state_id = (SELECT id FROM states WHERE uf = $2 LIMIT 1)',
+          [empresa.cidade, empresa.estado]
+        );
+        if (ufResult.rows.length > 0) {
+          codigoUFFinal = ufResult.rows[0].cod_city.substring(0, 2); // Pega os dois primeiros dígitos para o código da UF
+        } else {
+          // Fallback para o estado da empresa se a cidade não for encontrada no banco
+          const stateIdResult = await client.query('SELECT id FROM states WHERE uf = $1', [empresa.estado]);
+          if (stateIdResult.rows.length > 0) {
+            const stateInfoResult = await client.query('SELECT cod_city FROM cities WHERE state_id = $1 ORDER BY cod_city LIMIT 1', [stateIdResult.rows[0].id]);
+            if (stateInfoResult.rows.length > 0) {
+              codigoUFFinal = stateInfoResult.rows[0].cod_city.substring(0, 2);
+            }
+          }
+        }
+      }
+      console.log('UF final:', codigoUFFinal);
+
 
       // Inserir documento CT-e
       const result = await client.query(`
@@ -1783,7 +1806,7 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
         numeroFinal,
         serieFinal,
         data.data_emissao,
-        data.status || 'pendente',
+        codigoUFFinal, // Alterado para usar codigoUFFinal
         data.observacoes || null,
         data.tomador_id || null,
         data.remetente_id || null,
