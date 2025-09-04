@@ -63,6 +63,12 @@ export default defineConfig({
         secure: false,
         timeout: 30000,
       },
+      "/cadastros-publico": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        secure: false,
+        timeout: 30000,
+      },
       "/api": {
         target: "https://sistema.systemtruck.com.br",
         changeOrigin: true,

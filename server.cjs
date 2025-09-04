@@ -197,6 +197,49 @@ app.post('/api/consultar-nfe', async (req, res) => {
   }
 });
 
+// Endpoint para buscar todos os cadastros (SEM autenticação para funcionar no frontend)
+app.get('/cadastros-publico', async (req, res) => {
+  try {
+    console.log('🔍 Buscando todos os cadastros no banco local');
+    
+    const result = await pool.query(`
+      SELECT 
+        id,
+        tipo,
+        razao_social,
+        cnpj,
+        ie,
+        endereco,
+        cidade,
+        estado,
+        cep,
+        telefone,
+        emails,
+        ativo,
+        created_at,
+        updated_at
+      FROM cadastros 
+      WHERE ativo = true
+      ORDER BY razao_social
+    `);
+    
+    console.log('✅ Cadastros encontrados no banco local:', result.rows.length);
+    
+    const cadastros = result.rows.map(cadastro => ({
+      ...cadastro,
+      emails: Array.isArray(cadastro.emails) ? cadastro.emails : []
+    }));
+    
+    res.json(cadastros);
+  } catch (error) {
+    console.error('❌ Erro ao buscar cadastros:', error);
+    res.status(500).json({ 
+      error: 'Erro ao buscar cadastros no banco de dados',
+      details: error.message 
+    });
+  }
+});
+
 // Endpoint para verificar se cliente existe por CNPJ
 app.get('/api/verificar-cliente/:cnpj', async (req, res) => {
   try {
