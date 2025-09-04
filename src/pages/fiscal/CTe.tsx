@@ -10,7 +10,6 @@ import {
   XMarkIcon,
   EyeIcon,
   DocumentArrowDownIcon,
-  ClipboardDocumentIcon,
 } from '@heroicons/react/24/outline'
 import {
   getCTeDocumentos,
@@ -21,7 +20,6 @@ import {
   getEmpresasFiscais,
   getClientesAtivos,
   getProdutosCTe,
-  getAssociacoesFrotaAtivas,
   getCidadesPorNome,
   validarChaveAcesso,
   formatCNPJ,
@@ -30,7 +28,6 @@ import {
   type CTeDocumento,
   type CTeDocumentoCreate,
   type Cidade,
-  type ProdutoCTe
 } from '@/lib/api/fiscal'
 import {
   getAssociacoesAtivasParaCTe,
@@ -253,19 +250,25 @@ export default function CTe() {
     queryFn: getAssociacoesAtivasParaCTe,
     retry: 3,
     staleTime: 1000 * 60 * 5,
-    onSuccess: (data) => {
-      console.log('🎯 Associações carregadas no componente CT-e:', data?.length || 0)
-      if (data && data.length > 0) {
-        console.log('🎯 Primeira associação no componente:', data[0])
-        console.log('🎯 Funcionário da primeira associação:', data[0].funcionario)
-        console.log('🎯 Veículo principal da primeira associação:', data[0].veiculo_principal)
-        console.log('🎯 Estrutura completa da primeira associação:', JSON.stringify(data[0], null, 2))
-      }
-    },
-    onError: (error) => {
-      console.error('❌ Erro ao carregar associações no componente:', error)
-    }
   })
+
+  React.useEffect(() => {
+    if (associacoesFrota) {
+      console.log('🎯 Associações carregadas no componente CT-e:', associacoesFrota?.length || 0)
+      if (associacoesFrota && associacoesFrota.length > 0) {
+        console.log('🎯 Primeira associação no componente:', associacoesFrota[0])
+        console.log('🎯 Funcionário da primeira associação:', associacoesFrota[0].funcionario)
+        console.log('🎯 Veículo principal da primeira associação:', associacoesFrota[0].veiculo_principal)
+        console.log('🎯 Estrutura completa da primeira associação:', JSON.stringify(associacoesFrota[0], null, 2))
+      }
+    }
+  }, [associacoesFrota])
+
+  React.useEffect(() => {
+    if (associacoesError) {
+      console.error('❌ Erro ao carregar associações no componente:', associacoesError)
+    }
+  }, [associacoesError])
 
   // Query para buscar estados
   const { data: estados } = useQuery({
