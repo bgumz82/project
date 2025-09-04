@@ -16,7 +16,7 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       "/api/consultar-nfe": {
-        target: "http://localhost:3001",
+        target: "http://localhost:3000",
         changeOrigin: true,
         secure: false,
         timeout: 30000,
