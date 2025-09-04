@@ -1753,6 +1753,7 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
           numero_cte,
           serie,
           data_emissao,
+          codigo_uf,
           status,
           observacoes,
           tomador_id,
@@ -1795,18 +1796,19 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
           created_at,
           updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
-          $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
-          $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, 
-          $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, 
-          $41, $42, $43, NOW(), NOW()
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+          $12, $13, $14, $15, $16, $17, $18, $19, $20, $21,
+          $22, $23, $24, $25, $26, $27, $28, $29, $30, $31,
+          $32, $33, $34, $35, $36, $37, $38, $39, $40, $41,
+          $42, $43, $44, NOW(), NOW()
         ) RETURNING *
       `, [
         data.empresa_id,
         numeroFinal,
         serieFinal,
         data.data_emissao,
-        codigoUFFinal, // Alterado para usar codigoUFFinal
+        codigoUFFinal,
+        data.status || 'pendente',
         data.observacoes || null,
         data.tomador_id || null,
         data.remetente_id || null,
