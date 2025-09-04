@@ -181,6 +181,7 @@ export default function CTe() {
 
   // Estados para formulário CT-e Rápido
   const [formRapido, setFormRapido] = useState({
+    empresa_id: '',
     associacao_frota_id: '',
     produto_id: '',
     chave_nfe: '',
@@ -374,6 +375,7 @@ export default function CTe() {
 
   const resetFormRapido = () => {
     setFormRapido({
+      empresa_id: '',
       associacao_frota_id: '',
       produto_id: '',
       chave_nfe: '',
@@ -1170,6 +1172,11 @@ export default function CTe() {
 
     try {
       // Validações básicas
+      if (!formRapido.empresa_id) {
+        toast.error('Selecione a empresa emitente')
+        return
+      }
+
       if (!formRapido.associacao_frota_id) {
         toast.error('Selecione o motorista e veículo')
         return
@@ -1260,10 +1267,10 @@ export default function CTe() {
         return
       }
 
-      // Usar a primeira empresa ativa disponível
-      const empresaPadrao = empresas?.[0]
-      if (!empresaPadrao) {
-        toast.error('Nenhuma empresa fiscal cadastrada')
+      // Buscar empresa selecionada
+      const empresaSelecionada = empresas?.find(e => e.id === formRapido.empresa_id)
+      if (!empresaSelecionada) {
+        toast.error('Empresa selecionada não encontrada')
         return
       }
 
@@ -1377,7 +1384,7 @@ export default function CTe() {
       }
 
       const documentoData: CTeDocumentoCreate = {
-        empresa_id: empresaPadrao.id,
+        empresa_id: empresaSelecionada.id,
         data_emissao: format(new Date(), 'yyyy-MM-dd'),
         cidade_inicio_ibge: rapidoSelectedInicio.codigo,
         cidade_termino_ibge: rapidoSelectedTermino.codigo,
@@ -1414,7 +1421,7 @@ export default function CTe() {
         cfop: cfopCalculado,
         // Dados de transporte
         associacao_frota_id: formRapido.associacao_frota_id,
-        rntrc: empresaPadrao.rntrc,
+        rntrc: empresaSelecionada.rntrc,
         motorista_nome: associacao.funcionario?.nome,
         motorista_cnh: associacao.funcionario?.cnh,
         motorista_matricula: associacao.funcionario?.matricula,
@@ -3349,6 +3356,31 @@ export default function CTe() {
 
             <form onSubmit={handleSubmitRapido}>
               <div className="space-y-6">
+                {/* Empresa Emitente */}
+                <div>
+                  <label htmlFor="rapido_empresa_id" className="block text-sm font-medium text-gray-700">
+                    Empresa Emitente *
+                  </label>
+                  <select
+                    name="rapido_empresa_id"
+                    id="rapido_empresa_id"
+                    value={formRapido.empresa_id}
+                    onChange={(e) => setFormRapido(prev => ({ ...prev, empresa_id: e.target.value }))}
+                    required
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                  >
+                    <option value="">Selecione a empresa</option>
+                    {empresas?.filter(e => e.status === 'ativo').map((empresa) => (
+                      <option key={empresa.id} value={empresa.id}>
+                        {empresa.razao_social} - {formatCNPJ(empresa.cnpj)}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Empresa responsável pela emissão do CT-e
+                  </p>
+                </div>
+
                 {/* Motorista e Veículo */}
                 <div>
                   <label htmlFor="rapido_associacao_frota_id" className="block text-sm font-medium text-gray-700">
