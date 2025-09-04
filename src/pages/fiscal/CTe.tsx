@@ -1914,8 +1914,8 @@ export default function CTe() {
                 <table className="min-w-full divide-y divide-gray-300">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        Número/Série
+                      <th className="px-2 py-3.5 text-left text-sm font-semibold text-gray-900 w-32">
+                        Numero CT-e
                       </th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                         Empresa
@@ -1940,14 +1940,9 @@ export default function CTe() {
                   <tbody className="divide-y divide-gray-200 bg-white">
                     {filteredDocumentos?.map((documento) => (
                       <tr key={documento.id}>
-                        <td className="px-3 py-4 text-sm">
-                          <div>
-                            <div className="font-mono font-medium text-gray-900">
-                              {documento.numero_cte.padStart(9, '0')}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              Série: {documento.serie} • UF: {getUFFromCode(documento.codigo_uf)} • Forma: {documento.forma_emissao === 1 ? 'Normal' : 'Contingência'}
-                            </div>
+                        <td className="px-2 py-4 text-sm">
+                          <div className="font-mono font-medium text-gray-900">
+                            {documento.numero_cte.padStart(9, '0')}
                           </div>
                         </td>
                         <td className="px-3 py-4 text-sm text-gray-500">
