@@ -68,85 +68,29 @@ export default function NovoCtEAuto() {
   // Função para consultar NFE no webservice
   const consultarNFE = async (chave: string) => {
     try {
-      console.log('🔍 Consultando NF-e diretamente no webservice:', chave)
+      console.log('🔍 Consultando NF-e via servidor:', chave)
       
-      const token = '44B4845C-05F4-7E99-2DFF-8EAE5746E9BA'
-      const url = `https://www.roveri.inf.br/consultas/nfe.php?token=${token}&chave=${chave}`
-      
-      console.log('📡 URL da consulta:', url)
-
-      // Fazer requisição direta ao webservice
-      const response = await fetch(url, {
-        method: 'GET',
-        mode: 'no-cors', // Tentar sem CORS primeiro
-        headers: {
-          'Accept': 'application/json, text/plain, */*'
-        }
-      }).catch(async (corsError) => {
-        console.log('❌ Erro CORS, tentando com proxy...', corsError)
-        // Se falhar por CORS, tentar através de um proxy CORS público
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
-        console.log('📡 Tentando via proxy:', proxyUrl)
-        return fetch(proxyUrl, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          }
-        })
+      const response = await fetch('/api/consultar-nfe', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({ chaveNFE: chave })
       })
 
       if (!response.ok) {
-        throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`)
+        const errorText = await response.text()
+        console.error('❌ Erro na resposta:', response.status, errorText)
+        throw new Error(`Erro na consulta da NF-e: ${response.status}`)
       }
 
-      const responseText = await response.text()
-      console.log('📄 Resposta do webservice:', responseText)
-
-      // Verificar se a resposta veio do proxy CORS
-      let actualResponseText = responseText
-      try {
-        const proxyResponse = JSON.parse(responseText)
-        if (proxyResponse.contents) {
-          // Resposta veio do proxy allorigins
-          actualResponseText = proxyResponse.contents
-          console.log('📄 Resposta extraída do proxy:', actualResponseText)
-        }
-      } catch (e) {
-        // Se não for JSON do proxy, usar a resposta original
-      }
-
-      // Verificar se é um erro
-      if (actualResponseText.includes('Chave inválida') || actualResponseText.includes('erro') || actualResponseText.includes('error')) {
-        throw new Error(`Erro do webservice: ${actualResponseText}`)
-      }
-
-      // Tentar fazer parse como JSON
-      let nfeData
-      try {
-        nfeData = JSON.parse(actualResponseText)
-        console.log('✅ Dados JSON recebidos:', nfeData)
-        return nfeData
-      } catch (jsonError) {
-        // Se não for JSON, assumir que é uma mensagem de erro em texto
-        if (actualResponseText.trim()) {
-          throw new Error(`Resposta do webservice: ${actualResponseText}`)
-        } else {
-          throw new Error('Resposta vazia do webservice')
-        }
-      }
+      const result = await response.json()
+      console.log('✅ Resposta recebida do servidor:', result)
+      
+      return result
     } catch (error) {
-      console.error('❌ Erro completo ao consultar NF-e:', {
-        message: error?.message || 'Erro desconhecido',
-        name: error?.name || 'N/A',
-        stack: error?.stack || 'N/A',
-        error: error
-      })
-      
-      // Verificar se é erro de CORS específico
-      if (error?.name === 'TypeError' && error?.message?.includes('fetch')) {
-        throw new Error('Erro de CORS: O webservice não permite requisições diretas do navegador. Contate o administrador para configurar o servidor intermediário.')
-      }
-      
+      console.error('❌ Erro ao consultar NF-e:', error)
       throw error
     }
   }
