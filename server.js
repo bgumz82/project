@@ -300,21 +300,78 @@ app.post('/api/consultar-nfe', authenticateToken, async (req, res) => {
       throw new Error('Resposta vazia do webservice');
     }
 
+    // A resposta do webservice vem dentro do campo 'return'
+    const responseData = result.return || result;
+    console.log('📄 Dados da resposta:', responseData);
+
+    // Verificar se é uma mensagem de erro
+    if (typeof responseData === 'string' && responseData.includes('<mensagem>')) {
+      const mensagem = responseData.match(/<mensagem>(.*?)<\/mensagem>/);
+      if (mensagem) {
+        throw new Error(`Erro do webservice: ${mensagem[1]}`);
+      }
+    }
+
     // Verificar se houve erro na resposta
-    if (result.erro || result.error) {
-      console.error('❌ Erro reportado pelo webservice:', result.erro || result.error);
-      throw new Error(result.erro || result.error || 'Erro na consulta da NF-e');
+    if (responseData.erro || responseData.error) {
+      console.error('❌ Erro reportado pelo webservice:', responseData.erro || responseData.error);
+      throw new Error(responseData.erro || responseData.error || 'Erro na consulta da NF-e');
     }
 
     // Verificar se o webservice retornou dados válidos
-    if (result.status === 'error' || result.success === false) {
-      console.error('❌ Status de erro no webservice:', result);
-      throw new Error(result.message || 'Webservice retornou status de erro');
+    if (responseData.status === 'error' || responseData.success === false) {
+      console.error('❌ Status de erro no webservice:', responseData);
+      throw new Error(responseData.message || 'Webservice retornou status de erro');
     }
 
     // Parse do XML da NF-e se necessário
-    let nfeData = result;
-    if (typeof result.xml === 'string') {
+    let nfeData = responseData;
+    if (typeof responseData === 'string' && responseData.includes('<?xml')) {
+      // Se responseData é uma string XML, fazer o parse
+      const parser = new xml2js.Parser({ explicitArray: false });
+      const parsed = await parser.parseStringPromise(responseData);
+      
+      // Extrair dados principais da NF-e
+      const infNFe = parsed?.nfeProc?.NFe?.infNFe || parsed?.NFe?.infNFe;
+      
+      if (infNFe) {
+        nfeData = {
+          remetente: {
+            razao_social: infNFe.emit?.xNome || '',
+            cnpj: infNFe.emit?.CNPJ || '',
+            endereco: `${infNFe.emit?.enderEmit?.xLgr || ''}, ${infNFe.emit?.enderEmit?.nro || ''}`,
+            cidade: infNFe.emit?.enderEmit?.xMun || '',
+            estado: infNFe.emit?.enderEmit?.UF || '',
+            cep: infNFe.emit?.enderEmit?.CEP || ''
+          },
+          destinatario: {
+            razao_social: infNFe.dest?.xNome || '',
+            cnpj: infNFe.dest?.CNPJ || '',
+            endereco: `${infNFe.dest?.enderDest?.xLgr || ''}, ${infNFe.dest?.enderDest?.nro || ''}`,
+            cidade: infNFe.dest?.enderDest?.xMun || '',
+            estado: infNFe.dest?.enderDest?.UF || '',
+            cep: infNFe.dest?.enderDest?.CEP || ''
+          },
+          produto: {
+            descricao: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.xProd : infNFe.det?.prod?.xProd || '',
+            codigo_ncm: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.NCM : infNFe.det?.prod?.NCM || '',
+            valor_total: parseFloat(infNFe.total?.ICMSTot?.vNF || 0),
+            peso_total: parseFloat(infNFe.total?.ICMSTot?.vPeso || 0),
+            quantidade_total: Array.isArray(infNFe.det) ? 
+              infNFe.det.reduce((acc, item) => acc + parseFloat(item.prod?.qCom || 0), 0) :
+              parseFloat(infNFe.det?.prod?.qCom || 0)
+          },
+          transporte: {
+            valor_frete: parseFloat(infNFe.total?.ICMSTot?.vFrete || 0),
+            modal_transporte: infNFe.transp?.modFrete || '1'
+          },
+          numero_nfe: infNFe.ide?.nNF || '',
+          serie: infNFe.ide?.serie || '',
+          data_emissao: infNFe.ide?.dhEmi || infNFe.ide?.dEmi || '',
+          chave_acesso: chaveNFE
+        };
+      }
+    } else if (typeof responseData === 'object' && responseData.xml) {
       const parser = new xml2js.Parser({ explicitArray: false });
       const parsed = await parser.parseStringPromise(result.xml);
       
