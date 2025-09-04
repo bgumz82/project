@@ -15,6 +15,37 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: true,
     proxy: {
+      "/api/consultar-nfe": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+        secure: false,
+        timeout: 30000,
+        configure: (proxy, options) => {
+          proxy.on("error", (err, req, res) => {
+            console.log("Erro no proxy NF-e:", err.message);
+            // Fallback para fazer requisição direta ao webservice externo
+            if (req.method === 'POST' && req.url === '/api/consultar-nfe') {
+              const chaveNFE = req.body?.chaveNFE;
+              if (chaveNFE) {
+                const token = '44B4845C-05F4-7E99-2DFF-8EAE5746E9BA';
+                const url = `https://www.roveri.inf.br/consultas/nfe.php?token=${token}&chave=${chaveNFE}`;
+                
+                // Fazer requisição direta
+                fetch(url)
+                  .then(response => response.text())
+                  .then(data => {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: true, data }));
+                  })
+                  .catch(fetchError => {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Erro ao consultar NF-e', details: fetchError.message }));
+                  });
+              }
+            }
+          });
+        },
+      },
       "/api": {
         target: "https://sistema.systemtruck.com.br",
         changeOrigin: true,

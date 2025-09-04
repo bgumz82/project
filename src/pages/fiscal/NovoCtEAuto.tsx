@@ -68,28 +68,48 @@ export default function NovoCtEAuto() {
   // Função para consultar NFE no webservice
   const consultarNFE = async (chave: string) => {
     try {
-      console.log('🔍 Consultando NF-e no frontend:', chave)
+      console.log('🔍 Consultando NF-e diretamente no webservice:', chave)
       
-      const response = await fetch('/api/consultar-nfe', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
-        body: JSON.stringify({ chaveNFE: chave })
+      const token = '44B4845C-05F4-7E99-2DFF-8EAE5746E9BA'
+      const url = `https://www.roveri.inf.br/consultas/nfe.php?token=${token}&chave=${chave}`
+      
+      console.log('📡 URL da consulta:', url)
+
+      // Fazer requisição direta ao webservice
+      const response = await fetch(url, {
+        method: 'GET',
+        mode: 'cors',
+        headers: {
+          'Accept': 'application/json, text/plain, */*'
+        }
       })
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('❌ Erro na resposta:', response.status, errorText)
-        throw new Error(`Erro na consulta da NF-e: ${response.status}`)
+        throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`)
       }
 
-      const result = await response.json()
-      console.log('✅ Resposta recebida no frontend:', result)
-      
-      // O servidor retorna os dados diretamente, não em result.data
-      return result
+      const responseText = await response.text()
+      console.log('📄 Resposta do webservice:', responseText)
+
+      // Verificar se é um erro
+      if (responseText.includes('Chave inválida') || responseText.includes('erro') || responseText.includes('error')) {
+        throw new Error(`Erro do webservice: ${responseText}`)
+      }
+
+      // Tentar fazer parse como JSON
+      let nfeData
+      try {
+        nfeData = JSON.parse(responseText)
+        console.log('✅ Dados JSON recebidos:', nfeData)
+        return nfeData
+      } catch (jsonError) {
+        // Se não for JSON, assumir que é uma mensagem de erro em texto
+        if (responseText.trim()) {
+          throw new Error(`Resposta do webservice: ${responseText}`)
+        } else {
+          throw new Error('Resposta vazia do webservice')
+        }
+      }
     } catch (error) {
       console.error('Erro ao consultar NF-e:', error)
       throw error
