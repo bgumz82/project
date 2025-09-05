@@ -460,6 +460,12 @@ export default function NovoCtEAuto() {
     }
 
     console.log('📝 Criando CT-e com mapeamento completo:', cteData)
+    console.log('🔍 Dados NF-e específicos being enviados:', {
+      remetente_cnpj: nfeData.remetente.cnpj,
+      destinatario_cnpj: nfeData.destinatario.cnpj,
+      remetente_razao: nfeData.remetente.razao_social,
+      destinatario_razao: nfeData.destinatario.razao_social
+    })
 
     setIsSubmitting(true)
     createCTeMutation.mutate(cteData)

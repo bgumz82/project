@@ -1953,6 +1953,15 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
   try {
     const data = req.body;
     console.log('📝 Recebendo dados para criar CT-e:', data);
+    
+    // LOG ESPECIAL PARA DADOS DA NFE
+    console.log('🔍 Dados específicos da NF-e recebidos:', {
+      nfe_remetente_cnpj: data.nfe_remetente_cnpj,
+      nfe_remetente_razao_social: data.nfe_remetente_razao_social,
+      nfe_destinatario_cnpj: data.nfe_destinatario_cnpj,
+      nfe_destinatario_razao_social: data.nfe_destinatario_razao_social,
+      temDadosNfe: !!(data.nfe_remetente_cnpj || data.nfe_destinatario_cnpj)
+    });
 
     // Obter pool correto para o usuário
     const userPool = await getUserDatabasePool(req.user.id);
@@ -1996,6 +2005,16 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
       console.log('UF final:', codigoUFFinal);
 
       // ==== MAPEAMENTO AUTOMÁTICO DE PARTICIPANTES E PRODUTOS ====
+      
+      console.log('🔍 Dados recebidos para mapeamento:', {
+        nfe_remetente_cnpj: data.nfe_remetente_cnpj,
+        nfe_remetente_razao_social: data.nfe_remetente_razao_social,
+        nfe_destinatario_cnpj: data.nfe_destinatario_cnpj,
+        nfe_destinatario_razao_social: data.nfe_destinatario_razao_social,
+        tomador_id: data.tomador_id,
+        remetente_id: data.remetente_id,
+        destinatario_id: data.destinatario_id
+      });
       
       let tomadorIdFinal = data.tomador_id;
       let remetenteIdFinal = data.remetente_id;
@@ -2127,6 +2146,15 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
         destinatario: destinatarioIdFinal,
         produto_predominante: produtoPredominanteIdFinal
       });
+
+      // VALIDAÇÃO FINAL - Verificar se algum participante foi criado/encontrado
+      if (!tomadorIdFinal && !remetenteIdFinal && !destinatarioIdFinal) {
+        console.log('⚠️ NENHUM PARTICIPANTE FOI MAPEADO - Isso pode ser um problema!');
+        console.log('Dados NFe recebidos:', {
+          remetente_cnpj: data.nfe_remetente_cnpj,
+          destinatario_cnpj: data.nfe_destinatario_cnpj
+        });
+      }
 
       // Inserir documento CT-e
       const result = await client.query(`
