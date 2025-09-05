@@ -292,20 +292,110 @@ export default function NovoCtEAuto() {
       return
     }
 
-    // Mapear dados da NF-e para o CT-e
+    // ==== VALIDAÇÕES E MAPEAMENTO AUTOMÁTICO ====
+    
+    // 1. CFOP - Determinar baseado no estado origem/destino
+    const estadoOrigem = nfeData.remetente.estado
+    const estadoDestino = nfeData.destinatario.estado
+    const cfop = estadoOrigem === estadoDestino ? '5352' : '6352' // Mesmo estado = 5352, estados diferentes = 6352
+    
+    // 2. INÍCIO E TÉRMINO DA PRESTAÇÃO - Baseado nos endereços da NF-e
+    const cidade_inicio_nome = nfeData.remetente.cidade
+    const uf_inicio = nfeData.remetente.estado
+    const cidade_termino_nome = nfeData.destinatario.cidade
+    const uf_termino = nfeData.destinatario.estado
+    
+    // 3. TOMADOR - Por padrão é o destinatário da NF-e (quem recebe a mercadoria)
+    const tomador_id = null // Será mapeado pelo backend baseado no CNPJ do destinatário
+    
+    // 4. REMETENTE E DESTINATÁRIO - Usar os mesmos da NF-e
+    const remetente_id = null // Será mapeado pelo backend baseado no CNPJ do remetente
+    const destinatario_id = null // Será mapeado pelo backend baseado no CNPJ do destinatário
+    
+    // 5. SERVIÇOS E IMPOSTOS - Valor do frete baseado na carga
+    const valor_carga = nfeData.produto.valor_total
+    const quantidade_carga = nfeData.produto.quantidade_total
+    
+    // Calcular frete como percentual da carga (3% padrão para combustível)
+    const percentual_frete = 0.03 // 3% do valor da carga
+    const valor_prestacao = Math.round(valor_carga * percentual_frete * 100) / 100
+    const valor_receber = valor_prestacao
+    
+    // ICMS - Alíquota padrão para transporte
+    const icms_aliquota = estadoOrigem === estadoDestino ? 12.00 : 12.00 // 12% padrão
+    const icms_bc_valor = valor_prestacao
+    const icms_valor = Math.round(icms_bc_valor * (icms_aliquota / 100) * 100) / 100
+    const icms_situacao_tributaria = '00' // Tributado integralmente
+    
+    // 6. DADOS FISCAIS - Produto predominante baseado na NF-e
+    const produto_predominante_id = null // Será criado automaticamente baseado no NCM da NF-e
+    
+    // 7. OBSERVAÇÕES AUTOMÁTICAS
+    const placas = []
+    if (associacao.veiculo_principal?.placa) placas.push(associacao.veiculo_principal.placa)
+    if (associacao.veiculo_reboque1?.placa) placas.push(associacao.veiculo_reboque1.placa)
+    if (associacao.veiculo_reboque2?.placa) placas.push(associacao.veiculo_reboque2.placa)
+    if (associacao.veiculo_implemento?.placa) placas.push(associacao.veiculo_implemento.placa)
+    
+    const placasTexto = placas.length > 0 ? `Placas: ${placas.join(', ')}.` : ''
+    
+    // Extrair Doc. Transporte das observações da NF-e
+    let docTransporte = ''
+    if (nfeData.observacoes) {
+      const match = nfeData.observacoes.match(/Doc\.?\s*Transporte:\s*(\d+)/i)
+      if (match) {
+        docTransporte = `Doc. Transporte: ${match[1]}.`
+      }
+    }
+    
+    const observacoes = [
+      `Referente à NF-e ${nfeData.numero_nfe}/${nfeData.serie}`,
+      docTransporte,
+      placasTexto,
+      'Transporte de combustível/derivados de petróleo.'
+    ].filter(obs => obs.trim() !== '').join(' ')
+
+    // Mapear dados completos da NF-e para o CT-e
     const cteData = {
       empresa_id: empresaSelecionada,
-      data_emissao: new Date().toISOString().split('T')[0], // Data atual
+      data_emissao: new Date().toISOString().split('T')[0],
       chave_acesso_1: chaveNFE,
-      numero_cte: 'AUTO', // Deixar o servidor gerar automaticamente
+      numero_cte: 'AUTO',
       serie: empresa.serie_padrao_cte || '001',
-      codigo_uf: empresa.codigo_uf || '35', // Usar código UF da empresa
+      codigo_uf: empresa.codigo_uf || '35',
       status: 'pendente' as const,
-      // Dados básicos para o CT-e
-      tipo_servico: '0', // Normal
-      finalidade_cte: '0', // Normal
-      cfop: '5352', // Prestação de serviços de transporte
-      // Dados da associação/motorista
+      
+      // REGRAS CFOP E PRESTAÇÃO
+      cfop,
+      cidade_inicio_nome,
+      uf_inicio,
+      cidade_termino_nome,
+      uf_termino,
+      
+      // PARTICIPANTES
+      tomador_id,
+      remetente_id,
+      destinatario_id,
+      
+      // SERVIÇOS E IMPOSTOS
+      valor_prestacao,
+      valor_receber,
+      valor_tributos: icms_valor,
+      icms_situacao_tributaria,
+      icms_bc_valor,
+      icms_aliquota,
+      icms_valor,
+      
+      // DADOS FISCAIS
+      valor_carga,
+      quantidade_carga,
+      produto_predominante_id,
+      
+      // DADOS BÁSICOS
+      tipo_servico: '0',
+      finalidade_cte: '0',
+      
+      // TRANSPORTE
       associacao_frota_id: associacaoSelecionada,
       motorista_nome: associacao.funcionario?.nome || null,
       motorista_cnh: associacao.funcionario?.cnh || null,
@@ -313,14 +403,18 @@ export default function NovoCtEAuto() {
       motorista_validade_cnh: associacao.funcionario?.validade_cnh ? new Date(associacao.funcionario.validade_cnh).toISOString().split('T')[0] : null,
       placa_veiculo: associacao.veiculo_principal?.placa || null,
       placa_reboque: associacao.veiculo_reboque1?.placa || associacao.veiculo_reboque2?.placa || associacao.veiculo_implemento?.placa || null,
-      // Dados do produto/carga da NF-e
-      valor_carga: nfeData.produto.valor_total,
-      quantidade_carga: nfeData.produto.quantidade_total,
-      // Observações da NF-e
-      observacoes: nfeData.observacoes ? `Referente à NF-e ${nfeData.numero_nfe}/${nfeData.serie}. ${nfeData.observacoes}` : `Referente à NF-e ${nfeData.numero_nfe}/${nfeData.serie}`
+      
+      // OBSERVAÇÕES
+      observacoes,
+      
+      // DADOS ADICIONAIS DA NFE PARA MAPEAMENTO NO BACKEND
+      nfe_remetente_cnpj: nfeData.remetente.cnpj,
+      nfe_destinatario_cnpj: nfeData.destinatario.cnpj,
+      nfe_produto_ncm: nfeData.produto.codigo_ncm,
+      nfe_produto_descricao: nfeData.produto.descricao
     }
 
-    console.log('📝 Criando novo documento CT-e:', cteData)
+    console.log('📝 Criando CT-e com mapeamento completo:', cteData)
 
     setIsSubmitting(true)
     createCTeMutation.mutate(cteData)

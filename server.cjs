@@ -1995,6 +1995,88 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
       const codigoUFFinal = data.codigo_uf || empresa.codigo_uf || '35';
       console.log('UF final:', codigoUFFinal);
 
+      // ==== MAPEAMENTO AUTOMÁTICO DE PARTICIPANTES E PRODUTOS ====
+      
+      let tomadorIdFinal = data.tomador_id;
+      let remetenteIdFinal = data.remetente_id;
+      let destinatarioIdFinal = data.destinatario_id;
+      let produtoPredominanteIdFinal = data.produto_predominante_id;
+
+      // 1. MAPEAR REMETENTE pelo CNPJ da NF-e
+      if (data.nfe_remetente_cnpj && !remetenteIdFinal) {
+        console.log('🔍 Buscando remetente por CNPJ:', data.nfe_remetente_cnpj);
+        
+        const remetenteResult = await client.query(
+          'SELECT id FROM cadastros WHERE cnpj = $1 AND tipo = $2 AND ativo = true LIMIT 1',
+          [data.nfe_remetente_cnpj, 'cliente']
+        );
+        
+        if (remetenteResult.rows.length > 0) {
+          remetenteIdFinal = remetenteResult.rows[0].id;
+          console.log('✅ Remetente encontrado:', remetenteIdFinal);
+        } else {
+          console.log('⚠️ Remetente não encontrado para CNPJ:', data.nfe_remetente_cnpj);
+        }
+      }
+
+      // 2. MAPEAR DESTINATÁRIO pelo CNPJ da NF-e
+      if (data.nfe_destinatario_cnpj && !destinatarioIdFinal) {
+        console.log('🔍 Buscando destinatário por CNPJ:', data.nfe_destinatario_cnpj);
+        
+        const destinatarioResult = await client.query(
+          'SELECT id FROM cadastros WHERE cnpj = $1 AND tipo = $2 AND ativo = true LIMIT 1',
+          [data.nfe_destinatario_cnpj, 'cliente']
+        );
+        
+        if (destinatarioResult.rows.length > 0) {
+          destinatarioIdFinal = destinatarioResult.rows[0].id;
+          console.log('✅ Destinatário encontrado:', destinatarioIdFinal);
+        } else {
+          console.log('⚠️ Destinatário não encontrado para CNPJ:', data.nfe_destinatario_cnpj);
+        }
+      }
+
+      // 3. TOMADOR = DESTINATÁRIO (padrão para frete CIF)
+      if (!tomadorIdFinal && destinatarioIdFinal) {
+        tomadorIdFinal = destinatarioIdFinal;
+        console.log('✅ Tomador definido como destinatário:', tomadorIdFinal);
+      }
+
+      // 4. MAPEAR/CRIAR PRODUTO PREDOMINANTE pelo NCM da NF-e
+      if (data.nfe_produto_ncm && !produtoPredominanteIdFinal) {
+        console.log('🔍 Buscando produto por NCM:', data.nfe_produto_ncm);
+        
+        const produtoResult = await client.query(
+          'SELECT id FROM produtos WHERE codigo_ncm = $1 LIMIT 1',
+          [data.nfe_produto_ncm]
+        );
+        
+        if (produtoResult.rows.length > 0) {
+          produtoPredominanteIdFinal = produtoResult.rows[0].id;
+          console.log('✅ Produto predominante encontrado:', produtoPredominanteIdFinal);
+        } else if (data.nfe_produto_descricao) {
+          // Criar produto automaticamente se não existir
+          console.log('📝 Criando produto automaticamente:', data.nfe_produto_descricao);
+          
+          const novoProdutoResult = await client.query(`
+            INSERT INTO produtos (descricao, codigo_ncm, unidade, ativo, created_at, updated_at)
+            VALUES ($1, $2, 'L', true, NOW(), NOW())
+            RETURNING id
+          `, [data.nfe_produto_descricao, data.nfe_produto_ncm]);
+          
+          if (novoProdutoResult.rows.length > 0) {
+            produtoPredominanteIdFinal = novoProdutoResult.rows[0].id;
+            console.log('✅ Produto criado automaticamente:', produtoPredominanteIdFinal);
+          }
+        }
+      }
+
+      console.log('📋 Participantes mapeados:', {
+        tomador: tomadorIdFinal,
+        remetente: remetenteIdFinal,
+        destinatario: destinatarioIdFinal,
+        produto_predominante: produtoPredominanteIdFinal
+      });
 
       // Inserir documento CT-e
       const result = await client.query(`
@@ -2060,10 +2142,10 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
         codigoUFFinal,
         data.status || 'pendente',
         data.observacoes || null,
-        data.tomador_id || null,
-        data.remetente_id || null,
+        tomadorIdFinal || null,
+        remetenteIdFinal || null,
         data.recebedor_id || null,
-        data.destinatario_id || null,
+        destinatarioIdFinal || null,
         data.valor_prestacao || null,
         data.valor_receber || null,
         data.valor_tributos || null,
@@ -2075,7 +2157,7 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
         data.icms_valor || null,
         data.valor_carga || null,
         data.quantidade_carga || null,
-        data.produto_predominante_id || null,
+        produtoPredominanteIdFinal || null,
         data.chave_acesso_1 || null,
         data.chave_acesso_2 || null,
         data.chave_acesso_3 || null,
