@@ -297,7 +297,27 @@ export default function NovoCtEAuto() {
       empresa_id: empresaSelecionada,
       data_emissao: new Date().toISOString().split('T')[0], // Data atual
       chave_acesso_1: chaveNFE,
-      // ... outros campos mapeados automaticamente
+      numero_cte: 'AUTO', // Deixar o servidor gerar automaticamente
+      serie: empresa.serie_padrao_cte || '001',
+      codigo_uf: empresa.codigo_uf || '35', // Usar código UF da empresa
+      status: 'pendente' as const,
+      // Dados básicos para o CT-e
+      tipo_servico: '0', // Normal
+      finalidade_cte: '0', // Normal
+      cfop: '5352', // Prestação de serviços de transporte
+      // Dados da associação/motorista
+      associacao_frota_id: associacaoSelecionada,
+      motorista_nome: associacao.funcionario?.nome || null,
+      motorista_cnh: associacao.funcionario?.cnh || null,
+      motorista_matricula: associacao.funcionario?.matricula || null,
+      motorista_validade_cnh: associacao.funcionario?.validade_cnh ? new Date(associacao.funcionario.validade_cnh).toISOString().split('T')[0] : null,
+      placa_veiculo: associacao.veiculo_principal?.placa || null,
+      placa_reboque: associacao.veiculo_reboque1?.placa || associacao.veiculo_reboque2?.placa || associacao.veiculo_implemento?.placa || null,
+      // Dados do produto/carga da NF-e
+      valor_carga: nfeData.produto.valor_total,
+      quantidade_carga: nfeData.produto.quantidade_total,
+      // Observações da NF-e
+      observacoes: nfeData.observacoes ? `Referente à NF-e ${nfeData.numero_nfe}/${nfeData.serie}. ${nfeData.observacoes}` : `Referente à NF-e ${nfeData.numero_nfe}/${nfeData.serie}`
     }
 
     console.log('📝 Criando novo documento CT-e:', cteData)
