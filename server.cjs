@@ -1970,8 +1970,8 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
     try {
       // Validar empresa
       const empresaResult = await client.query(
-        'SELECT * FROM empresas_fiscais WHERE id = $1 AND status = $2',
-        [data.empresa_id, 'ativo']
+        'SELECT * FROM empresas_fiscais WHERE id = $1 AND ativo = $2',
+        [data.empresa_id, true]
       );
 
       if (empresaResult.rows.length === 0) {
