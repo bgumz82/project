@@ -18,6 +18,7 @@ interface NFEData {
   remetente: {
     razao_social: string
     cnpj: string
+    ie: string
     endereco: string
     cidade: string
     estado: string
@@ -26,6 +27,7 @@ interface NFEData {
   destinatario: {
     razao_social: string
     cnpj: string
+    ie: string
     endereco: string
     cidade: string
     estado: string
@@ -167,7 +169,7 @@ export default function NovoCtEAuto() {
       `, [
         dadosCliente.razao_social,
         dadosCliente.cnpj,
-        null, // ie
+        dadosCliente.ie || null, // ie da NF-e
         dadosCliente.endereco,
         dadosCliente.cidade,
         dadosCliente.estado,

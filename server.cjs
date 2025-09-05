@@ -147,6 +147,7 @@ app.post('/api/consultar-nfe', async (req, res) => {
             remetente: {
               razao_social: infNFe.emit?.xNome || '',
               cnpj: infNFe.emit?.CNPJ || '',
+              ie: infNFe.emit?.IE || '',
               endereco: `${infNFe.emit?.enderEmit?.xLgr || ''}, ${infNFe.emit?.enderEmit?.nro || ''}`,
               cidade: infNFe.emit?.enderEmit?.xMun || '',
               estado: infNFe.emit?.enderEmit?.UF || '',
@@ -155,6 +156,7 @@ app.post('/api/consultar-nfe', async (req, res) => {
             destinatario: {
               razao_social: infNFe.dest?.xNome || '',
               cnpj: infNFe.dest?.CNPJ || '',
+              ie: infNFe.dest?.IE || '',
               endereco: `${infNFe.dest?.enderDest?.xLgr || ''}, ${infNFe.dest?.enderDest?.nro || ''}`,
               cidade: infNFe.dest?.enderDest?.xMun || '',
               estado: infNFe.dest?.enderDest?.UF || '',
