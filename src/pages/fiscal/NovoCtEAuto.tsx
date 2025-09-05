@@ -10,9 +10,10 @@ import {
 } from '@heroicons/react/24/outline'
 import { toast } from 'react-hot-toast'
 import { getAssociacoesFrota } from '@/lib/api/fleet-associations'
-import { validarChaveAcesso, createCTeDocumento } from '@/lib/api/fiscal'
+import { validarChaveAcesso, createCTeDocumento, getEmpresasFiscais } from '@/lib/api/fiscal'
 import { query } from '@/lib/db'
 import type { AssociacaoFrota } from '@/lib/api/fleet-associations'
+import type { EmpresaFiscal } from '@/lib/api/fiscal'
 
 interface NFEData {
   remetente: {
@@ -57,6 +58,7 @@ export default function NovoCtEAuto() {
   
   const [chaveNFE, setChaveNFE] = useState('')
   const [chaveValida, setChaveValida] = useState<boolean | null>(null)
+  const [empresaSelecionada, setEmpresaSelecionada] = useState<string>('')
   const [associacaoSelecionada, setAssociacaoSelecionada] = useState<string>('')
   const [nfeData, setNfeData] = useState<NFEData | null>(null)
   const [consultandoNFE, setConsultandoNFE] = useState(false)
@@ -90,6 +92,13 @@ export default function NovoCtEAuto() {
     
     return `${primeiroNome} - ${placaUltimoReboque}`
   }
+
+  // Buscar empresas fiscais
+  const { data: empresasFiscais } = useQuery({
+    queryKey: ['empresas-fiscais'],
+    queryFn: getEmpresasFiscais,
+    staleTime: 1000 * 60 * 5
+  })
 
   // Buscar associações (motorista/reboque)
   const { data: associacoes } = useQuery({
@@ -266,8 +275,8 @@ export default function NovoCtEAuto() {
   }
 
   const handleCriarCTE = () => {
-    if (!nfeData || !associacaoSelecionada) {
-      toast.error('Consulte a NF-e e selecione o motorista/reboque')
+    if (!nfeData || !associacaoSelecionada || !empresaSelecionada) {
+      toast.error('Consulte a NF-e, selecione a empresa emitente e o motorista/reboque')
       return
     }
 
@@ -277,12 +286,21 @@ export default function NovoCtEAuto() {
       return
     }
 
+    const empresa = empresasFiscais?.find(e => e.id === empresaSelecionada)
+    if (!empresa) {
+      toast.error('Empresa fiscal não encontrada')
+      return
+    }
+
     // Mapear dados da NF-e para o CT-e
     const cteData = {
-      // Será implementado no próximo passo
+      empresa_id: empresaSelecionada,
+      data_emissao: new Date().toISOString().split('T')[0], // Data atual
       chave_acesso_1: chaveNFE,
       // ... outros campos mapeados automaticamente
     }
+
+    console.log('📝 Criando novo documento CT-e:', cteData)
 
     setIsSubmitting(true)
     createCTeMutation.mutate(cteData)
@@ -350,6 +368,28 @@ export default function NovoCtEAuto() {
               <MagnifyingGlassIcon className="h-4 w-4 mr-2" />
               {consultandoNFE ? 'Consultando...' : 'Consultar NF-e'}
             </button>
+
+            {/* Seleção de Empresa Emitente */}
+            {nfeData && (
+              <div>
+                <label htmlFor="empresa" className="block text-sm font-medium text-gray-700 mb-2">
+                  Empresa Emitente *
+                </label>
+                <select
+                  id="empresa"
+                  value={empresaSelecionada}
+                  onChange={(e) => setEmpresaSelecionada(e.target.value)}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                >
+                  <option value="">Selecione a empresa...</option>
+                  {empresasFiscais?.map((empresa) => (
+                    <option key={empresa.id} value={empresa.id}>
+                      {empresa.razao_social}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Seleção de Motorista/Reboque */}
             {nfeData && (
