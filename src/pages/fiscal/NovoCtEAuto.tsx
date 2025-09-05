@@ -11,6 +11,7 @@ import {
 import { toast } from 'react-hot-toast'
 import { getAssociacoesFrota } from '@/lib/api/fleet-associations'
 import { validarChaveAcesso, createCTeDocumento } from '@/lib/api/fiscal'
+import { query } from '@/lib/db'
 import type { AssociacaoFrota } from '@/lib/api/fleet-associations'
 
 interface NFEData {
@@ -125,25 +126,27 @@ export default function NovoCtEAuto() {
     }
   }
 
-  // Função para verificar se cliente existe por CNPJ
+  // Função para verificar se cliente existe por CNPJ (usando banco remoto)
   const verificarCliente = async (cnpj: string) => {
     try {
-      const response = await fetch(`/api/verificar-cliente/${cnpj}`)
-      const result = await response.json()
+      console.log('🔍 Verificando cliente no banco remoto:', cnpj)
       
-      if (response.ok) {
-        return result.exists
-      } else {
-        console.error('Erro ao verificar cliente:', result.error)
-        return false
-      }
+      const result = await query(`
+        SELECT id FROM cadastros 
+        WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
+        LIMIT 1
+      `, [cnpj])
+      
+      const existe = result.length > 0
+      console.log('✅ Cliente existe no banco remoto:', existe)
+      return existe
     } catch (error) {
-      console.error('Erro ao verificar cliente:', error)
+      console.error('❌ Erro ao verificar cliente no banco remoto:', error)
       return false
     }
   }
 
-  // Função para cadastrar cliente automaticamente
+  // Função para cadastrar cliente automaticamente (usando banco remoto)
   const cadastrarClienteNFE = async (tipo: 'remetente' | 'destinatario') => {
     if (!nfeData) return
     
@@ -152,28 +155,39 @@ export default function NovoCtEAuto() {
     try {
       const dadosCliente = tipo === 'remetente' ? nfeData.remetente : nfeData.destinatario
       
-      const response = await fetch('/api/cadastrar-cliente-nfe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dadosCliente })
-      })
+      console.log('📝 Cadastrando cliente no banco remoto:', dadosCliente)
       
-      const result = await response.json()
+      // Inserir no banco remoto usando query
+      await query(`
+        INSERT INTO cadastros (
+          id, tipo, razao_social, cnpj, endereco, cidade, estado, cep, emails, ativo, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), 'cliente', $1, $2, $3, $4, $5, $6, $7::text[], true, NOW(), NOW()
+        )
+      `, [
+        dadosCliente.razao_social,
+        dadosCliente.cnpj,
+        dadosCliente.endereco,
+        dadosCliente.cidade,
+        dadosCliente.estado,
+        dadosCliente.cep,
+        '{}' // emails vazios
+      ])
       
-      if (response.ok) {
-        toast.success(`${tipo === 'remetente' ? 'Remetente' : 'Destinatário'} cadastrado com sucesso!`)
-        
-        // Atualizar status
-        if (tipo === 'remetente') {
-          setRemetenteExiste(true)
-        } else {
-          setDestinatarioExiste(true)
-        }
+      toast.success(`${tipo === 'remetente' ? 'Remetente' : 'Destinatário'} cadastrado com sucesso!`)
+      
+      // Atualizar status
+      if (tipo === 'remetente') {
+        setRemetenteExiste(true)
       } else {
-        toast.error(result.error || 'Erro ao cadastrar cliente')
+        setDestinatarioExiste(true)
       }
+      
+      // Invalidar cache dos cadastros para recarregar lista atualizada
+      queryClient.invalidateQueries({ queryKey: ['cadastros'] })
+      
     } catch (error) {
-      console.error('Erro ao cadastrar cliente:', error)
+      console.error('❌ Erro ao cadastrar cliente no banco remoto:', error)
       toast.error('Erro ao cadastrar cliente')
     } finally {
       setCadastrandoCliente(null)
