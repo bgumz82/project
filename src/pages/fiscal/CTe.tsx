@@ -1686,12 +1686,76 @@ export default function CTe() {
 
   const handleEdit = (documento: CTeDocumento) => {
     console.log('✅ RNTRC carregado para edição:', documento.rntrc)
+    console.log('📝 Dados do documento para edição:', documento)
+    
     setSelectedDocumento(documento); // Define o documento selecionado para edição
 
     // Preenche os campos de busca de cidade para exibição
     setCidadeInicioNome(documento.cidade_inicio_nome || '');
     setCidadeTerminoNome(documento.cidade_termino_nome || '');
 
+    // Preenche TODOS os dados do formulário com os dados do documento
+    setFormData({
+      empresa_id: documento.empresa_id || '',
+      numero_cte: documento.numero_cte || '',
+      serie: documento.serie || '',
+      data_emissao: documento.data_emissao ? new Date(documento.data_emissao).toISOString().split('T')[0] : '',
+      codigo_uf: documento.codigo_uf || '',
+      status: documento.status || 'pendente',
+      observacoes: documento.observacoes || '',
+      // PARTICIPANTES - DADOS PRINCIPAIS
+      tomador_id: documento.tomador_id || '',
+      remetente_id: documento.remetente_id || '',
+      recebedor_id: documento.recebedor_id || '',
+      destinatario_id: documento.destinatario_id || '',
+      // VALORES FINANCEIROS
+      valor_prestacao: documento.valor_prestacao || '',
+      valor_receber: documento.valor_receber || '',
+      valor_tributos: documento.valor_tributos || '',
+      valor_pedagio: documento.valor_pedagio || '',
+      valor_outros: documento.valor_outros || '',
+      // DADOS FISCAIS
+      cfop: documento.cfop || '',
+      finalidade_cte: documento.finalidade_cte || '',
+      tipo_servico: documento.tipo_servico || '',
+      icms_situacao_tributaria: documento.icms_situacao_tributaria || '',
+      icms_bc_valor: documento.icms_bc_valor || '',
+      icms_aliquota: documento.icms_aliquota || '',
+      icms_valor: documento.icms_valor || '',
+      // DADOS DA CARGA
+      valor_carga: documento.valor_carga || '',
+      quantidade_carga: documento.quantidade_carga || '',
+      produto_predominante_id: documento.produto_predominante_id || '',
+      // CHAVES DE ACESSO NF-e
+      chave_acesso_1: documento.chave_acesso_1 || '',
+      chave_acesso_2: documento.chave_acesso_2 || '',
+      chave_acesso_3: documento.chave_acesso_3 || '',
+      chave_acesso_4: documento.chave_acesso_4 || '',
+    });
+
+    // Preenche os campos de endereço se existirem
+    if (documento.cidade_inicio_codigo) {
+      setSelectedInicio({
+        codigo: documento.cidade_inicio_codigo,
+        nome: documento.cidade_inicio_nome || '',
+        uf: documento.cidade_inicio_uf || ''
+      });
+    }
+
+    if (documento.cidade_termino_codigo) {
+      setSelectedTermino({
+        codigo: documento.cidade_termino_codigo,
+        nome: documento.cidade_termino_nome || '',
+        uf: documento.cidade_termino_uf || ''
+      });
+    }
+
+    // Preenche dados do motorista/associação se existirem
+    if (documento.associacao_frota_id) {
+      setSelectedMotoristaId(documento.associacao_frota_id);
+    }
+
+    console.log('✅ Formulário preenchido com dados do documento');
     setIsModalOpen(true);
   };
 

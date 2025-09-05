@@ -294,10 +294,20 @@ export default function NovoCtEAuto() {
 
     // ==== VALIDAÇÕES E MAPEAMENTO AUTOMÁTICO ====
     
-    // 1. CFOP - Determinar baseado no estado origem/destino
+    // 1. CFOP - Regras específicas para empresa emitente MG
     const estadoOrigem = nfeData.remetente.estado
     const estadoDestino = nfeData.destinatario.estado
-    const cfop = estadoOrigem === estadoDestino ? '5352' : '6352' // Mesmo estado = 5352, estados diferentes = 6352
+    
+    let cfop = '6352' // Padrão
+    if (estadoOrigem === 'GO' && estadoDestino === 'GO') {
+      cfop = '5932' // GO→GO
+    } else if (estadoOrigem === 'GO' && estadoDestino === 'MG') {
+      cfop = '6932' // GO→MG
+    } else if (estadoOrigem === 'MG' && estadoDestino === 'GO') {
+      cfop = '6352' // MG→GO
+    } else if (estadoOrigem === 'MG' && estadoDestino === 'MG') {
+      cfop = '5352' // MG→MG
+    }
     
     // 2. INÍCIO E TÉRMINO DA PRESTAÇÃO - Baseado nos endereços da NF-e
     const cidade_inicio_nome = nfeData.remetente.cidade
@@ -318,14 +328,37 @@ export default function NovoCtEAuto() {
     
     // Calcular frete como percentual da carga (3% padrão para combustível)
     const percentual_frete = 0.03 // 3% do valor da carga
-    const valor_prestacao = Math.round(valor_carga * percentual_frete * 100) / 100
+    const frete_base = Math.round(valor_carga * percentual_frete * 100) / 100
+    
+    // PEDÁGIO E SEGURO - Regras do CT-e Rápido
+    const valor_pedagio = Math.round(frete_base * 0.15 * 100) / 100 // 15% do frete base
+    const valor_seguro = Math.round(valor_carga * 0.001 * 100) / 100 // 0.1% do valor da carga
+    const valor_outros = valor_seguro // Seguro vai em "outros"
+    
+    // VALOR TOTAL DA PRESTAÇÃO = frete base + pedágio
+    const valor_prestacao = Math.round((frete_base + valor_pedagio) * 100) / 100
     const valor_receber = valor_prestacao
     
-    // ICMS - Alíquota padrão para transporte
-    const icms_aliquota = estadoOrigem === estadoDestino ? 12.00 : 12.00 // 12% padrão
-    const icms_bc_valor = valor_prestacao
-    const icms_valor = Math.round(icms_bc_valor * (icms_aliquota / 100) * 100) / 100
-    const icms_situacao_tributaria = '00' // Tributado integralmente
+    // ICMS - Regras específicas para empresa emitente MG
+    let icms_aliquota = 0
+    let icms_situacao_tributaria = '40' // Isenção
+    
+    if (estadoOrigem === 'GO' && estadoDestino === 'GO') {
+      icms_aliquota = 0 // Isenção
+      icms_situacao_tributaria = '40'
+    } else if (estadoOrigem === 'GO' && estadoDestino === 'MG') {
+      icms_aliquota = 12.00 // 12%
+      icms_situacao_tributaria = '00'
+    } else if (estadoOrigem === 'MG' && estadoDestino === 'GO') {
+      icms_aliquota = 7.00 // 7%
+      icms_situacao_tributaria = '00'
+    } else if (estadoOrigem === 'MG' && estadoDestino === 'MG') {
+      icms_aliquota = 0 // Isenção
+      icms_situacao_tributaria = '40'
+    }
+    
+    const icms_bc_valor = icms_aliquota > 0 ? valor_prestacao : 0
+    const icms_valor = icms_aliquota > 0 ? Math.round(icms_bc_valor * (icms_aliquota / 100) * 100) / 100 : 0
     
     // 6. DADOS FISCAIS - Produto predominante baseado na NF-e
     const produto_predominante_id = null // Será criado automaticamente baseado no NCM da NF-e
@@ -349,10 +382,8 @@ export default function NovoCtEAuto() {
     }
     
     const observacoes = [
-      `Referente à NF-e ${nfeData.numero_nfe}/${nfeData.serie}`,
       docTransporte,
-      placasTexto,
-      'Transporte de combustível/derivados de petróleo.'
+      placasTexto
     ].filter(obs => obs.trim() !== '').join(' ')
 
     // Mapear dados completos da NF-e para o CT-e
@@ -381,6 +412,8 @@ export default function NovoCtEAuto() {
       valor_prestacao,
       valor_receber,
       valor_tributos: icms_valor,
+      valor_pedagio,
+      valor_outros,
       icms_situacao_tributaria,
       icms_bc_valor,
       icms_aliquota,
