@@ -157,20 +157,22 @@ export default function NovoCtEAuto() {
       
       console.log('📝 Cadastrando cliente no banco remoto:', dadosCliente)
       
-      // Inserir no banco remoto usando query
+      // Inserir no banco remoto usando query com todos os campos obrigatórios
       await query(`
         INSERT INTO cadastros (
-          id, tipo, razao_social, cnpj, endereco, cidade, estado, cep, emails, ativo, created_at, updated_at
+          id, tipo, razao_social, cnpj, ie, endereco, cidade, estado, cep, telefone, emails, ativo, created_at, updated_at
         ) VALUES (
-          gen_random_uuid(), 'cliente', $1, $2, $3, $4, $5, $6, $7::text[], true, NOW(), NOW()
+          gen_random_uuid(), 'cliente', $1, $2, $3, $4, $5, $6, $7, $8, $9::text[], true, NOW(), NOW()
         )
       `, [
         dadosCliente.razao_social,
         dadosCliente.cnpj,
+        null, // ie
         dadosCliente.endereco,
         dadosCliente.cidade,
         dadosCliente.estado,
         dadosCliente.cep,
+        null, // telefone
         '{}' // emails vazios
       ])
       
