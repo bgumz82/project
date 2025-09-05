@@ -164,7 +164,7 @@ export default function NovoCtEAuto() {
         INSERT INTO cadastros (
           id, tipo, razao_social, cnpj, ie, endereco, cidade, estado, cep, telefone, emails, ativo, created_at, updated_at
         ) VALUES (
-          gen_random_uuid(), 'cliente', $1, $2, $3, $4, $5, $6, $7, $8, $9::text[], true, NOW(), NOW()
+          gen_random_uuid(), 'cliente', $1, $2, $3, $4, $5, $6, $7, $8, $9, true, NOW(), NOW()
         )
       `, [
         dadosCliente.razao_social,
@@ -175,7 +175,7 @@ export default function NovoCtEAuto() {
         dadosCliente.estado,
         dadosCliente.cep,
         null, // telefone
-        '{}' // emails vazios
+        null // emails como null
       ])
       
       toast.success(`${tipo === 'remetente' ? 'Remetente' : 'Destinatário'} cadastrado com sucesso!`)
