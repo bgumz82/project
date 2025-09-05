@@ -442,7 +442,19 @@ export default function NovoCtEAuto() {
       
       // DADOS ADICIONAIS DA NFE PARA MAPEAMENTO NO BACKEND
       nfe_remetente_cnpj: nfeData.remetente.cnpj,
+      nfe_remetente_razao_social: nfeData.remetente.razao_social,
+      nfe_remetente_ie: nfeData.remetente.ie,
+      nfe_remetente_endereco: nfeData.remetente.endereco,
+      nfe_remetente_cidade: nfeData.remetente.cidade,
+      nfe_remetente_estado: nfeData.remetente.estado,
+      nfe_remetente_cep: nfeData.remetente.cep,
       nfe_destinatario_cnpj: nfeData.destinatario.cnpj,
+      nfe_destinatario_razao_social: nfeData.destinatario.razao_social,
+      nfe_destinatario_ie: nfeData.destinatario.ie,
+      nfe_destinatario_endereco: nfeData.destinatario.endereco,
+      nfe_destinatario_cidade: nfeData.destinatario.cidade,
+      nfe_destinatario_estado: nfeData.destinatario.estado,
+      nfe_destinatario_cep: nfeData.destinatario.cep,
       nfe_produto_ncm: nfeData.produto.codigo_ncm,
       nfe_produto_descricao: nfeData.produto.descricao
     }

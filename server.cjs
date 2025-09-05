@@ -2015,7 +2015,32 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
           remetenteIdFinal = remetenteResult.rows[0].id;
           console.log('✅ Remetente encontrado:', remetenteIdFinal);
         } else {
-          console.log('⚠️ Remetente não encontrado para CNPJ:', data.nfe_remetente_cnpj);
+          // Criar remetente automaticamente se não existir
+          console.log('📝 Criando remetente automaticamente para CNPJ:', data.nfe_remetente_cnpj);
+          
+          const novoRemetenteResult = await client.query(`
+            INSERT INTO cadastros (
+              id, tipo, razao_social, cnpj, ie, endereco, cidade, estado, cep, telefone, emails, ativo, created_at, updated_at
+            ) VALUES (
+              gen_random_uuid(), 'cliente', $1, $2, $3, $4, $5, $6, $7, $8, $9, true, NOW(), NOW()
+            )
+            RETURNING id
+          `, [
+            data.nfe_remetente_razao_social || 'Cliente NFe',
+            data.nfe_remetente_cnpj,
+            data.nfe_remetente_ie || null,
+            data.nfe_remetente_endereco || null,
+            data.nfe_remetente_cidade || null,
+            data.nfe_remetente_estado || null,
+            data.nfe_remetente_cep || null,
+            null, // telefone
+            null  // emails
+          ]);
+          
+          if (novoRemetenteResult.rows.length > 0) {
+            remetenteIdFinal = novoRemetenteResult.rows[0].id;
+            console.log('✅ Remetente criado automaticamente:', remetenteIdFinal);
+          }
         }
       }
 
@@ -2032,7 +2057,32 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
           destinatarioIdFinal = destinatarioResult.rows[0].id;
           console.log('✅ Destinatário encontrado:', destinatarioIdFinal);
         } else {
-          console.log('⚠️ Destinatário não encontrado para CNPJ:', data.nfe_destinatario_cnpj);
+          // Criar destinatário automaticamente se não existir
+          console.log('📝 Criando destinatário automaticamente para CNPJ:', data.nfe_destinatario_cnpj);
+          
+          const novoDestinatarioResult = await client.query(`
+            INSERT INTO cadastros (
+              id, tipo, razao_social, cnpj, ie, endereco, cidade, estado, cep, telefone, emails, ativo, created_at, updated_at
+            ) VALUES (
+              gen_random_uuid(), 'cliente', $1, $2, $3, $4, $5, $6, $7, $8, $9, true, NOW(), NOW()
+            )
+            RETURNING id
+          `, [
+            data.nfe_destinatario_razao_social || 'Cliente NFe',
+            data.nfe_destinatario_cnpj,
+            data.nfe_destinatario_ie || null,
+            data.nfe_destinatario_endereco || null,
+            data.nfe_destinatario_cidade || null,
+            data.nfe_destinatario_estado || null,
+            data.nfe_destinatario_cep || null,
+            null, // telefone
+            null  // emails
+          ]);
+          
+          if (novoDestinatarioResult.rows.length > 0) {
+            destinatarioIdFinal = novoDestinatarioResult.rows[0].id;
+            console.log('✅ Destinatário criado automaticamente:', destinatarioIdFinal);
+          }
         }
       }
 
