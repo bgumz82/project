@@ -1970,19 +1970,20 @@ app.post('/api/cte-documentos', (req, res, next) => {
       temDadosNfe: !!(data.nfe_remetente_cnpj || data.nfe_destinatario_cnpj)
     });
 
-    // Usar pool principal (sistema multi-tenant não configurado ainda)
+    console.log(`🔍 [${requestId}] Iniciando validação da empresa...`);
+    
+    // Validar empresa usando o mesmo pool que funciona na interface
+    const empresaResult = await pool.query(
+      'SELECT * FROM empresas_fiscais WHERE id = $1',
+      [data.empresa_id]
+    );
+    
+    console.log(`📋 [${requestId}] Resultado da query empresa:`, empresaResult.rows.length, 'registros');
+    
+    // Obter client apenas depois da validação
     const client = await pool.connect();
 
     try {
-      console.log(`🔍 [${requestId}] Iniciando validação da empresa...`);
-      
-      // Validar empresa
-      const empresaResult = await client.query(
-        'SELECT * FROM empresas_fiscais WHERE id = $1',
-        [data.empresa_id]
-      );
-      
-      console.log(`📋 [${requestId}] Resultado da query empresa:`, empresaResult.rows.length, 'registros');
 
       if (empresaResult.rows.length === 0) {
         return res.status(400).json({ error: 'Empresa fiscal não encontrada' });
