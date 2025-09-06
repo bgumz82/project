@@ -2150,6 +2150,14 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
         produto_predominante: produtoPredominanteIdFinal
       });
 
+      // LOG EXTRA PARA DEBUG
+      console.log('🔍 DEBUG - Valores que serão inseridos no banco:');
+      console.log('  empresa_id:', data.empresa_id);
+      console.log('  numeroFinal:', numeroFinal, 'tipo:', typeof numeroFinal);
+      console.log('  tomadorIdFinal:', tomadorIdFinal, 'tipo:', typeof tomadorIdFinal);
+      console.log('  remetenteIdFinal:', remetenteIdFinal, 'tipo:', typeof remetenteIdFinal);
+      console.log('  destinatarioIdFinal:', destinatarioIdFinal, 'tipo:', typeof destinatarioIdFinal);
+
       // VALIDAÇÃO FINAL - Verificar se algum participante foi criado/encontrado
       if (!tomadorIdFinal && !remetenteIdFinal && !destinatarioIdFinal) {
         console.log('⚠️ NENHUM PARTICIPANTE FOI MAPEADO - Isso pode ser um problema!');
@@ -2263,6 +2271,16 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
       ]);
 
       console.log('✅ Documento CT-e criado com sucesso:', result.rows[0].id);
+      
+      // LOG CRÍTICO - Ver o que foi REALMENTE salvo no banco
+      console.log('🔍 VALORES SALVOS NO BANCO:');
+      console.log('  ID:', result.rows[0].id);
+      console.log('  Número CT-e:', result.rows[0].numero_cte);
+      console.log('  Tomador ID salvo:', result.rows[0].tomador_id);
+      console.log('  Remetente ID salvo:', result.rows[0].remetente_id);
+      console.log('  Destinatário ID salvo:', result.rows[0].destinatario_id);
+      console.log('  Produto ID salvo:', result.rows[0].produto_predominante_id);
+      
       res.status(201).json(result.rows[0]);
 
     } finally {
