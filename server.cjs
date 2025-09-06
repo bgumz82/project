@@ -1949,7 +1949,12 @@ app.post('/api/db/query-main', authenticateToken, async (req, res) => {
 });
 
 // Rota específica para CT-e documentos
-app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
+app.post('/api/cte-documentos', (req, res, next) => {
+  console.log('🔥 REQUISIÇÃO CHEGOU NA ROTA /api/cte-documentos');
+  console.log('🔥 Headers:', req.headers);
+  console.log('🔥 Body preview:', JSON.stringify(req.body, null, 2).substring(0, 500));
+  next();
+}, authenticateToken, async (req, res) => {
   try {
     const data = req.body;
     console.log('🚨 === INÍCIO CRIAÇÃO CT-e ===');
