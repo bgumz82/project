@@ -1977,17 +1977,23 @@ app.post('/api/cte-documentos', (req, res, next) => {
       
       // Validar empresa
       const empresaResult = await client.query(
-        'SELECT * FROM empresas_fiscais WHERE id = $1 AND status = $2',
-        [data.empresa_id, 'ativo']
+        'SELECT * FROM empresas_fiscais WHERE id = $1',
+        [data.empresa_id]
       );
       
       console.log('📋 Resultado da query empresa:', empresaResult.rows.length, 'registros');
 
       if (empresaResult.rows.length === 0) {
-        return res.status(400).json({ error: 'Empresa fiscal não encontrada ou inativa' });
+        return res.status(400).json({ error: 'Empresa fiscal não encontrada' });
       }
 
       const empresa = empresaResult.rows[0];
+      console.log('🏢 Status da empresa:', empresa.status);
+      
+      if (empresa.status !== 'ativo') {
+        return res.status(400).json({ error: 'Empresa fiscal não está ativa' });
+      }
+
       console.log('🏢 Empresa validada:', empresa.razao_social);
 
       // Obter próximo número se não fornecido
