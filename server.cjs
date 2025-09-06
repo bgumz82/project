@@ -1048,6 +1048,7 @@ async function createTables(client) {
           ambiente_cte varchar(10) DEFAULT '1' CHECK (ambiente_cte IN ('1', '2')),
           numero_ult_nfce integer DEFAULT 0,
           numero_ult_cte integer DEFAULT 0,
+          proximo_numero_cte integer DEFAULT 1,
           serie_padrao_nfce varchar(3) DEFAULT '1',
           serie_padrao_cte varchar(3) DEFAULT '1',
           status varchar(20) DEFAULT 'ativo' CHECK (status IN ('ativo', 'inativo', 'suspenso')),
@@ -1077,7 +1078,7 @@ async function createTables(client) {
           valor_carga decimal(12,2),
           quantidade_carga integer,
           observacoes text,
-          tomador_id uuid,
+          tomador_id varchar(20),
           remetente_id uuid,
           recebedor_id uuid,
           destinatario_id uuid,
@@ -2007,16 +2008,34 @@ app.post('/api/cte-documentos', (req, res, next) => {
       // Obter próximo número se não fornecido
       let numeroFinal = data.numero_cte;
       if (!numeroFinal || numeroFinal === 'AUTO') {
-        // Buscar último número da empresa
-        const ultimoNumeroResult = await client.query(`
-          SELECT COALESCE(MAX(CAST(numero_cte AS INTEGER)), 0) + 1 as proximo_numero
-          FROM cte_documentos 
-          WHERE empresa_id = $1 
-          AND numero_cte ~ '^[0-9]+$'
+        // Buscar o próximo número usando o campo proximo_numero_cte da empresa
+        const empresaNumeroResult = await client.query(`
+          SELECT proximo_numero_cte FROM empresas_fiscais WHERE id = $1
         `, [data.empresa_id]);
 
-        numeroFinal = ultimoNumeroResult.rows[0].proximo_numero;
-        console.log('📋 Próximo número CT-e:', numeroFinal);
+        if (empresaNumeroResult.rows.length > 0) {
+          numeroFinal = empresaNumeroResult.rows[0].proximo_numero_cte || 1;
+          
+          // Incrementar o contador na empresa após usar
+          await client.query(`
+            UPDATE empresas_fiscais 
+            SET proximo_numero_cte = proximo_numero_cte + 1 
+            WHERE id = $1
+          `, [data.empresa_id]);
+          
+          console.log('📋 Próximo número CT-e da empresa:', numeroFinal);
+        } else {
+          // Fallback: buscar último número da tabela
+          const ultimoNumeroResult = await client.query(`
+            SELECT COALESCE(MAX(CAST(numero_cte AS INTEGER)), 0) + 1 as proximo_numero
+            FROM cte_documentos 
+            WHERE empresa_id = $1 
+            AND numero_cte ~ '^[0-9]+$'
+          `, [data.empresa_id]);
+
+          numeroFinal = ultimoNumeroResult.rows[0].proximo_numero;
+          console.log('📋 Próximo número CT-e (fallback):', numeroFinal);
+        }
       } else {
         // Converter número fornecido para integer
         numeroFinal = parseInt(numeroFinal, 10);
@@ -2149,13 +2168,9 @@ app.post('/api/cte-documentos', (req, res, next) => {
             const tomadorFrete = freteResult.rows[0].tomador_frete;
             console.log('📋 Tomador definido no frete:', tomadorFrete);
 
-            if (tomadorFrete === 'remetente') {
-              tomadorIdFinal = remetenteIdFinal;
-              console.log('✅ Tomador definido como remetente (baseado no frete):', tomadorIdFinal);
-            } else {
-              tomadorIdFinal = destinatarioIdFinal;
-              console.log('✅ Tomador definido como destinatário (baseado no frete):', tomadorIdFinal);
-            }
+            // Salvar o valor literal, não o UUID
+            tomadorIdFinal = tomadorFrete; // "remetente" ou "destinatario"
+            console.log('✅ Tomador definido como valor literal (baseado no frete):', tomadorIdFinal);
           } else {
             // ABORTAR se não encontrar frete cadastrado
             console.error('❌ Frete não encontrado - abortar criação do CT-e');
@@ -2195,10 +2210,10 @@ app.post('/api/cte-documentos', (req, res, next) => {
           console.log('📝 Criando produto automaticamente:', data.nfe_produto_descricao);
 
           const novoProdutoResult = await client.query(`
-            INSERT INTO cte_produtos (cte_documento_id, sequencia, ncm_produto, descricao_produto, created_at, updated_at)
-            VALUES ($1, 1, $2, $3, NOW(), NOW())
+            INSERT INTO cte_produtos (sequencia, cod_ncm, descricao_produto)
+            VALUES (1, $1, $2)
             RETURNING id
-          `, [null, data.nfe_produto_ncm, data.nfe_produto_descricao]); // cte_documento_id is null here
+          `, [data.nfe_produto_ncm, data.nfe_produto_descricao]);
 
           if (novoProdutoResult.rows.length > 0) {
             produtoPredominanteIdFinal = novoProdutoResult.rows[0].id;
