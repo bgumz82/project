@@ -1969,9 +1969,8 @@ app.post('/api/cte-documentos', (req, res, next) => {
       temDadosNfe: !!(data.nfe_remetente_cnpj || data.nfe_destinatario_cnpj)
     });
 
-    // Obter pool correto para o usuário
-    const userPool = await getUserDatabasePool(req.user.id);
-    const client = await userPool.connect();
+    // Usar pool principal (sistema multi-tenant não configurado ainda)
+    const client = await pool.connect();
 
     try {
       // Validar empresa
