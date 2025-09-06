@@ -2165,7 +2165,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
               remetente_razao: data.nfe_remetente_razao_social,
               destinatario_razao: data.nfe_destinatario_razao_social
             });
-            
+
             return res.status(400).json({ 
               error: `Frete não cadastrado. É necessário cadastrar o frete para a rota: ${data.nfe_remetente_razao_social || 'Remetente'} → ${data.nfe_destinatario_razao_social || 'Destinatário'}. Acesse o módulo de Controle de Frete para cadastrar esta rota antes de criar o CT-e.`
             });
@@ -2218,7 +2218,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
       console.log('🔍 DEBUG - Valores que serão inseridos no banco:');
       console.log('  empresa_id:', data.empresa_id);
       console.log('  numeroFinal:', numeroFinal, 'tipo:', typeof numeroFinal);
-      console.log('  tomadorIdFinal:', tomadorIdFinal, 'tipo:', typeof tomadorIdFinal);
+      console.log('  tomadorIdFinal:', tomadorIdFinal, 'tipo:', typeof tomadorIdFinal, '(deve ser "remetente" ou "destinatario")');
       console.log('  remetenteIdFinal:', remetenteIdFinal, 'tipo:', typeof remetenteIdFinal);
       console.log('  destinatarioIdFinal:', destinatarioIdFinal, 'tipo:', typeof destinatarioIdFinal);
 
