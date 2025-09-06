@@ -201,6 +201,9 @@ export default function CTe() {
   const [rapidoShowInicioResults, setRapidoShowInicioResults] = useState(false)
   const [rapidoShowTerminoResults, setRapidoShowTerminoResults] = useState(false)
 
+  // Estado para desabilitar botão de submit durante a submissão do formulário rápido
+  const [isSubmittingRapido, setIsSubmittingRapido] = useState(false)
+
 
   // Função para validar chave de acesso em tempo real
   const validateChaveAcesso = (value: string, fieldName: string) => {
@@ -1187,21 +1190,25 @@ export default function CTe() {
 
   const handleSubmitRapido = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setIsSubmittingRapido(true) // Inicia o estado de submissão
 
     try {
       // Validações básicas
       if (!formRapido.empresa_id) {
         toast.error('Selecione a empresa emitente')
+        setIsSubmittingRapido(false)
         return
       }
 
       if (!formRapido.associacao_frota_id) {
         toast.error('Selecione o motorista e veículo')
+        setIsSubmittingRapido(false)
         return
       }
 
       if (!formRapido.produto_id) {
         toast.error('Selecione o produto')
+        setIsSubmittingRapido(false)
         return
       }
 
@@ -1209,12 +1216,14 @@ export default function CTe() {
       const chaveNFeLimpa = formRapido.chave_nfe.replace(/\s/g, '') // Remove todos os espaços
       if (!chaveNFeLimpa || chaveNFeLimpa.length !== 44) {
         toast.error('Informe uma chave de NF-e válida (44 dígitos). Chave atual tem ' + chaveNFeLimpa.length + ' dígitos.')
+        setIsSubmittingRapido(false)
         return
       }
 
       // Validar se chave contém apenas números
       if (!/^\d+$/.test(chaveNFeLimpa)) {
         toast.error('A chave de NF-e deve conter apenas números')
+        setIsSubmittingRapido(false)
         return
       }
 
@@ -1226,31 +1235,37 @@ export default function CTe() {
       if (!cnpjRemetenteChave) {
         console.error('❌ Falha ao extrair CNPJ da chave NF-e')
         toast.error('Não foi possível extrair o CNPJ do remetente da chave NF-e')
+        setIsSubmittingRapido(false)
         return
       }
 
       if (!formRapido.cnpj_destinatario) {
         toast.error('Informe o CNPJ do destinatário')
+        setIsSubmittingRapido(false)
         return
       }
 
       if (!formRapido.valor_nota || parseFloat(formRapido.valor_nota) <= 0) {
         toast.error('Informe um valor válido da nota fiscal')
+        setIsSubmittingRapido(false)
         return
       }
 
       if (!formRapido.quantidade || parseFloat(formRapido.quantidade) <= 0) {
-        toast.error('Informe uma quantidade válida')
+        toast.toast.error('Informe uma quantidade válida')
+        setIsSubmittingRapido(false)
         return
       }
 
       if (!rapidoSelectedInicio) {
         toast.error('Selecione a cidade de início')
+        setIsSubmittingRapido(false)
         return
       }
 
       if (!rapidoSelectedTermino) {
         toast.error('Selecione a cidade de término')
+        setIsSubmittingRapido(false)
         return
       }
 
@@ -1261,6 +1276,7 @@ export default function CTe() {
       if (!remetente) {
         console.error('❌ Remetente não encontrado para CNPJ:', cnpjRemetenteChave)
         toast.error(`Remetente não encontrado com CNPJ ${cnpjRemetenteChave} (extraído da chave NF-e). Cadastre o cliente primeiro.`)
+        setIsSubmittingRapido(false)
         return
       }
 
@@ -1273,6 +1289,7 @@ export default function CTe() {
       if (!destinatario) {
         console.error('❌ Destinatário não encontrado para CNPJ:', formRapido.cnpj_destinatario)
         toast.error('Destinatário não encontrado com este CNPJ. Cadastre o cliente primeiro.')
+        setIsSubmittingRapido(false)
         return
       }
 
@@ -1282,6 +1299,7 @@ export default function CTe() {
       const associacao = associacoesFrota?.find(a => a.id === formRapido.associacao_frota_id)
       if (!associacao) {
         toast.error('Associação de frota não encontrada')
+        setIsSubmittingRapido(false)
         return
       }
 
@@ -1289,6 +1307,7 @@ export default function CTe() {
       const empresaSelecionada = empresas?.find(e => e.id === formRapido.empresa_id)
       if (!empresaSelecionada) {
         toast.error('Empresa selecionada não encontrada')
+        setIsSubmittingRapido(false)
         return
       }
 
@@ -1318,12 +1337,16 @@ export default function CTe() {
         rapidoSelectedTermino.codigo
       )
 
+      // Verificar se frete foi encontrado - obrigatório para criar CT-e
       if (!informacoesFrete) {
-        toast.error('Frete não encontrado no cadastro. É necessário cadastrar o frete antes de criar o CT-e.')
+        console.error('❌ Frete não encontrado - abortar criação do CT-e')
+        toast.error('Não foi possível criar o CT-e. Frete não está cadastrado para esta origem/destino e tipo de reboque.')
+        setIsSubmittingRapido(false)
         return
       }
 
       console.log('📋 Informações do frete encontradas:', informacoesFrete)
+      console.log('👤 Tomador definido no frete:', informacoesFrete.tomador_frete)
 
       // Calcular valor base do frete
       let valorBaseFrete = informacoesFrete.valor_frete
@@ -1549,6 +1572,8 @@ export default function CTe() {
     } catch (error) {
       console.error('Erro ao criar CT-e rápido:', error)
       toast.error(error instanceof Error ? error.message : 'Erro ao criar CT-e rápido')
+    } finally {
+      setIsSubmittingRapido(false) // Finaliza o estado de submissão
     }
   }
 
@@ -1687,7 +1712,7 @@ export default function CTe() {
   const handleEdit = (documento: CTeDocumento) => {
     console.log('✅ RNTRC carregado para edição:', documento.rntrc)
     console.log('📝 Dados do documento para edição:', documento)
-    
+
     setSelectedDocumento(documento); // Define o documento selecionado para edição
 
     // Preenche os campos de busca de cidade para exibição
@@ -1780,7 +1805,7 @@ export default function CTe() {
       emitido: 'Emitido',
       cancelado: 'Cancelado'
     }
-    
+
     const confirmed = confirm(`Tem certeza que deseja alterar o status para "${statusLabels[newStatus]}"?`)
     if (confirmed) {
       statusUpdateMutation.mutate({ id, status: newStatus })
@@ -1792,13 +1817,13 @@ export default function CTe() {
     try {
       // Verifica se o documento já tem XML gerado
       const documento = documentos?.find(d => d.id === id)
-      
+
       if (documento?.xml_gerado) {
         // Se já tem XML gerado, altera status para pendente antes de gerar novamente
         await updateCTeDocumento(id, { status: 'pendente' })
         console.log('📝 Status alterado para pendente - regenerando arquivos para documento:', id)
       }
-      
+
       // Chama a função para gerar os arquivos
       await generateCTeFiles(id)
       // Invalida a query para atualizar a lista de documentos com os novos status
@@ -2128,7 +2153,7 @@ export default function CTe() {
                             >
                               <PencilIcon className="h-5 w-5" />
                             </button>
-                            
+
                             {/* Status Change Buttons */}
                             <div className="flex items-center gap-1 ml-2 border-l pl-2">
                               {documento.status === 'rascunho' && (
@@ -2159,7 +2184,7 @@ export default function CTe() {
                                 </button>
                               )}
                             </div>
-                            
+
                             <button
                               onClick={() => handleDelete(documento.id)}
                               className="text-red-600 hover:text-red-900 ml-2"
@@ -3831,10 +3856,10 @@ export default function CTe() {
                 </button>
                 <button
                   type="submit"
-                  disabled={createMutation.isPending}
+                  disabled={isSubmittingRapido}
                   className="inline-flex justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700 disabled:opacity-50"
                 >
-                  {createMutation.isPending ? (
+                  {isSubmittingRapido ? (
                     <>
                       <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

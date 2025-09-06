@@ -143,10 +143,10 @@ app.post('/api/consultar-nfe', async (req, res) => {
         console.log('📄 Resposta em formato XML, fazendo parse...');
         const parser = new xml2js.Parser({ explicitArray: false });
         const parsed = await parser.parseStringPromise(responseText);
-        
+
         // Extrair dados principais da NF-e
         const infNFe = parsed?.nfeProc?.NFe?.infNFe || parsed?.NFe?.infNFe;
-        
+
         if (infNFe) {
           nfeData = {
             remetente: {
@@ -208,7 +208,7 @@ app.post('/api/consultar-nfe', async (req, res) => {
 app.get('/cadastros-publico', async (req, res) => {
   try {
     console.log('🔍 Buscando todos os cadastros no banco local');
-    
+
     const result = await pool.query(`
       SELECT 
         id,
@@ -229,14 +229,14 @@ app.get('/cadastros-publico', async (req, res) => {
       WHERE ativo = true
       ORDER BY razao_social
     `);
-    
+
     console.log('✅ Cadastros encontrados no banco local:', result.rows.length);
-    
+
     const cadastros = result.rows.map(cadastro => ({
       ...cadastro,
       emails: Array.isArray(cadastro.emails) ? cadastro.emails : []
     }));
-    
+
     res.json(cadastros);
   } catch (error) {
     console.error('❌ Erro ao buscar cadastros:', error);
@@ -251,11 +251,11 @@ app.get('/cadastros-publico', async (req, res) => {
 app.get('/api/verificar-cliente/:cnpj', async (req, res) => {
   try {
     const { cnpj } = req.params;
-    
+
     if (!cnpj) {
       return res.status(400).json({ error: 'CNPJ é obrigatório' });
     }
-    
+
     const result = await pool.query(`
       SELECT 
         id,
@@ -269,7 +269,7 @@ app.get('/api/verificar-cliente/:cnpj', async (req, res) => {
       FROM cadastros 
       WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
     `, [cnpj]);
-    
+
     if (result.rows.length > 0) {
       console.log('✅ Cliente encontrado:', result.rows[0].razao_social);
       res.json({ exists: true, cliente: result.rows[0] });
@@ -290,20 +290,20 @@ app.get('/api/verificar-cliente/:cnpj', async (req, res) => {
 app.post('/api/cadastrar-cliente-nfe', async (req, res) => {
   try {
     const { dadosCliente } = req.body;
-    
+
     if (!dadosCliente || !dadosCliente.razao_social || !dadosCliente.cnpj) {
       return res.status(400).json({ error: 'Dados do cliente são obrigatórios' });
     }
-    
+
     // Verificar se já existe
     const existingResult = await pool.query(`
       SELECT id FROM cadastros WHERE cnpj = $1
     `, [dadosCliente.cnpj]);
-    
+
     if (existingResult.rows.length > 0) {
       return res.status(400).json({ error: 'Cliente já cadastrado no sistema' });
     }
-    
+
     // Preparar dados para inserção
     const insertData = [
       'cliente',
@@ -316,7 +316,7 @@ app.post('/api/cadastrar-cliente-nfe', async (req, res) => {
       JSON.stringify([]), // Array vazio para emails
       true
     ];
-    
+
     console.log('📝 SQL INSERT que será executado:');
     console.log(`INSERT INTO cadastros (
       tipo,
@@ -332,7 +332,7 @@ app.post('/api/cadastrar-cliente-nfe', async (req, res) => {
       updated_at
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())`);
     console.log('📊 Dados do INSERT:', insertData);
-    
+
     // Cadastrar novo cliente
     const result = await pool.query(`
       INSERT INTO cadastros (
@@ -350,7 +350,7 @@ app.post('/api/cadastrar-cliente-nfe', async (req, res) => {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
       RETURNING *
     `, insertData);
-    
+
     if (result.rows.length > 0) {
       console.log('✅ Cliente cadastrado automaticamente:', result.rows[0].razao_social);
       res.json({ 
@@ -1571,9 +1571,9 @@ async function createIndexes(client) {
     'CREATE INDEX IF NOT EXISTS idx_cte_outros_valores_cte_documento_id ON cte_outros_valores(cte_documento_id)',
     'CREATE INDEX IF NOT EXISTS idx_cte_componentes_redespacho_cte_documento_id ON cte_componentes_redespacho(cte_documento_id)',
     'CREATE INDEX IF NOT EXISTS idx_cte_remetente_cte_documento_id ON cte_remetente(cte_documento_id)',
-    'CREATE INDEX IF NOT EXISTS idx_cte_recebedor_cte_documento_id ON cte_recebedor(cte_documento_id)',
-    'CREATE INDEX IF NOT EXISTS idx_cte_destinatario_cte_documento_id ON cte_destinatario(cte_documento_id)',
-    'CREATE INDEX IF NOT EXISTS idx_cte_tomador_cte_documento_id ON cte_tomador(cte_documento_id)'
+    'CREATE INDEX IF NOT EXISTS idx_cte_recebedor_cte_documento_id ON cte_recebedor(cte_recebedor_id)',
+    'CREATE INDEX IF NOT EXISTS idx_cte_destinatario_cte_documento_id ON cte_destinatario(cte_destinatario_id)',
+    'CREATE INDEX IF NOT EXISTS idx_cte_tomador_cte_documento_id ON cte_tomador(cte_tomador_id)'
   ];
 
   for (const indexQuery of indexes) {
@@ -1620,10 +1620,10 @@ async function createFunctionsAndTriggers(client) {
           (user_id_param, 'usuarios', true, true, true, true),
           (user_id_param, 'permissoes', true, true, true, true),
           (user_id_param, 'configuracoes_banco', true, true, true, true),
-          (user_id_param, 'financeiro', true, true, true, true),
+          (user_id_param, 'financeiro', true, true, true, false),
           (user_id_param, 'relatorios', true, true, false, false);
 
-          permission_count := 12;
+          permission_count := 13;
 
         ELSIF user_type_param = 'operador_checklist' THEN
           INSERT INTO user_permissions (user_id, module, can_access, can_create, can_edit, can_delete) VALUES
@@ -1965,7 +1965,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
     const requestId = Date.now().toString(36) + Math.random().toString(36).substr(2);
     console.log(`🚨 [${requestId}] === INÍCIO CRIAÇÃO CT-e ===`);
     console.log(`📝 [${requestId}] Dados RAW recebidos da interface:`, JSON.stringify(data, null, 2));
-    
+
     // LOG ESPECIAL PARA DADOS DA NFE
     console.log('🔍 Dados específicos da NF-e recebidos:', {
       nfe_remetente_cnpj: data.nfe_remetente_cnpj,
@@ -1976,15 +1976,15 @@ app.post('/api/cte-documentos', (req, res, next) => {
     });
 
     console.log(`🔍 [${requestId}] Iniciando validação da empresa...`);
-    
+
     // Validar empresa usando o mesmo pool que funciona na interface
     const empresaResult = await pool.query(
       'SELECT * FROM empresas_fiscais WHERE id = $1',
       [data.empresa_id]
     );
-    
+
     console.log(`📋 [${requestId}] Resultado da query empresa:`, empresaResult.rows.length, 'registros');
-    
+
     // Obter client apenas depois da validação
     const client = await pool.connect();
 
@@ -1996,7 +1996,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
 
       const empresa = empresaResult.rows[0];
       console.log('🏢 Status da empresa:', empresa.status);
-      
+
       if (empresa.status !== 'ativo') {
         return res.status(400).json({ error: 'Empresa fiscal não está ativa' });
       }
@@ -2031,7 +2031,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
       console.log('UF final:', codigoUFFinal);
 
       // ==== MAPEAMENTO AUTOMÁTICO DE PARTICIPANTES E PRODUTOS ====
-      
+
       console.log('🔍 Dados recebidos para mapeamento:', {
         nfe_remetente_cnpj: data.nfe_remetente_cnpj,
         nfe_remetente_razao_social: data.nfe_remetente_razao_social,
@@ -2041,7 +2041,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
         remetente_id: data.remetente_id,
         destinatario_id: data.destinatario_id
       });
-      
+
       let tomadorIdFinal = data.tomador_id;
       let remetenteIdFinal = data.remetente_id;
       let destinatarioIdFinal = data.destinatario_id;
@@ -2050,19 +2050,19 @@ app.post('/api/cte-documentos', (req, res, next) => {
       // 1. MAPEAR REMETENTE pelo CNPJ da NF-e
       if (data.nfe_remetente_cnpj && !remetenteIdFinal) {
         console.log('🔍 Buscando remetente por CNPJ:', data.nfe_remetente_cnpj);
-        
+
         const remetenteResult = await client.query(
           'SELECT id FROM cadastros WHERE cnpj = $1 AND tipo = $2 AND ativo = true LIMIT 1',
           [data.nfe_remetente_cnpj, 'cliente']
         );
-        
+
         if (remetenteResult.rows.length > 0) {
           remetenteIdFinal = remetenteResult.rows[0].id;
           console.log('✅ Remetente encontrado:', remetenteIdFinal);
         } else {
           // Criar remetente automaticamente se não existir
           console.log('📝 Criando remetente automaticamente para CNPJ:', data.nfe_remetente_cnpj);
-          
+
           const novoRemetenteResult = await client.query(`
             INSERT INTO cadastros (
               id, tipo, razao_social, cnpj, ie, endereco, cidade, estado, cep, telefone, emails, ativo, created_at, updated_at
@@ -2081,7 +2081,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
             null, // telefone
             null  // emails
           ]);
-          
+
           if (novoRemetenteResult.rows.length > 0) {
             remetenteIdFinal = novoRemetenteResult.rows[0].id;
             console.log('✅ Remetente criado automaticamente:', remetenteIdFinal);
@@ -2092,19 +2092,19 @@ app.post('/api/cte-documentos', (req, res, next) => {
       // 2. MAPEAR DESTINATÁRIO pelo CNPJ da NF-e
       if (data.nfe_destinatario_cnpj && !destinatarioIdFinal) {
         console.log('🔍 Buscando destinatário por CNPJ:', data.nfe_destinatario_cnpj);
-        
+
         const destinatarioResult = await client.query(
           'SELECT id FROM cadastros WHERE cnpj = $1 AND tipo = $2 AND ativo = true LIMIT 1',
           [data.nfe_destinatario_cnpj, 'cliente']
         );
-        
+
         if (destinatarioResult.rows.length > 0) {
           destinatarioIdFinal = destinatarioResult.rows[0].id;
           console.log('✅ Destinatário encontrado:', destinatarioIdFinal);
         } else {
           // Criar destinatário automaticamente se não existir
           console.log('📝 Criando destinatário automaticamente para CNPJ:', data.nfe_destinatario_cnpj);
-          
+
           const novoDestinatarioResult = await client.query(`
             INSERT INTO cadastros (
               id, tipo, razao_social, cnpj, ie, endereco, cidade, estado, cep, telefone, emails, ativo, created_at, updated_at
@@ -2123,7 +2123,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
             null, // telefone
             null  // emails
           ]);
-          
+
           if (novoDestinatarioResult.rows.length > 0) {
             destinatarioIdFinal = novoDestinatarioResult.rows[0].id;
             console.log('✅ Destinatário criado automaticamente:', destinatarioIdFinal);
@@ -2131,34 +2131,68 @@ app.post('/api/cte-documentos', (req, res, next) => {
         }
       }
 
-      // 3. TOMADOR = DESTINATÁRIO (padrão para frete CIF)
-      if (!tomadorIdFinal && destinatarioIdFinal) {
-        tomadorIdFinal = destinatarioIdFinal;
-        console.log('✅ Tomador definido como destinatário:', tomadorIdFinal);
+      // 3. TOMADOR - Buscar no cadastro de frete (OBRIGATÓRIO)
+      if (!tomadorIdFinal && remetenteIdFinal && destinatarioIdFinal) {
+        console.log('🔍 Buscando configuração de tomador no cadastro de frete');
+
+        try {
+          const freteResult = await client.query(`
+            SELECT tomador_frete
+            FROM frete_documentos 
+            WHERE cliente_origem_id = $1 
+            AND cliente_destino_id = $2 
+            AND ativo = true
+            LIMIT 1
+          `, [remetenteIdFinal, destinatarioIdFinal]);
+
+          if (freteResult.rows.length > 0) {
+            const tomadorFrete = freteResult.rows[0].tomador_frete;
+            console.log('📋 Tomador definido no frete:', tomadorFrete);
+
+            if (tomadorFrete === 'remetente') {
+              tomadorIdFinal = remetenteIdFinal;
+              console.log('✅ Tomador definido como remetente (baseado no frete):', tomadorIdFinal);
+            } else {
+              tomadorIdFinal = destinatarioIdFinal;
+              console.log('✅ Tomador definido como destinatário (baseado no frete):', tomadorIdFinal);
+            }
+          } else {
+            // ABORTAR se não encontrar frete cadastrado
+            console.error('❌ Frete não encontrado - abortar criação do CT-e');
+            return res.status(400).json({ 
+              error: 'Não foi possível criar o CT-e. Frete não está cadastrado para esta origem/destino.' 
+            });
+          }
+        } catch (error) {
+          console.error('❌ Erro ao buscar tomador no frete:', error);
+          return res.status(500).json({ 
+            error: 'Erro ao verificar frete cadastrado. Não foi possível criar o CT-e.' 
+          });
+        }
       }
 
       // 4. MAPEAR/CRIAR PRODUTO PREDOMINANTE pelo NCM da NF-e
       if (data.nfe_produto_ncm && !produtoPredominanteIdFinal) {
         console.log('🔍 Buscando produto por NCM:', data.nfe_produto_ncm);
-        
+
         const produtoResult = await client.query(
-          'SELECT id FROM cte_produtos WHERE cod_ncm = $1 LIMIT 1',
+          'SELECT id FROM cte_produtos WHERE ncm_produto = $1 LIMIT 1',
           [data.nfe_produto_ncm]
         );
-        
+
         if (produtoResult.rows.length > 0) {
           produtoPredominanteIdFinal = produtoResult.rows[0].id;
           console.log('✅ Produto predominante encontrado:', produtoPredominanteIdFinal);
         } else if (data.nfe_produto_descricao) {
           // Criar produto automaticamente se não existir
           console.log('📝 Criando produto automaticamente:', data.nfe_produto_descricao);
-          
+
           const novoProdutoResult = await client.query(`
-            INSERT INTO cte_produtos (cod_ncm, descricao, created_at, updated_at)
-            VALUES ($1, $2, NOW(), NOW())
+            INSERT INTO cte_produtos (cte_documento_id, sequencia, ncm_produto, descricao_produto, created_at, updated_at)
+            VALUES ($1, 1, $2, $3, NOW(), NOW())
             RETURNING id
-          `, [data.nfe_produto_ncm, data.nfe_produto_descricao]);
-          
+          `, [null, data.nfe_produto_ncm, data.nfe_produto_descricao]); // cte_documento_id is null here
+
           if (novoProdutoResult.rows.length > 0) {
             produtoPredominanteIdFinal = novoProdutoResult.rows[0].id;
             console.log('✅ Produto criado automaticamente:', produtoPredominanteIdFinal);
@@ -2294,7 +2328,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
       ]);
 
       console.log('✅ Documento CT-e criado com sucesso:', result.rows[0].id);
-      
+
       // LOG CRÍTICO - Ver o que foi REALMENTE salvo no banco
       console.log('🔍 VALORES SALVOS NO BANCO:');
       console.log('  ID:', result.rows[0].id);
@@ -2303,7 +2337,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
       console.log('  Remetente ID salvo:', result.rows[0].remetente_id);
       console.log('  Destinatário ID salvo:', result.rows[0].destinatario_id);
       console.log('  Produto ID salvo:', result.rows[0].produto_predominante_id);
-      
+
       res.status(201).json(result.rows[0]);
 
     } finally {
@@ -2316,7 +2350,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
     console.error('❌ Tipo do erro:', typeof error);
     console.error('❌ Nome do erro:', error.name);
     console.error('❌ Mensagem do erro:', error.message);
-    
+
     res.status(500).json({
       error: 'Erro ao criar documento CT-e',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -2383,7 +2417,7 @@ async function getNFeData(chaveNFE) {
     if (!chaveNFE || chaveNFE.length !== 44) {
       throw new Error('Chave de acesso NF-e deve ter 44 dígitos');
     }
-    
+
     const token = '44B4845C-05F4-7E99-2DFF-8EAE5746E9BA';
     const url = `https://www.roveri.inf.br/consultas/nfe.php?token=${token}&chave=${chaveNFE}`;
 
@@ -2394,11 +2428,11 @@ async function getNFeData(chaveNFE) {
         'Accept': 'application/json, text/plain, */*'
       }
     });
-    
+
     if (!response.ok) {
       throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
     }
-    
+
     const responseText = await response.text();
     console.log('📄 Resposta do webservice:', responseText);
 
@@ -2418,10 +2452,10 @@ async function getNFeData(chaveNFE) {
         console.log('📄 Resposta em formato XML, fazendo parse...');
         const parser = new xml2js.Parser({ explicitArray: false });
         const parsed = await parser.parseStringPromise(responseText);
-        
+
         // Extrair dados principais da NF-e
         const infNFe = parsed?.nfeProc?.NFe?.infNFe || parsed?.NFe?.infNFe;
-        
+
         if (infNFe) {
           nfeData = {
             remetente: {
@@ -2495,7 +2529,7 @@ app.post('/api/fiscal/cte-auto-test', async (req, res) => {
     // Buscar dados da NF-e
     console.log('🔍 Consultando NF-e:', data.chave_nfe);
     const nfeData = await getNFeData(data.chave_nfe);
-    
+
     if (!nfeData) {
       return res.status(400).json({ error: 'NF-e não encontrada ou inválida' });
     }
@@ -2534,7 +2568,7 @@ app.post('/api/fiscal/cte-auto-test', async (req, res) => {
         cteData.valor_prestacao,
         cteData.observacoes
       ]);
-      
+
       console.log('✅ CT-e criado automaticamente com sucesso!');
       res.json({
         success: true,
