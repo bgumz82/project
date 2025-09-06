@@ -1992,8 +1992,11 @@ app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
           AND numero_cte ~ '^[0-9]+$'
         `, [data.empresa_id]);
 
-        numeroFinal = ultimoNumeroResult.rows[0].proximo_numero.toString();
+        numeroFinal = ultimoNumeroResult.rows[0].proximo_numero;
         console.log('📋 Próximo número CT-e:', numeroFinal);
+      } else {
+        // Converter número fornecido para integer
+        numeroFinal = parseInt(numeroFinal, 10);
       }
 
       // Usar série padrão se não fornecida
@@ -2325,6 +2328,189 @@ app.get('/api/postos', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar postos:', error);
     res.status(500).json({ error: 'Erro ao buscar postos' });
+  }
+});
+
+// Função para consultar dados da NF-e
+async function getNFeData(chaveNFE) {
+  try {
+    if (!chaveNFE || chaveNFE.length !== 44) {
+      throw new Error('Chave de acesso NF-e deve ter 44 dígitos');
+    }
+    
+    const token = '44B4845C-05F4-7E99-2DFF-8EAE5746E9BA';
+    const url = `https://www.roveri.inf.br/consultas/nfe.php?token=${token}&chave=${chaveNFE}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Fleet-Management-System/1.0',
+        'Accept': 'application/json, text/plain, */*'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
+    }
+    
+    const responseText = await response.text();
+    console.log('📄 Resposta do webservice:', responseText);
+
+    // Verificar se é um erro em formato de mensagem
+    if (responseText.includes('Chave inválida') || responseText.includes('erro') || responseText.includes('error')) {
+      throw new Error(`Erro do webservice: ${responseText}`);
+    }
+
+    // Tentar fazer parse como JSON primeiro
+    let nfeData;
+    try {
+      nfeData = JSON.parse(responseText);
+      console.log('✅ Dados JSON recebidos:', nfeData);
+    } catch (jsonError) {
+      // Se não for JSON válido, assumir que é XML
+      if (responseText.includes('<?xml')) {
+        console.log('📄 Resposta em formato XML, fazendo parse...');
+        const parser = new xml2js.Parser({ explicitArray: false });
+        const parsed = await parser.parseStringPromise(responseText);
+        
+        // Extrair dados principais da NF-e
+        const infNFe = parsed?.nfeProc?.NFe?.infNFe || parsed?.NFe?.infNFe;
+        
+        if (infNFe) {
+          nfeData = {
+            remetente: {
+              razao_social: infNFe.emit?.xNome || '',
+              cnpj: infNFe.emit?.CNPJ || '',
+              ie: infNFe.emit?.IE || '',
+              endereco: `${infNFe.emit?.enderEmit?.xLgr || ''}, ${infNFe.emit?.enderEmit?.nro || ''}`,
+              cidade: infNFe.emit?.enderEmit?.xMun || '',
+              estado: infNFe.emit?.enderEmit?.UF || '',
+              cep: infNFe.emit?.enderEmit?.CEP || ''
+            },
+            destinatario: {
+              razao_social: infNFe.dest?.xNome || '',
+              cnpj: infNFe.dest?.CNPJ || '',
+              ie: infNFe.dest?.IE || '',
+              endereco: `${infNFe.dest?.enderDest?.xLgr || ''}, ${infNFe.dest?.enderDest?.nro || ''}`,
+              cidade: infNFe.dest?.enderDest?.xMun || '',
+              estado: infNFe.dest?.enderDest?.UF || '',
+              cep: infNFe.dest?.enderDest?.CEP || ''
+            },
+            produto: {
+              descricao: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.xProd : infNFe.det?.prod?.xProd || '',
+              codigo_ncm: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.NCM : infNFe.det?.prod?.NCM || '',
+              valor_total: parseFloat(infNFe.total?.ICMSTot?.vNF || 0),
+              peso_total: parseFloat(infNFe.total?.ICMSTot?.vPeso || 0),
+              quantidade_total: Array.isArray(infNFe.det) ? 
+                infNFe.det.reduce((acc, item) => acc + parseFloat(item.prod?.qCom || 0), 0) :
+                parseFloat(infNFe.det?.prod?.qCom || 0)
+            },
+            transporte: {
+              valor_frete: parseFloat(infNFe.total?.ICMSTot?.vFrete || 0),
+              modal_transporte: infNFe.transp?.modFrete || '1'
+            },
+            numero_nfe: infNFe.ide?.nNF || '',
+            serie: infNFe.ide?.serie || '',
+            data_emissao: infNFe.ide?.dhEmi || infNFe.ide?.dEmi || '',
+            chave_acesso: chaveNFE,
+            observacoes: infNFe.infAdic?.infCpl || ''
+          };
+        } else {
+          throw new Error('XML da NF-e não possui estrutura válida');
+        }
+      } else {
+        throw new Error(`Resposta não é JSON nem XML válido: ${responseText}`);
+      }
+    }
+
+    console.log('✅ Dados da NF-e processados:', nfeData);
+    return nfeData;
+  } catch (error) {
+    console.error('❌ Erro ao consultar NF-e:', error.message);
+    return null;
+  }
+}
+
+// Rota para criação automática de CT-e a partir de NF-e
+app.post('/api/fiscal/cte-auto-test', async (req, res) => {
+  try {
+    console.log('🚀 Iniciando criação automática de CT-e...');
+    const data = req.body;
+    console.log('📝 Dados recebidos:', data);
+
+    // Verificar campos obrigatórios
+    if (!data.empresa_id) {
+      return res.status(400).json({ error: 'empresa_id é obrigatório' });
+    }
+    if (!data.chave_nfe) {
+      return res.status(400).json({ error: 'chave_nfe é obrigatória' });
+    }
+
+    // Buscar dados da NF-e
+    console.log('🔍 Consultando NF-e:', data.chave_nfe);
+    const nfeData = await getNFeData(data.chave_nfe);
+    
+    if (!nfeData) {
+      return res.status(400).json({ error: 'NF-e não encontrada ou inválida' });
+    }
+
+    // Para teste, usar o banco principal diretamente
+    const client = await pool.connect();
+
+    try {
+      // Montar dados para criação do CT-e
+      const cteData = {
+        empresa_id: data.empresa_id,
+        numero_cte: data.numero_cte || 'AUTO',
+        nfe_remetente_cnpj: nfeData.remetente?.cnpj,
+        nfe_remetente_razao_social: nfeData.remetente?.razao_social,
+        nfe_destinatario_cnpj: nfeData.destinatario?.cnpj,
+        nfe_destinatario_razao_social: nfeData.destinatario?.razao_social,
+        produto_predominante_id: nfeData.produto?.id,
+        valor_prestacao: nfeData.produto?.valor_total || 0,
+        observacoes: `CT-e criado automaticamente a partir da NF-e ${data.chave_nfe}`
+      };
+
+      console.log('📋 Dados do CT-e montados:', cteData);
+
+      // Simular criação básica de CT-e por enquanto
+      const result = await client.query(`
+        INSERT INTO cte_documentos (
+          empresa_id, numero_cte, serie, data_emissao, codigo_uf,
+          valor_prestacao, observacoes
+        ) VALUES (
+          $1, $2, '001', NOW(), '31',
+          $3, $4
+        ) RETURNING id, numero_cte, valor_prestacao
+      `, [
+        cteData.empresa_id,
+        88888, // número fixo para teste
+        cteData.valor_prestacao,
+        cteData.observacoes
+      ]);
+      
+      console.log('✅ CT-e criado automaticamente com sucesso!');
+      res.json({
+        success: true,
+        message: 'CT-e criado automaticamente a partir da NF-e',
+        data: result.rows[0]
+      });
+
+    } catch (error) {
+      console.error('❌ Erro ao criar CT-e automaticamente:', error);
+      if (client) client.release();
+      res.status(500).json({ 
+        error: 'Erro ao criar CT-e automaticamente',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Erro geral na criação automática:', error);
+    res.status(500).json({ 
+      error: 'Erro na criação automática de CT-e',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
