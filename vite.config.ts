@@ -63,6 +63,17 @@ export default defineConfig({
         secure: false,
         timeout: 30000,
       },
+      "/api/cte-documentos": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        secure: false,
+        timeout: 30000,
+        configure: (proxy, options) => {
+          proxy.on("proxyReq", (proxyReq, req, res) => {
+            console.log("🔥 Redirecionando CT-e para localhost:", req.url);
+          });
+        },
+      },
       "/api": {
         target: "https://sistema.systemtruck.com.br",
         changeOrigin: true,
