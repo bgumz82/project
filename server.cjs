@@ -2159,14 +2159,21 @@ app.post('/api/cte-documentos', (req, res, next) => {
           } else {
             // ABORTAR se não encontrar frete cadastrado
             console.error('❌ Frete não encontrado - abortar criação do CT-e');
+            console.error('❌ Parâmetros de busca:', {
+              remetente: remetenteIdFinal,
+              destinatario: destinatarioIdFinal,
+              remetente_razao: data.nfe_remetente_razao_social,
+              destinatario_razao: data.nfe_destinatario_razao_social
+            });
+            
             return res.status(400).json({ 
-              error: 'Não foi possível criar o CT-e. Frete não está cadastrado para esta origem/destino.' 
+              error: `Frete não cadastrado. É necessário cadastrar o frete para a rota: ${data.nfe_remetente_razao_social || 'Remetente'} → ${data.nfe_destinatario_razao_social || 'Destinatário'}. Acesse o módulo de Controle de Frete para cadastrar esta rota antes de criar o CT-e.`
             });
           }
         } catch (error) {
           console.error('❌ Erro ao buscar tomador no frete:', error);
           return res.status(500).json({ 
-            error: 'Erro ao verificar frete cadastrado. Não foi possível criar o CT-e.' 
+            error: `Erro ao verificar frete cadastrado: ${error.message}. Verifique se os clientes estão cadastrados corretamente e se existe uma rota de frete configurada entre ${data.nfe_remetente_razao_social || 'o remetente'} e ${data.nfe_destinatario_razao_social || 'o destinatário'}.`
           });
         }
       }
@@ -2176,7 +2183,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
         console.log('🔍 Buscando produto por NCM:', data.nfe_produto_ncm);
 
         const produtoResult = await client.query(
-          'SELECT id FROM cte_produtos WHERE ncm_produto = $1 LIMIT 1',
+          'SELECT id FROM cte_produtos WHERE cod_ncm = $1 LIMIT 1',
           [data.nfe_produto_ncm]
         );
 
