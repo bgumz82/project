@@ -1973,11 +1973,15 @@ app.post('/api/cte-documentos', (req, res, next) => {
     const client = await pool.connect();
 
     try {
+      console.log('🔍 Iniciando validação da empresa...');
+      
       // Validar empresa
       const empresaResult = await client.query(
         'SELECT * FROM empresas_fiscais WHERE id = $1 AND ativo = $2',
         [data.empresa_id, true]
       );
+      
+      console.log('📋 Resultado da query empresa:', empresaResult.rows.length, 'registros');
 
       if (empresaResult.rows.length === 0) {
         return res.status(400).json({ error: 'Empresa fiscal não encontrada ou inativa' });
@@ -2294,6 +2298,11 @@ app.post('/api/cte-documentos', (req, res, next) => {
 
   } catch (error) {
     console.error('❌ Erro ao criar documento CT-e:', error);
+    console.error('❌ Stack trace completo:', error.stack);
+    console.error('❌ Tipo do erro:', typeof error);
+    console.error('❌ Nome do erro:', error.name);
+    console.error('❌ Mensagem do erro:', error.message);
+    
     res.status(500).json({
       error: 'Erro ao criar documento CT-e',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
