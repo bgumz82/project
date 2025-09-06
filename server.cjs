@@ -1957,8 +1957,9 @@ app.post('/api/cte-documentos', (req, res, next) => {
 }, authenticateToken, async (req, res) => {
   try {
     const data = req.body;
-    console.log('🚨 === INÍCIO CRIAÇÃO CT-e ===');
-    console.log('📝 Dados RAW recebidos da interface:', JSON.stringify(data, null, 2));
+    const requestId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+    console.log(`🚨 [${requestId}] === INÍCIO CRIAÇÃO CT-e ===`);
+    console.log(`📝 [${requestId}] Dados RAW recebidos da interface:`, JSON.stringify(data, null, 2));
     
     // LOG ESPECIAL PARA DADOS DA NFE
     console.log('🔍 Dados específicos da NF-e recebidos:', {
@@ -1973,7 +1974,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
     const client = await pool.connect();
 
     try {
-      console.log('🔍 Iniciando validação da empresa...');
+      console.log(`🔍 [${requestId}] Iniciando validação da empresa...`);
       
       // Validar empresa
       const empresaResult = await client.query(
@@ -1981,7 +1982,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
         [data.empresa_id]
       );
       
-      console.log('📋 Resultado da query empresa:', empresaResult.rows.length, 'registros');
+      console.log(`📋 [${requestId}] Resultado da query empresa:`, empresaResult.rows.length, 'registros');
 
       if (empresaResult.rows.length === 0) {
         return res.status(400).json({ error: 'Empresa fiscal não encontrada' });
