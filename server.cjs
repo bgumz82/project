@@ -19,13 +19,16 @@ const JWT_SECRET = process.env.JWT_SECRET;
 // Configurar CORS
 app.use(cors());
 
+// FORÇA O BANCO CORRETO - HARDCODED PARA GARANTIR FUNCIONAMENTO
+const FORCE_DATABASE_URL = 'postgres://postgres:bytecross8682@db.systemtruck.com.br:5454/frota_management';
+
 // Configurar pool de conexão com o banco
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgres://postgres:bytecross8682@db.systemtruck.com.br:5454/frota_management',
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  connectionString: FORCE_DATABASE_URL,
+  ssl: false
 });
 
-console.log('🔍 DATABASE_URL configurado:', process.env.DATABASE_URL || 'postgres://postgres:bytecross8682@db.systemtruck.com.br:5454/frota_management');
+console.log('🔍 FORÇADO DATABASE_URL:', FORCE_DATABASE_URL);
 
 // Pool principal para usuários e permissões (sempre frota_management)
 const mainPool = pool; // O pool principal já está configurado para frota_management
