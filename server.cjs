@@ -1977,8 +1977,8 @@ app.post('/api/cte-documentos', (req, res, next) => {
       
       // Validar empresa
       const empresaResult = await client.query(
-        'SELECT * FROM empresas_fiscais WHERE id = $1 AND ativo = $2',
-        [data.empresa_id, true]
+        'SELECT * FROM empresas_fiscais WHERE id = $1 AND status = $2',
+        [data.empresa_id, 'ativo']
       );
       
       console.log('📋 Resultado da query empresa:', empresaResult.rows.length, 'registros');
