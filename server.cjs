@@ -1995,6 +1995,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
       }
 
       console.log('🏢 Empresa validada:', empresa.razao_social);
+      console.log('✅ Passando para geração do número CT-e...');
 
       // Obter próximo número se não fornecido
       let numeroFinal = data.numero_cte;
