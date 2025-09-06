@@ -1952,7 +1952,8 @@ app.post('/api/db/query-main', authenticateToken, async (req, res) => {
 app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
   try {
     const data = req.body;
-    console.log('📝 Recebendo dados para criar CT-e:', data);
+    console.log('🚨 === INÍCIO CRIAÇÃO CT-e ===');
+    console.log('📝 Dados RAW recebidos da interface:', JSON.stringify(data, null, 2));
     
     // LOG ESPECIAL PARA DADOS DA NFE
     console.log('🔍 Dados específicos da NF-e recebidos:', {
