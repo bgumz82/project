@@ -2142,7 +2142,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
         console.log('🔍 Buscando produto por NCM:', data.nfe_produto_ncm);
         
         const produtoResult = await client.query(
-          'SELECT id FROM produtos WHERE codigo_ncm = $1 LIMIT 1',
+          'SELECT id FROM cte_produtos WHERE cod_ncm = $1 LIMIT 1',
           [data.nfe_produto_ncm]
         );
         
@@ -2154,10 +2154,10 @@ app.post('/api/cte-documentos', (req, res, next) => {
           console.log('📝 Criando produto automaticamente:', data.nfe_produto_descricao);
           
           const novoProdutoResult = await client.query(`
-            INSERT INTO produtos (descricao, codigo_ncm, unidade, ativo, created_at, updated_at)
-            VALUES ($1, $2, 'L', true, NOW(), NOW())
+            INSERT INTO cte_produtos (cod_ncm, descricao, created_at, updated_at)
+            VALUES ($1, $2, NOW(), NOW())
             RETURNING id
-          `, [data.nfe_produto_descricao, data.nfe_produto_ncm]);
+          `, [data.nfe_produto_ncm, data.nfe_produto_descricao]);
           
           if (novoProdutoResult.rows.length > 0) {
             produtoPredominanteIdFinal = novoProdutoResult.rows[0].id;
