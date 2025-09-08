@@ -1141,7 +1141,7 @@ async function createTables(client) {
           cte_documento_id uuid NOT NULL,
           chave_acesso varchar(44) NOT NULL,
           CONSTRAINT fk_cte_documento
-            FOREIGNKEY(cte_documento_id)
+            FOREIGN KEY(cte_documento_id)
             REFERENCES cte_documentos(id)
             ON DELETE CASCADE
         )
@@ -1544,9 +1544,9 @@ async function createIndexes(client) {
     'CREATE INDEX IF NOT EXISTS idx_cte_outros_valores_cte_documento_id ON cte_outros_valores(cte_documento_id)',
     'CREATE INDEX IF NOT EXISTS idx_cte_componentes_redespacho_cte_documento_id ON cte_componentes_redespacho(cte_documento_id)',
     'CREATE INDEX IF NOT EXISTS idx_cte_remetente_cte_documento_id ON cte_remetente(cte_documento_id)',
-    'CREATE INDEX IF NOT EXISTS idx_cte_recebedor_cte_documento_id ON cte_recebedor(cte_recebedor_id)',
-    'CREATE INDEX IF NOT EXISTS idx_cte_destinatario_cte_documento_id ON cte_destinatario(cte_destinatario_id)',
-    'CREATE INDEX IF NOT EXISTS idx_cte_tomador_cte_documento_id ON cte_tomador(cte_tomador_id)'
+    'CREATE INDEX IF NOT EXISTS idx_cte_recebedor_cte_documento_id ON cte_recebedor(cte_documento_id)',
+    'CREATE INDEX IF NOT EXISTS idx_cte_destinatario_cte_documento_id ON cte_destinatario(cte_documento_id)',
+    'CREATE INDEX IF NOT EXISTS idx_cte_tomador_cte_documento_id ON cte_tomador(cte_documento_id)'
   ];
 
   for (const indexQuery of indexes) {
@@ -2940,13 +2940,20 @@ app.use((err, req, res, next) => {
 const server = app.listen(PORT, 'localhost', () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 
-  // Inicializar estrutura do banco principal na inicialização
-  createDatabaseStructure()
-    .then(() => {
-      console.log('✅ Estrutura do banco principal inicializada com sucesso');
+  // Inicializar estrutura do banco principal na inicialização com client válido
+  pool.connect()
+    .then(async (client) => {
+      try {
+        await createDatabaseStructure(client);
+        console.log('✅ Estrutura do banco principal inicializada com sucesso');
+      } catch (error) {
+        console.error('❌ Erro ao inicializar estrutura do banco principal:', error);
+      } finally {
+        client.release();
+      }
     })
     .catch((error) => {
-      console.error('❌ Erro ao inicializar estrutura do banco principal:', error);
+      console.error('❌ Erro ao conectar com o banco para inicialização:', error);
     });
 });
 
