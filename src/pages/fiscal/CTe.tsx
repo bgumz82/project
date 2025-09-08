@@ -74,6 +74,31 @@ interface Estado {
   uf: string;
 }
 
+// Função auxiliar para executar consultas SQL
+async function query(sql: string, params: any[] = []) {
+  const response = await fetch('/api/db/query', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
+    },
+    body: JSON.stringify({
+      query: sql,
+      params: params
+    })
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('❌ Erro na resposta da API (query):', response.status, response.statusText, errorText)
+    throw new Error(`Erro ${response.status}: ${response.statusText}`)
+  }
+
+  const result = await response.json()
+  console.log('📊 Resultado da query:', result)
+  return result
+}
+
 export default function CTe() {
   const navigate = useNavigate()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -1345,8 +1370,51 @@ export default function CTe() {
         return
       }
 
-      console.log('📋 Informações do frete encontradas:', informacoesFrete)
-      console.log('👤 Tomador definido no frete:', informacoesFrete.tomador_frete)
+      console.log('✅ Informações do frete encontradas:', informacoesFrete)
+
+      // Definir tomador baseado na configuração do frete
+      let tomadorIdFinal = ''
+      let remetenteIdFinal = ''
+      let destinatarioIdFinal = ''
+
+      // Buscar IDs dos participantes pelos CNPJs
+      const remetenteQuery = `SELECT id FROM cadastros WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true LIMIT 1`
+      const destinatarioQuery = `SELECT id FROM cadastros WHERE cnpj = $2 AND tipo = 'cliente' AND ativo = true LIMIT 1`
+
+      try {
+        const [remetenteResult, destinatarioResult] = await Promise.all([
+          query(remetenteQuery, [cnpjRemetenteChave]),
+          query(destinatarioQuery, [formRapido.cnpj_destinatario])
+        ])
+
+        if (remetenteResult?.rows?.length > 0) {
+          remetenteIdFinal = remetenteResult.rows[0].id
+          console.log('✅ Remetente encontrado:', remetenteIdFinal)
+        }
+
+        if (destinatarioResult?.rows?.length > 0) {
+          destinatarioIdFinal = destinatarioResult.rows[0].id
+          console.log('✅ Destinatário encontrado:', destinatarioIdFinal)
+        }
+
+        // Definir tomador baseado na configuração do frete
+        if (informacoesFrete.tomador_frete === 'remetente') {
+          tomadorIdFinal = remetenteIdFinal
+          console.log('👤 Tomador definido como REMETENTE (baseado no frete):', tomadorIdFinal)
+        } else if (informacoesFrete.tomador_frete === 'destinatario') {
+          tomadorIdFinal = destinatarioIdFinal
+          console.log('👤 Tomador definido como DESTINATÁRIO (baseado no frete):', tomadorIdFinal)
+        }
+
+      } catch (error) {
+        console.error('❌ Erro ao buscar participantes:', error)
+        toast.error('Erro ao buscar dados dos participantes')
+        setIsSubmittingRapido(false)
+        return
+      }
+
+      console.log('✅ Informações do frete encontradas:', informacoesFrete)
+
 
       // Calcular valor base do frete
       let valorBaseFrete = informacoesFrete.valor_frete
@@ -1437,11 +1505,10 @@ export default function CTe() {
         cidade_termino_nome: rapidoSelectedTermino.nome,
         forma_emissao: 1,
         status: 'pendente',
-        // Participantes - usar remetente da chave e destinatário informado
-        // Tomador baseado na configuração do frete
-        tomador_id: informacoesFrete.tomador_frete === 'remetente' ? remetente.id : destinatario.id,
-        remetente_id: remetente.id,
-        destinatario_id: destinatario.id,
+        // Participantes - usar IDs encontrados e tomador baseado no frete
+        tomador_id: tomadorIdFinal,
+        remetente_id: remetenteIdFinal,
+        destinatario_id: destinatarioIdFinal,
         recebedor_id: null,
         // Valores calculados
         valor_prestacao: valorTotalComICMS,
@@ -1584,7 +1651,7 @@ export default function CTe() {
     // Use o estado `selectedEmpresaId` para garantir que a empresa selecionada seja usada
     const empresaIdValue = selectedEmpresaId || ''
 
-    // Validação adicional do empresa_id
+    // Validar adicional do empresa_id
     if (!empresaIdValue || empresaIdValue.trim() === '') {
       toast.error('Por favor, selecione uma empresa antes de prosseguir.')
       return
@@ -1954,7 +2021,7 @@ export default function CTe() {
               className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
               <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0113.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
               </svg>
               Atualizar Dados
             </button>
