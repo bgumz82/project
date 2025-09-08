@@ -2040,7 +2040,9 @@ app.post('/api/cte-documentos', (req, res, next) => {
           numeroFinal = empresaNumeroResult.rows[0].numero_atual || 1;
           console.log('📋 Número CT-e reservado atomicamente:', numeroFinal);
         } else {
-          // Fallback: buscar último número da tabela
+          console.log('⚠️ Empresa não encontrada para UPDATE, criando entrada...');
+          
+          // Primeiro, tentar buscar o último número da tabela
           const ultimoNumeroResult = await client.query(`
             SELECT COALESCE(MAX(CAST(numero_cte AS INTEGER)), 0) + 1 as proximo_numero
             FROM cte_documentos
@@ -2048,8 +2050,22 @@ app.post('/api/cte-documentos', (req, res, next) => {
             AND numero_cte ~ '^[0-9]+$'
           `, [data.empresa_id]);
 
-          numeroFinal = ultimoNumeroResult.rows[0].proximo_numero;
-          console.log('📋 Próximo número CT-e (fallback):', numeroFinal);
+          const proximoNumero = ultimoNumeroResult.rows[0].proximo_numero;
+          
+          // Tentar fazer INSERT da nova numeração para esta empresa
+          try {
+            await client.query(`
+              UPDATE empresas_fiscais 
+              SET proximo_numero_cte = $2
+              WHERE id = $1
+            `, [data.empresa_id, proximoNumero + 1]);
+            
+            numeroFinal = proximoNumero;
+            console.log('📋 Número CT-e inicializado para empresa:', numeroFinal);
+          } catch (error) {
+            console.log('⚠️ Erro ao inicializar numeração, usando fallback:', error.message);
+            numeroFinal = proximoNumero;
+          }
         }
       } else {
         // Converter número fornecido para integer
