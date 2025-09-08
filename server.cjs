@@ -2884,6 +2884,172 @@ createCrudRoutes('centros_custo', 'centro de custo');
 createCrudRoutes('contas_pagar', 'conta a pagar');
 createCrudRoutes('contas_receber', 'conta a receber');
 
+// ===== ROTAS MDF-e DOCUMENTOS =====
+
+// Rota para criar documento MDF-e
+app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
+  const requestId = generateRequestId();
+  let client;
+
+  try {
+    console.log(`🚨 [${requestId}] === INÍCIO CRIAÇÃO MDF-e ===`);
+    console.log(`📝 [${requestId}] Dados RAW recebidos da interface:`, JSON.stringify(req.body, null, 2));
+
+    // Conectar ao banco do usuário
+    console.log(`🔍 [${requestId}] USANDO BANCO DO USUÁRIO: ${req.user.email}`);
+    const userDbConfig = await getUserDbConfig(req.user.email);
+    
+    if (!userDbConfig || !userDbConfig.configuracao_padrao) {
+      throw new Error('Configuração de banco de dados do usuário não encontrada');
+    }
+
+    console.log(`🔗 Conectando ao banco do usuário: ${userDbConfig.configuracao_padrao.nome_empresa}`);
+    client = new Client(userDbConfig.configuracao_padrao);
+    await client.connect();
+
+    const data = req.body;
+
+    // Validar dados obrigatórios
+    if (!data.empresa_id) {
+      throw new Error('ID da empresa é obrigatório');
+    }
+
+    if (!data.cte_ids || !Array.isArray(data.cte_ids) || data.cte_ids.length === 0) {
+      throw new Error('É necessário selecionar pelo menos um CT-e emitido para criar o MDF-e');
+    }
+
+    console.log(`✅ CT-es selecionados para MDF-e: ${data.cte_ids.length}`);
+
+    // Verificar se todos os CT-es estão emitidos e pertencem à empresa
+    const ctesValidation = await client.query(`
+      SELECT id, numero_cte, status, chave_acesso 
+      FROM cte_documentos 
+      WHERE id = ANY($1) AND empresa_id = $2
+    `, [data.cte_ids, data.empresa_id]);
+
+    if (ctesValidation.rows.length !== data.cte_ids.length) {
+      throw new Error('Alguns CT-es selecionados não foram encontrados ou não pertencem à empresa');
+    }
+
+    const ctesNaoEmitidos = ctesValidation.rows.filter(cte => cte.status !== 'emitido');
+    if (ctesNaoEmitidos.length > 0) {
+      throw new Error(`CT-es ${ctesNaoEmitidos.map(c => c.numero_cte).join(', ')} não estão emitidos`);
+    }
+
+    console.log(`✅ Todos os CT-es validados: ${ctesValidation.rows.map(c => c.numero_cte).join(', ')}`);
+
+    // Buscar dados da empresa
+    const empresa = await client.query(
+      `SELECT id, serie_padrao_mdfe, codigo_uf, proximo_numero_mdfe FROM empresas_fiscais WHERE id = $1`,
+      [data.empresa_id]
+    );
+
+    if (empresa.rows.length === 0) {
+      throw new Error('Empresa fiscal não encontrada');
+    }
+
+    const empresaData = empresa.rows[0];
+    console.log(`🏢 Empresa validada: ${empresaData.id}`);
+
+    // APLICAR MESMA LÓGICA DE NUMERAÇÃO SEQUENCIAL DO CT-e
+    let numeroFinal = data.numero_mdfe;
+    if (!numeroFinal || numeroFinal === "AUTO" || numeroFinal.trim() === "") {
+      console.log('🔒 Obtendo próximo número MDF-e da empresa cadastrada...');
+      
+      // Buscar último número real usado nos documentos desta empresa
+      const ultimoNumeroResult = await client.query(`
+        SELECT COALESCE(MAX(CAST(numero_mdfe AS INTEGER)), 0) as ultimo_numero
+        FROM mdfe_documentos
+        WHERE empresa_id = $1
+        AND numero_mdfe ~ '^[0-9]+$'
+      `, [data.empresa_id]);
+
+      const ultimoNumeroReal = ultimoNumeroResult.rows[0].ultimo_numero || 0;
+      const proximoNumeroCalculado = ultimoNumeroReal + 1;
+      
+      console.log('📋 ÚLTIMO NÚMERO MDF-e REAL NA BASE:', ultimoNumeroReal);
+      console.log('📋 PRÓXIMO NÚMERO MDF-e CALCULADO:', proximoNumeroCalculado);
+      console.log('📋 VALOR NA EMPRESA (campo):', empresaData.proximo_numero_mdfe);
+      
+      // Usar o maior entre calculado e campo da empresa
+      numeroFinal = Math.max(proximoNumeroCalculado, empresaData.proximo_numero_mdfe);
+      console.log('📋 NÚMERO MDF-e FINAL ESCOLHIDO:', numeroFinal);
+
+      // Atualizar o próximo número na empresa
+      await client.query(`
+        UPDATE empresas_fiscais 
+        SET proximo_numero_mdfe = $2
+        WHERE id = $1
+      `, [data.empresa_id, numeroFinal + 1]);
+      
+      console.log('📋 Próximo número MDF-e atualizado na empresa para:', numeroFinal + 1);
+    }
+
+    // Usar série padrão da empresa se não fornecida
+    const serieFinal = data.serie || empresaData.serie_padrao_mdfe || "001";
+
+    // Criar o documento MDF-e
+    const result = await client.query(`
+      INSERT INTO mdfe_documentos (
+        empresa_id,
+        numero_mdfe,
+        serie,
+        data_emissao,
+        codigo_uf,
+        forma_emissao,
+        status,
+        observacoes,
+        created_at,
+        updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+      RETURNING *
+    `, [
+      data.empresa_id,
+      numeroFinal.toString(),
+      serieFinal,
+      data.data_emissao,
+      empresaData.codigo_uf || "31",
+      data.forma_emissao || 1,
+      data.status || "pendente",
+      data.observacoes
+    ]);
+
+    if (result.rows.length === 0) {
+      throw new Error("Erro ao criar documento MDF-e");
+    }
+
+    const mdfeDoc = result.rows[0];
+
+    // Vincular CT-es ao MDF-e
+    console.log('🔗 Vinculando CT-es ao MDF-e...');
+    for (const cteId of data.cte_ids) {
+      await client.query(`
+        INSERT INTO mdfe_cte_relacionados (mdfe_documento_id, cte_documento_id, created_at)
+        VALUES ($1, $2, NOW())
+      `, [mdfeDoc.id, cteId]);
+    }
+
+    console.log(`✅ Documento MDF-e criado com sucesso: ${mdfeDoc.id}`);
+    console.log(`✅ CT-es vinculados: ${data.cte_ids.length}`);
+
+    res.json({
+      message: 'Documento MDF-e criado com sucesso',
+      documento: mdfeDoc
+    });
+
+  } catch (error) {
+    console.error(`❌ [${requestId}] Erro ao criar documento MDF-e:`, error);
+    res.status(400).json({ 
+      error: error.message || 'Erro interno do servidor',
+      details: error.stack
+    });
+  } finally {
+    if (client) {
+      await client.end();
+    }
+  }
+});
+
 // Rotas específicas para CT-e
 app.get('/api/cte-documentos', authenticateToken, async (req, res) => {
   try {
