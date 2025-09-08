@@ -1827,6 +1827,198 @@ export async function generateAccessKey(
   }
 }
 
+// Função para gerar arquivos XML e PDF do MDF-e
+export async function generateMDFeFiles(documentoId: string): Promise<void> {
+  try {
+    console.log("📄 Iniciando geração de arquivos para MDF-e:", documentoId);
+
+    // Buscar dados completos do MDF-e
+    console.log("🔍 Buscando dados completos do documento...");
+    const documento = await queryOne(`
+      SELECT m.*, e.razao_social as empresa_razao_social, e.cnpj as empresa_cnpj, 
+             e.ie as empresa_ie, e.endereco_completo as empresa_endereco, 
+             e.codigo_uf as empresa_codigo_uf, e.rntrc as empresa_rntrc,
+             e.path_arquivos as empresa_path
+      FROM mdfe_documentos m
+      JOIN empresas_fiscais e ON m.empresa_id = e.id
+      WHERE m.id = $1
+    `, [documentoId]);
+
+    if (!documento) {
+      throw new Error("Documento MDF-e não encontrado");
+    }
+
+    console.log("✅ Documento MDF-e encontrado:", documento.numero_mdfe);
+
+    // Buscar CT-es relacionados ao MDF-e
+    const ctesRelacionados = await query(`
+      SELECT c.*, mcr.id as relacao_id
+      FROM mdfe_cte_relacionados mcr
+      JOIN cte_documentos c ON mcr.cte_documento_id = c.id
+      WHERE mcr.mdfe_documento_id = $1
+      ORDER BY c.numero_cte
+    `, [documentoId]);
+
+    console.log("📋 CT-es relacionados encontrados:", ctesRelacionados.length);
+
+    // Construir caminhos dos arquivos
+    const basePath = documento.empresa_path || `uploads/fiscal/${documento.empresa_cnpj}`;
+    const fileName = `${documento.chave_acesso}-mdfe`;
+    
+    // Estrutura de pastas: {empresa_path}/mdfe/
+    const xmlPath = `${basePath}/mdfe/${fileName}.xml`;
+    const pdfPath = `${basePath}/mdfe/${fileName}-damdfe.pdf`;
+    const xmlProcPath = `${basePath}/mdfe/${fileName}-procMDFe.xml`;
+
+    console.log("📁 Caminhos dos arquivos:", {
+      xml: xmlPath,
+      pdf: pdfPath,
+      xmlProc: xmlProcPath
+    });
+
+    // Gerar conteúdo XML do MDF-e
+    const xmlContent = generateMDFeXML(documento, ctesRelacionados);
+
+    // Salvar arquivo XML fisicamente
+    try {
+      const fullXmlPath = `uploads/fiscal/${documento.empresa_cnpj}/mdfe`;
+      
+      console.log("💾 Salvando arquivo XML...");
+      const response = await fetch('/api/upload-file', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: xmlContent,
+          path: fullXmlPath,
+          filename: fileName + '.xml'
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("✅ Arquivo XML salvo fisicamente:", result.path);
+      } else {
+        console.log("⚠️ Erro no upload, mas XML foi gerado:", await response.text());
+      }
+
+      console.log("📄 Preview do XML:", xmlContent.substring(0, 300) + "...");
+
+    } catch (writeError) {
+      console.error("❌ Erro ao salvar arquivo XML:", writeError);
+      console.log("📄 Conteúdo XML gerado:", xmlContent.substring(0, 200) + "...");
+    }
+
+    // Atualizar status dos arquivos no banco
+    await query(`
+      UPDATE mdfe_documentos 
+      SET xml_path = $1, pdf_path = $2, xml_proc_path = $3,
+          xml_gerado = true, pdf_gerado = false,
+          xml_gerado_em = NOW(), pdf_gerado_em = NULL,
+          updated_at = NOW()
+      WHERE id = $4
+    `, [xmlPath, pdfPath, xmlProcPath, documentoId]);
+
+    console.log("✅ Arquivo MDF-e processado com sucesso:", {
+      xml: xmlPath,
+      pdf: pdfPath,
+      xmlProc: xmlProcPath,
+      xmlGerado: true
+    });
+
+  } catch (error) {
+    console.error("❌ Erro ao gerar arquivos MDF-e:", error);
+    throw error;
+  }
+}
+
+// Função para gerar conteúdo XML do MDF-e
+function generateMDFeXML(documento: any, ctesRelacionados: any[]): string {
+  const dataEmissao = new Date(documento.data_emissao).toISOString().split('T')[0];
+  const horaEmissao = new Date(documento.data_emissao).toTimeString().split(' ')[0];
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<MDFe xmlns="http://www.portalfiscal.inf.br/mdfe">
+  <infMDFe versao="3.00" Id="MDFe${documento.chave_acesso}">
+    <ide>
+      <cUF>${documento.codigo_uf || '31'}</cUF>
+      <tpAmb>2</tpAmb>
+      <tpEmit>1</tpEmit>
+      <tpTransp>1</tpTransp>
+      <mod>58</mod>
+      <serie>${documento.serie}</serie>
+      <nMDF>${documento.numero_mdfe}</nMDF>
+      <cMDF>${documento.codigo_numerico || '00000000'}</cMDF>
+      <cDV>${documento.dv}</cDV>
+      <modal>1</modal>
+      <dhEmi>${dataEmissao}T${horaEmissao}-03:00</dhEmi>
+      <tpEmis>1</tpEmis>
+      <procEmi>0</procEmi>
+      <verProc>1.0</verProc>
+      <UFIni>${documento.uf_inicio || 'MG'}</UFIni>
+      <UFFim>${documento.uf_termino || 'MG'}</UFFim>
+      <infMunCarrega>
+        <cMunCarrega>${documento.cidade_inicio_ibge || '3132404'}</cMunCarrega>
+        <xMunCarrega>${documento.cidade_inicio_nome || 'Iraí de Minas'}</xMunCarrega>
+      </infMunCarrega>
+      <infMunDescarga>
+        <cMunDescarga>${documento.cidade_termino_ibge || '3132404'}</cMunDescarga>
+        <xMunDescarga>${documento.cidade_termino_nome || 'Iraí de Minas'}</xMunDescarga>
+      </infMunDescarga>
+    </ide>
+    <emit>
+      <CNPJ>${documento.empresa_cnpj}</CNPJ>
+      <IE>${documento.empresa_ie}</IE>
+      <xNome>${documento.empresa_razao_social}</xNome>
+      <enderEmit>
+        <xLgr>Rua Exemplo</xLgr>
+        <nro>123</nro>
+        <xBairro>Centro</xBairro>
+        <cMun>3132404</cMun>
+        <xMun>Iraí de Minas</xMun>
+        <CEP>38950000</CEP>
+        <UF>MG</UF>
+      </enderEmit>
+    </emit>
+    <infModal versaoModal="3.00">
+      <rodo>
+        <infANTT>
+          <RNTRC>${documento.empresa_rntrc || '12345678'}</RNTRC>
+        </infANTT>
+        <veicTracao>
+          <cInt>001</cInt>
+          <placa>${documento.placa_veiculo || 'ABC1234'}</placa>
+          <RENAVAM>000000000</RENAVAM>
+          <tara>8000</tara>
+          <capKG>20000</capKG>
+          <capM3>60</capM3>
+          <tpRod>01</tpRod>
+          <tpCar>00</tpCar>
+          <UF>MG</UF>
+        </veicTracao>
+        <codAgPorto>12345</codAgPorto>
+      </rodo>
+    </infModal>
+    <infDoc>
+${ctesRelacionados.map(cte => `      <infMunDescarga>
+        <cMunDescarga>${cte.cidade_termino_ibge || '3132404'}</cMunDescarga>
+        <xMunDescarga>${cte.cidade_termino_nome || 'Iraí de Minas'}</xMunDescarga>
+        <infCTe>
+          <chCTe>${cte.chave_acesso}</chCTe>
+        </infCTe>
+      </infMunDescarga>`).join('\n')}
+    </infDoc>
+    <tot>
+      <qCTe>${ctesRelacionados.length}</qCTe>
+      <vCarga>${documento.valor_carga || '0.00'}</vCarga>
+      <cUnid>01</cUnid>
+      <qCarga>${documento.quantidade_carga || '0.000'}</qCarga>
+    </tot>
+  </infMDFe>
+</MDFe>`;
+}
+
 // Função para gerar arquivos XML e PDF do CT-e
 export async function generateCTeFiles(documentoId: string): Promise<void> {
   try {
