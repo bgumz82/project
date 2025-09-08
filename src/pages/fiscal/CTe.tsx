@@ -1897,9 +1897,17 @@ export default function CTe() {
       await refetch()
       toast.success('Arquivos XML e PDF gerados com sucesso!')
     } catch (error) {
-      console.error('Erro ao gerar arquivos CT-e:', error)
-      // Exibe mensagem de erro genérica ou específica se disponível
-      toast.error(error instanceof Error ? error.message : 'Erro ao gerar arquivos CT-e')
+      console.error('❌ Erro ao gerar arquivos CT-e:', error)
+      console.error('❌ Detalhes do erro:', {
+        tipo: typeof error,
+        mensagem: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : 'Sem stack'
+      })
+      // Exibe mensagem de erro específica
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : `Erro ao gerar arquivos CT-e: ${String(error)}`;
+      toast.error(errorMessage)
     } finally {
       setIsGeneratingFiles(false) // Finaliza o estado de carregamento
     }

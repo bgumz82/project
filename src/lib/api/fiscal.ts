@@ -1777,6 +1777,7 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
     console.log("📄 Iniciando geração de arquivos para CT-e:", documentoId);
 
     // Buscar dados completos do CT-e
+    console.log("🔍 Buscando dados completos do documento...");
     const documento = await queryOne(`
       SELECT c.*, e.razao_social as empresa_razao_social, e.cnpj as empresa_cnpj, 
              e.ie as empresa_ie, e.endereco_completo as empresa_endereco, 
@@ -1791,7 +1792,23 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
       throw new Error("Documento CT-e não encontrado");
     }
 
+    console.log("✅ Documento encontrado:", {
+      id: documento.id,
+      numero: documento.numero_cte,
+      empresa: documento.empresa_razao_social,
+      chave_acesso: documento.chave_acesso
+    });
+
     // Buscar dados dos participantes
+    console.log("🔍 Buscando dados dos participantes...");
+    console.log("📋 IDs para busca:", {
+      tomador_id: documento.tomador_id,
+      remetente_id: documento.remetente_id,
+      destinatario_id: documento.destinatario_id,
+      recebedor_id: documento.recebedor_id,
+      produto_predominante_id: documento.produto_predominante_id
+    });
+
     const [tomador, remetente, destinatario, recebedor, produto] = await Promise.all([
       documento.tomador_id && !['remetente', 'destinatario'].includes(documento.tomador_id) 
         ? queryOne(`SELECT * FROM cadastros WHERE id = $1`, [documento.tomador_id])
@@ -1802,14 +1819,29 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
       queryOne(`SELECT * FROM cte_produtos WHERE id = $1`, [documento.produto_predominante_id])
     ]);
 
+    console.log("✅ Participantes encontrados:", {
+      tomador: tomador ? 'OK' : 'N/A',
+      remetente: remetente ? 'OK' : 'FALTANDO',
+      destinatario: destinatario ? 'OK' : 'FALTANDO',
+      recebedor: recebedor ? 'OK' : 'N/A',
+      produto: produto ? 'OK' : 'FALTANDO'
+    });
+
     if (!remetente || !destinatario || !produto) {
-      throw new Error("Dados obrigatórios não encontrados (remetente, destinatário ou produto)");
+      const faltando = [];
+      if (!remetente) faltando.push('remetente');
+      if (!destinatario) faltando.push('destinatário');
+      if (!produto) faltando.push('produto');
+      throw new Error(`Dados obrigatórios não encontrados: ${faltando.join(', ')}`);
     }
 
     // Importar função de geração XML
+    console.log("📦 Importando módulo de geração XML...");
     const { generateCTeXML } = await import('./cte-xml');
+    console.log("✅ Módulo importado com sucesso");
 
     // Gerar XML
+    console.log("🔧 Iniciando geração do conteúdo XML...");
     const xmlContent = await generateCTeXML(
       documento,
       {
@@ -1910,7 +1942,16 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
 
   } catch (error) {
     console.error("❌ Erro ao gerar arquivos CT-e:", error);
-    throw error;
+    console.error("❌ Tipo do erro:", typeof error);
+    console.error("❌ Stack trace:", error instanceof Error ? error.stack : 'Sem stack trace');
+    console.error("❌ Mensagem:", error instanceof Error ? error.message : String(error));
+    
+    // Melhorar a mensagem de erro
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Erro desconhecido na geração de arquivos CT-e';
+    
+    throw new Error(errorMessage);
   }
 }
 
