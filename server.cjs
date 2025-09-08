@@ -2029,12 +2029,18 @@ app.post('/api/cte-documentos', (req, res, next) => {
         console.log('🔒 Obtendo próximo número CT-e com lock para evitar conflitos...');
         
         // Usar UPDATE com RETURNING para garantir atomicidade
+        console.log('🔍 DEBUGANDO EMPRESA_ID RECEBIDO:', data.empresa_id);
+        console.log('🔍 TIPO DO EMPRESA_ID:', typeof data.empresa_id);
+        
         const empresaNumeroResult = await client.query(`
           UPDATE empresas_fiscais 
           SET proximo_numero_cte = proximo_numero_cte + 1
           WHERE id = $1
-          RETURNING proximo_numero_cte - 1 as numero_atual
+          RETURNING proximo_numero_cte - 1 as numero_atual, id as empresa_encontrada
         `, [data.empresa_id]);
+        
+        console.log('🔍 RESULTADO DO UPDATE:', empresaNumeroResult.rows);
+        console.log('🔍 TOTAL DE ROWS AFETADAS:', empresaNumeroResult.rowCount);
 
         if (empresaNumeroResult.rows.length > 0) {
           numeroFinal = empresaNumeroResult.rows[0].numero_atual || 1;
