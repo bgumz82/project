@@ -172,7 +172,7 @@ app.post('/api/consultar-nfe', async (req, res) => {
               codigo_ncm: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.NCM : infNFe.det?.prod?.NCM || '',
               valor_total: parseFloat(infNFe.total?.ICMSTot?.vNF || 0),
               peso_total: parseFloat(infNFe.total?.ICMSTot?.vPeso || 0),
-              quantidade_total: Array.isArray(infNFe.det) ? 
+              quantidade_total: Array.isArray(infNFe.det) ?
                 infNFe.det.reduce((acc, item) => acc + parseFloat(item.prod?.qCom || 0), 0) :
                 parseFloat(infNFe.det?.prod?.qCom || 0)
             },
@@ -184,7 +184,7 @@ app.post('/api/consultar-nfe', async (req, res) => {
             serie: infNFe.ide?.serie || '',
             data_emissao: infNFe.ide?.dhEmi || infNFe.ide?.dEmi || '',
             chave_acesso: chaveNFE,
-            observacoes: infNFe.infAdic?.infCpl || '' // Extrair observações da NF-e
+            observacoes: infNFe.infAdic?.infCpl || ''
           };
         } else {
           throw new Error('XML da NF-e não possui estrutura válida');
@@ -210,7 +210,7 @@ app.get('/cadastros-publico', async (req, res) => {
     console.log('🔍 Buscando todos os cadastros no banco local');
 
     const result = await pool.query(`
-      SELECT 
+      SELECT
         id,
         tipo,
         razao_social,
@@ -225,7 +225,7 @@ app.get('/cadastros-publico', async (req, res) => {
         ativo,
         created_at,
         updated_at
-      FROM cadastros 
+      FROM cadastros
       WHERE ativo = true
       ORDER BY razao_social
     `);
@@ -240,9 +240,9 @@ app.get('/cadastros-publico', async (req, res) => {
     res.json(cadastros);
   } catch (error) {
     console.error('❌ Erro ao buscar cadastros:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro ao buscar cadastros no banco de dados',
-      details: error.message 
+      details: error.message
     });
   }
 });
@@ -257,7 +257,7 @@ app.get('/api/verificar-cliente/:cnpj', async (req, res) => {
     }
 
     const result = await pool.query(`
-      SELECT 
+      SELECT
         id,
         tipo,
         razao_social,
@@ -266,7 +266,7 @@ app.get('/api/verificar-cliente/:cnpj', async (req, res) => {
         cidade,
         estado,
         cep
-      FROM cadastros 
+      FROM cadastros
       WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
     `, [cnpj]);
 
@@ -279,9 +279,9 @@ app.get('/api/verificar-cliente/:cnpj', async (req, res) => {
     }
   } catch (error) {
     console.error('❌ Erro ao verificar cliente:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro ao verificar cliente no banco de dados',
-      details: error.message 
+      details: error.message
     });
   }
 });
@@ -353,8 +353,8 @@ app.post('/api/cadastrar-cliente-nfe', async (req, res) => {
 
     if (result.rows.length > 0) {
       console.log('✅ Cliente cadastrado automaticamente:', result.rows[0].razao_social);
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         cliente: result.rows[0],
         message: 'Cliente cadastrado com sucesso a partir da NF-e'
       });
@@ -363,9 +363,9 @@ app.post('/api/cadastrar-cliente-nfe', async (req, res) => {
     }
   } catch (error) {
     console.error('❌ Erro ao cadastrar cliente:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro ao cadastrar cliente automaticamente',
-      details: error.message 
+      details: error.message
     });
   }
 });
@@ -384,7 +384,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     // Buscar usuário
     const userResult = await pool.query(`
-      SELECT id, email, nome, tipo, ativo, 
+      SELECT id, email, nome, tipo, ativo,
              senha
       FROM usuarios
       WHERE email = $1
@@ -597,7 +597,7 @@ app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
 
     // Atualizar senha no banco
     await pool.query(`
-      UPDATE usuarios 
+      UPDATE usuarios
       SET senha = $1, updated_at = NOW()
       WHERE id = $2
     `, [hashedNewPassword, userId]);
@@ -698,7 +698,6 @@ async function createDatabaseStructure(client) {
     await createFunctionsAndTriggers(client);
 
     console.log('📝 Inserindo dados iniciais...');
-    // 7. Inserir dados iniciais
     // 7. Inserir dados iniciais
     await insertInitialData(client);
 
@@ -1128,7 +1127,7 @@ async function createTables(client) {
           valor_seguro decimal(12,2),
           valor_frete decimal(12,2),
           CONSTRAINT fk_cte_documento
-            FOREIGN KEY(cte_documento_id) 
+            FOREIGN KEY(cte_documento_id)
             REFERENCES cte_documentos(id)
             ON DELETE CASCADE
         )
@@ -1142,7 +1141,7 @@ async function createTables(client) {
           cte_documento_id uuid NOT NULL,
           chave_acesso varchar(44) NOT NULL,
           CONSTRAINT fk_cte_documento
-            FOREIGNKEY(cte_documento_id) 
+            FOREIGNKEY(cte_documento_id)
             REFERENCES cte_documentos(id)
             ON DELETE CASCADE
         )
@@ -1158,7 +1157,7 @@ async function createTables(client) {
           percentual decimal(5,2),
           valor decimal(12,2) NOT NULL,
           CONSTRAINT fk_cte_documento
-            FOREIGN KEY(cte_documento_id) 
+            FOREIGN KEY(cte_documento_id)
             REFERENCES cte_documentos(id)
             ON DELETE CASCADE
         )
@@ -1176,7 +1175,7 @@ async function createTables(client) {
           uf_prestacao varchar(2),
           valor_prestacao decimal(12,2),
           CONSTRAINT fk_cte_documento
-            FOREIGN KEY(cte_documento_id) 
+            FOREIGN KEY(cte_documento_id)
             REFERENCES cte_documentos(id)
             ON DELETE CASCADE
         )
@@ -1202,7 +1201,7 @@ async function createTables(client) {
           endereco_uf varchar(2),
           endereco_cep varchar(10),
           CONSTRAINT fk_cte_documento
-            FOREIGN KEY(cte_documento_id) 
+            FOREIGN KEY(cte_documento_id)
             REFERENCES cte_documentos(id)
             ON DELETE CASCADE
         )
@@ -1228,7 +1227,7 @@ async function createTables(client) {
           endereco_uf varchar(2),
           endereco_cep varchar(10),
           CONSTRAINT fk_cte_documento
-            FOREIGN KEY(cte_documento_id) 
+            FOREIGN KEY(cte_documento_id)
             REFERENCES cte_documentos(id)
             ON DELETE CASCADE
         )
@@ -1254,7 +1253,7 @@ async function createTables(client) {
           endereco_uf varchar(2),
           endereco_cep varchar(10),
           CONSTRAINT fk_cte_documento
-            FOREIGN KEY(cte_documento_id) 
+            FOREIGN KEY(cte_documento_id)
             REFERENCES cte_documentos(id)
             ON DELETE CASCADE
         )
@@ -1280,7 +1279,7 @@ async function createTables(client) {
           endereco_uf varchar(2),
           endereco_cep varchar(10),
           CONSTRAINT fk_cte_documento
-            FOREIGN KEY(cte_documento_id) 
+            FOREIGN KEY(cte_documento_id)
             REFERENCES cte_documentos(id)
             ON DELETE CASCADE
         )
@@ -1530,15 +1529,15 @@ async function createForeignKeys(client) {
     try {
       // Verificar se a constraint já existe
       const constraintExists = await client.query(`
-        SELECT 1 FROM information_schema.table_constraints 
+        SELECT 1 FROM information_schema.table_constraints
         WHERE constraint_name = $1 AND table_name = $2
       `, [fk.name, fk.table]);
 
       if (constraintExists.rows.length === 0) {
         const onDeleteClause = fk.onDelete ? ` ON DELETE ${fk.onDelete}` : '';
         await client.query(`
-          ALTER TABLE ${fk.table} 
-          ADD CONSTRAINT ${fk.name} 
+          ALTER TABLE ${fk.table}
+          ADD CONSTRAINT ${fk.name}
           FOREIGN KEY (${fk.column}) REFERENCES ${fk.references}${onDeleteClause}
         `);
         console.log(`✅ Foreign key ${fk.name} criada`);
@@ -1682,7 +1681,7 @@ async function insertInitialData(client) {
 
   try {
     await client.query(`
-      INSERT INTO usuarios (email, nome, tipo, senha, ativo) 
+      INSERT INTO usuarios (email, nome, tipo, senha, ativo)
       VALUES ('admin@empresa.com', 'Administrador', 'admin', $1, true)
       ON CONFLICT (email) DO NOTHING
     `, [validHash]);
@@ -1797,10 +1796,10 @@ async function insertInitialData(client) {
   try {
     await client.query(`
       INSERT INTO empresas_fiscais (
-        razao_social, nome_fantasia, cnpj, inscricao_estadual, endereco, cidade, estado, 
+        razao_social, nome_fantasia, cnpj, inscricao_estadual, endereco, cidade, estado,
         uf_emissao_nfe, ambiente_nfce, ambiente_cte, serie_padrao_cte, status
       ) VALUES (
-        'EMPRESA DE EXEMPLO LTDA', 'EXEMPLO LTDA', '00.000.000/0001-00', '123.456.789.012', 
+        'EMPRESA DE EXEMPLO LTDA', 'EXEMPLO LTDA', '00.000.000/0001-00', '123.456.789.012',
         'Rua das Amostras, 100', 'São Paulo', 'SP', 'SP', '1', '1', '001', 'ativo'
       )
       ON CONFLICT (cnpj) DO NOTHING
@@ -2015,21 +2014,21 @@ app.post('/api/cte-documentos', (req, res, next) => {
 
         if (empresaNumeroResult.rows.length > 0) {
           numeroFinal = empresaNumeroResult.rows[0].proximo_numero_cte || 1;
-          
+
           // Incrementar o contador na empresa após usar
           await client.query(`
-            UPDATE empresas_fiscais 
-            SET proximo_numero_cte = proximo_numero_cte + 1 
+            UPDATE empresas_fiscais
+            SET proximo_numero_cte = proximo_numero_cte + 1
             WHERE id = $1
           `, [data.empresa_id]);
-          
+
           console.log('📋 Próximo número CT-e da empresa:', numeroFinal);
         } else {
           // Fallback: buscar último número da tabela
           const ultimoNumeroResult = await client.query(`
             SELECT COALESCE(MAX(CAST(numero_cte AS INTEGER)), 0) + 1 as proximo_numero
-            FROM cte_documentos 
-            WHERE empresa_id = $1 
+            FROM cte_documentos
+            WHERE empresa_id = $1
             AND numero_cte ~ '^[0-9]+$'
           `, [data.empresa_id]);
 
@@ -2157,9 +2156,9 @@ app.post('/api/cte-documentos', (req, res, next) => {
         try {
           const freteResult = await client.query(`
             SELECT tomador_frete
-            FROM frete_documentos 
-            WHERE cliente_origem_id = $1 
-            AND cliente_destino_id = $2 
+            FROM frete_documentos
+            WHERE cliente_origem_id = $1
+            AND cliente_destino_id = $2
             AND ativo = true
             LIMIT 1
           `, [remetenteIdFinal, destinatarioIdFinal]);
@@ -2181,13 +2180,13 @@ app.post('/api/cte-documentos', (req, res, next) => {
               destinatario_razao: data.nfe_destinatario_razao_social
             });
 
-            return res.status(400).json({ 
+            return res.status(400).json({
               error: `Frete não cadastrado. É necessário cadastrar o frete para a rota: ${data.nfe_remetente_razao_social || 'Remetente'} → ${data.nfe_destinatario_razao_social || 'Destinatário'}. Acesse o módulo de Controle de Frete para cadastrar esta rota antes de criar o CT-e.`
             });
           }
         } catch (error) {
           console.error('❌ Erro ao buscar tomador no frete:', error);
-          return res.status(500).json({ 
+          return res.status(500).json({
             error: `Erro ao verificar frete cadastrado: ${error.message}. Verifique se os clientes estão cadastrados corretamente e se existe uma rota de frete configurada entre ${data.nfe_remetente_razao_social || 'o remetente'} e ${data.nfe_destinatario_razao_social || 'o destinatário'}.`
           });
         }
@@ -2198,7 +2197,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
         console.log('🔍 Buscando produto por NCM:', data.nfe_produto_ncm);
 
         const produtoResult = await client.query(
-          'SELECT id FROM cte_produtos WHERE cod_ncm = $1 LIMIT 1',
+          'SELECT id FROM cte_produtos WHERE ncm_produto = $1 LIMIT 1',
           [data.nfe_produto_ncm]
         );
 
@@ -2210,8 +2209,8 @@ app.post('/api/cte-documentos', (req, res, next) => {
           console.log('📝 Criando produto automaticamente:', data.nfe_produto_descricao);
 
           const novoProdutoResult = await client.query(`
-            INSERT INTO cte_produtos (sequencia, cod_ncm, descricao_produto)
-            VALUES (1, $1, $2)
+            INSERT INTO cte_produtos (id, cte_documento_id, sequencia, ncm_produto, descricao_produto)
+            VALUES (gen_random_uuid(), NULL, 1, $1, $2)
             RETURNING id
           `, [data.nfe_produto_ncm, data.nfe_produto_descricao]);
 
@@ -2397,7 +2396,7 @@ app.get('/api/postos', authenticateToken, async (req, res) => {
     console.log('=== EXECUTANDO ROTA ESPECÍFICA PARA POSTOS ===');
 
     const query = `
-      SELECT 
+      SELECT
         id,
         nome,
         COALESCE(endereco, 'Endereço não informado') as endereco,
@@ -2409,7 +2408,7 @@ app.get('/api/postos', authenticateToken, async (req, res) => {
         COALESCE(ativo, true) as ativo,
         created_at,
         updated_at
-      FROM cadastros 
+      FROM cadastros
       WHERE tipo = 'abastecimento'
       ORDER BY nome
     `;
@@ -2503,7 +2502,7 @@ async function getNFeData(chaveNFE) {
               codigo_ncm: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.NCM : infNFe.det?.prod?.NCM || '',
               valor_total: parseFloat(infNFe.total?.ICMSTot?.vNF || 0),
               peso_total: parseFloat(infNFe.total?.ICMSTot?.vPeso || 0),
-              quantidade_total: Array.isArray(infNFe.det) ? 
+              quantidade_total: Array.isArray(infNFe.det) ?
                 infNFe.det.reduce((acc, item) => acc + parseFloat(item.prod?.qCom || 0), 0) :
                 parseFloat(infNFe.det?.prod?.qCom || 0)
             },
@@ -2601,7 +2600,7 @@ app.post('/api/fiscal/cte-auto-test', async (req, res) => {
     } catch (error) {
       console.error('❌ Erro ao criar CT-e automaticamente:', error);
       if (client) client.release();
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Erro ao criar CT-e automaticamente',
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
@@ -2609,7 +2608,7 @@ app.post('/api/fiscal/cte-auto-test', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Erro geral na criação automática:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro na criação automática de CT-e',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -2748,7 +2747,7 @@ app.get('/api/cte-documentos/pendentes', authenticateToken, async (req, res) => 
     console.log('🔍 Buscando documentos CT-e pendentes...');
 
     const result = await pool.query(`
-      SELECT * FROM cte_documentos 
+      SELECT * FROM cte_documentos
       WHERE status = 'pendente' AND xml_gerado = 'true'
       ORDER BY created_at ASC
     `);
@@ -2770,7 +2769,7 @@ app.put('/api/cte-documentos/:id/status', authenticateToken, async (req, res) =>
     console.log(`🔄 Atualizando status do CT-e ${id} para: ${status}`);
 
     const result = await pool.query(`
-      UPDATE cte_documentos 
+      UPDATE cte_documentos
       SET status = $1, updated_at = NOW()
       WHERE id = $2
       RETURNING *
