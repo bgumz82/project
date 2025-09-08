@@ -1970,7 +1970,7 @@ app.post('/api/db/query-main', authenticateToken, async (req, res) => {
   }
 });
 
-// Rota específica para CT-e documentos
+// Rota específica para CT-e documentos - USAR BANCO DO USUÁRIO
 app.post('/api/cte-documentos', (req, res, next) => {
   console.log('🔥 REQUISIÇÃO CHEGOU NA ROTA /api/cte-documentos');
   console.log('🔥 Headers:', req.headers);
@@ -1993,20 +1993,43 @@ app.post('/api/cte-documentos', (req, res, next) => {
       temDadosNfe: !!(data.nfe_remetente_cnpj || data.nfe_destinatario_cnpj)
     });
 
-    console.log(`🔍 [${requestId}] Iniciando validação da empresa...`);
+    console.log(`🔍 [${requestId}] USANDO BANCO DO USUÁRIO:`, req.user.email);
 
-    // Validar empresa usando o mesmo pool que funciona na interface
-    const empresaResult = await pool.query(
-      'SELECT * FROM empresas_fiscais WHERE id = $1',
-      [data.empresa_id]
-    );
+    // 🎯 USAR BANCO DO USUÁRIO - MESMA LÓGICA DE /api/db/query
+    const userId = req.user.id;
+    let client;
 
-    console.log(`📋 [${requestId}] Resultado da query empresa:`, empresaResult.rows.length, 'registros');
+    // Buscar configuração de banco do usuário
+    const userConfigResult = await mainPool.query(`
+      SELECT dc.*
+      FROM usuarios u
+      JOIN database_configurations dc ON u.database_config_id = dc.id
+      WHERE u.id = $1 AND dc.ativo = true
+    `, [userId]);
 
-    // Obter client apenas depois da validação
-    const client = await pool.connect();
+    if (userConfigResult.rows.length === 0) {
+      console.log('⚠️ Usuário sem configuração específica, usando pool padrão');
+      client = await pool.connect();
+    } else {
+      const dbConfig = userConfigResult.rows[0];
+      console.log('🔗 Conectando ao banco do usuário:', dbConfig.nome_empresa);
+      
+      const userPool = new Pool({
+        connectionString: dbConfig.connection_string,
+        ssl: dbConfig.ssl_enabled
+      });
+      
+      client = await userPool.connect();
+    }
 
     try {
+      // Validar empresa no banco correto do usuário
+      const empresaResult = await client.query(
+        'SELECT * FROM empresas_fiscais WHERE id = $1',
+        [data.empresa_id]
+      );
+
+      console.log(`📋 [${requestId}] Resultado da query empresa:`, empresaResult.rows.length, 'registros');
 
       if (empresaResult.rows.length === 0) {
         return res.status(400).json({ error: 'Empresa fiscal não encontrada' });

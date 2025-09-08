@@ -239,7 +239,7 @@ export async function getEmpresasFiscais(): Promise<EmpresaFiscal[]> {
       SELECT *
       FROM empresas_fiscais
       ORDER BY razao_social
-    `, undefined, true); // 🎯 USAR BANCO PRINCIPAL
+    `); // 🎯 USAR BANCO DO USUÁRIO
 
     console.log("✅ Empresas fiscais encontradas:", result.length);
     return result;
@@ -259,9 +259,8 @@ export async function getEmpresaFiscal(
       FROM empresas_fiscais
       WHERE id = $1
     `,
-      [id],
-      true // 🎯 USAR BANCO PRINCIPAL
-    );
+      [id]
+    ); // 🎯 USAR BANCO DO USUÁRIO
 
     return result;
   } catch (error) {
@@ -287,9 +286,8 @@ export async function createEmpresaFiscal(
       `
       SELECT id FROM empresas_fiscais WHERE cnpj = $1
     `,
-      [cnpjLimpo],
-      true // 🎯 USAR BANCO PRINCIPAL
-    );
+      [cnpjLimpo]
+    ); // 🎯 USAR BANCO DO USUÁRIO
 
     if (existingEmpresa) {
       throw new Error("CNPJ já cadastrado no sistema");
@@ -328,9 +326,8 @@ export async function createEmpresaFiscal(
         empresa.serie_padrao_cte || "001",
         empresa.serie_padrao_mdfe || "001",
         empresa.path_arquivos ? (empresa.path_arquivos.startsWith('./') ? empresa.path_arquivos.substring(2) : empresa.path_arquivos.startsWith('/') ? empresa.path_arquivos.substring(1) : empresa.path_arquivos) : empresa.path_arquivos,
-      ],
-      true // 🎯 USAR BANCO PRINCIPAL
-    );
+      ]
+    ); // 🎯 USAR BANCO DO USUÁRIO
 
     if (!result) {
       throw new Error("Erro ao criar empresa fiscal");
@@ -365,9 +362,8 @@ export async function updateEmpresaFiscal(
         `
         SELECT id FROM empresas_fiscais WHERE cnpj = $1 AND id != $2
       `,
-        [cnpjLimpo, id],
-        true // 🎯 USAR BANCO PRINCIPAL
-      );
+        [cnpjLimpo, id]
+      ); // 🎯 USAR BANCO DO USUÁRIO
 
       if (existingEmpresa) {
         throw new Error("CNPJ já cadastrado em outra empresa");
@@ -501,9 +497,8 @@ export async function updateEmpresaFiscal(
       WHERE id = $${paramIndex}
       RETURNING *
     `,
-      values,
-      true // 🎯 USAR BANCO PRINCIPAL
-    );
+      values
+    ); // 🎯 USAR BANCO DO USUÁRIO
 
     if (!result) {
       throw new Error("Empresa fiscal não encontrada");
@@ -526,17 +521,15 @@ export async function deleteEmpresaFiscal(id: string): Promise<void> {
       `
       SELECT COUNT(*) as count FROM cte_documentos WHERE empresa_id = $1
     `,
-      [id],
-      true // 🎯 USAR BANCO PRINCIPAL
-    );
+      [id]
+    ); // 🎯 USAR BANCO DO USUÁRIO
 
     const mdfeCount = await queryOne(
       `
       SELECT COUNT(*) as count FROM mdfe_documentos WHERE empresa_id = $1
     `,
-      [id],
-      true // 🎯 USAR BANCO PRINCIPAL
-    );
+      [id]
+    ); // 🎯 USAR BANCO DO USUÁRIO
 
     if (
       (cteCount && parseInt(cteCount.count) > 0) ||
@@ -547,7 +540,7 @@ export async function deleteEmpresaFiscal(id: string): Promise<void> {
       );
     }
 
-    await query("DELETE FROM empresas_fiscais WHERE id = $1", [id], true); // 🎯 USAR BANCO PRINCIPAL
+    await query("DELETE FROM empresas_fiscais WHERE id = $1", [id]); // 🎯 USAR BANCO DO USUÁRIO
     console.log("✅ Empresa fiscal excluída com sucesso");
   } catch (error) {
     console.error("❌ Erro ao excluir empresa fiscal:", error);
@@ -569,7 +562,7 @@ export async function getCTeDocumentos(): Promise<CTeDocumento[]> {
       FROM cte_documentos c
       JOIN empresas_fiscais e ON c.empresa_id = e.id
       ORDER BY c.data_emissao DESC, c.numero_cte DESC
-    `, undefined, true); // 🎯 USAR BANCO PRINCIPAL
+    `); // 🎯 USAR BANCO DO USUÁRIO
 
     console.log("✅ Documentos CT-e encontrados:", result.length);
 
@@ -611,9 +604,8 @@ export async function createCTeDocumento(
       `
       SELECT id, serie_padrao_cte, codigo_uf, status FROM empresas_fiscais WHERE id = $1
     `,
-      [documento.empresa_id],
-      true // 🎯 USAR BANCO PRINCIPAL
-    );
+      [documento.empresa_id]
+    ); // 🎯 USAR BANCO DO USUÁRIO
 
     console.log("🏢 Empresa encontrada:", empresa);
 
