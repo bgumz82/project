@@ -2225,10 +2225,13 @@ app.post('/api/cte-documentos', (req, res, next) => {
       if (data.nfe_produto_ncm && !produtoPredominanteIdFinal) {
         console.log('🔍 Buscando produto por NCM:', data.nfe_produto_ncm);
 
-        const produtoResult = await client.query(
+        // FORÇA USO DO POOL HARDCODED DIRETAMENTE
+        const produtoClient = await pool.connect();
+        const produtoResult = await produtoClient.query(
           'SELECT id FROM cte_produtos WHERE ncm_produto = $1 LIMIT 1',
           [data.nfe_produto_ncm]
         );
+        produtoClient.release();
 
         if (produtoResult.rows.length > 0) {
           produtoPredominanteIdFinal = produtoResult.rows[0].id;
