@@ -1444,6 +1444,17 @@ export async function createMDFeDocumento(
 
     console.log("✅ Documento MDF-e criado com sucesso:", result.id);
     console.log("✅ CT-es vinculados:", documento.cte_ids.length);
+
+    // Gerar XML automaticamente após criar o documento
+    try {
+      console.log("🚀 Gerando XML do MDF-e automaticamente...");
+      await generateMDFeFiles(result.id);
+      console.log("✅ XML do MDF-e gerado com sucesso");
+    } catch (xmlError) {
+      console.error("❌ Erro ao gerar XML do MDF-e:", xmlError);
+      // Não falhar a criação por causa do XML
+    }
+
     return result;
   } catch (error) {
     console.error("❌ Erro ao criar documento MDF-e:", error);
