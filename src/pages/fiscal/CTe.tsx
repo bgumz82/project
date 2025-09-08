@@ -1397,13 +1397,13 @@ export default function CTe() {
           console.log('✅ Destinatário encontrado:', destinatarioIdFinal)
         }
 
-        // Definir tomador baseado na configuração do frete
+        // Definir tomador baseado na configuração do frete - SALVAR VALOR LITERAL igual ao CT-e Auto
         if (informacoesFrete.tomador_frete === 'remetente') {
-          tomadorIdFinal = remetenteIdFinal
-          console.log('👤 Tomador definido como REMETENTE (baseado no frete):', tomadorIdFinal)
+          tomadorIdFinal = 'remetente'  // Salvar literal, não UUID
+          console.log('👤 Tomador definido como REMETENTE (valor literal):', tomadorIdFinal)
         } else if (informacoesFrete.tomador_frete === 'destinatario') {
-          tomadorIdFinal = destinatarioIdFinal
-          console.log('👤 Tomador definido como DESTINATÁRIO (baseado no frete):', tomadorIdFinal)
+          tomadorIdFinal = 'destinatario'  // Salvar literal, não UUID
+          console.log('👤 Tomador definido como DESTINATÁRIO (valor literal):', tomadorIdFinal)
         }
 
       } catch (error) {
