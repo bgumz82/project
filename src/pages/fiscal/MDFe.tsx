@@ -219,8 +219,10 @@ export default function MDFe() {
           </div>
           <button
             onClick={() => {
+              console.log("🚀 Abrindo modal MDF-e - vai carregar CT-es emitidos...")
               resetForm()
               setIsModalOpen(true)
+              setShowCTeSelection(true) // Ativar busca de CT-es
             }}
             className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
           >

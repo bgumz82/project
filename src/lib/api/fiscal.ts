@@ -1191,7 +1191,18 @@ export async function getCTeEmitidosParaMDFe(): Promise<CTeDocumento[]> {
     `);
     console.log("📊 CT-es por status:", statusCount);
 
-    const result = await query(`
+    // Primeiro, verificar se a tabela mdfe_cte_relacionados existe
+    let tabelaExiste = true;
+    try {
+      await query("SELECT 1 FROM mdfe_cte_relacionados LIMIT 1");
+      console.log("✅ Tabela mdfe_cte_relacionados existe");
+    } catch (error) {
+      console.log("❌ Tabela mdfe_cte_relacionados NÃO existe:", error);
+      tabelaExiste = false;
+    }
+
+    // Query sem verificar relacionamentos se tabela não existir
+    const querySQL = tabelaExiste ? `
       SELECT 
         c.*,
         e.razao_social as empresa_razao_social,
@@ -1205,7 +1216,20 @@ export async function getCTeEmitidosParaMDFe(): Promise<CTeDocumento[]> {
         WHERE cte_documento_id IS NOT NULL
       )
       ORDER BY c.data_emissao DESC, c.numero_cte DESC
-    `);
+    ` : `
+      SELECT 
+        c.*,
+        e.razao_social as empresa_razao_social,
+        e.cnpj as empresa_cnpj
+      FROM cte_documentos c
+      JOIN empresas_fiscais e ON c.empresa_id = e.id
+      WHERE c.status = 'emitido'
+      ORDER BY c.data_emissao DESC, c.numero_cte DESC
+    `;
+
+    console.log("🔍 Query SQL que será executada:", querySQL);
+    
+    const result = await query(querySQL);
 
     console.log("✅ CT-es emitidos disponíveis para MDF-e:", result.length);
 
