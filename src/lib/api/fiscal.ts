@@ -196,6 +196,8 @@ export interface MDFeDocumentoCreate {
   forma_emissao?: number;
   status?: "pendente" | "emitido" | "cancelado" | "encerrado";
   observacoes?: string | null;
+  // CT-es relacionados
+  cte_ids?: string[];
 }
 
 // Códigos UF do Brasil
@@ -1162,6 +1164,43 @@ export async function deleteCTeDocumento(id: string): Promise<void> {
   }
 }
 
+// ===== CT-es EMITIDOS PARA MDF-e =====
+
+export async function getCTeEmitidosParaMDFe(): Promise<CTeDocumento[]> {
+  try {
+    console.log("🔍 Buscando CT-es emitidos disponíveis para MDF-e");
+
+    const result = await query(`
+      SELECT 
+        c.*,
+        e.razao_social as empresa_razao_social,
+        e.cnpj as empresa_cnpj
+      FROM cte_documentos c
+      JOIN empresas_fiscais e ON c.empresa_id = e.id
+      WHERE c.status = 'emitido'
+      AND c.id NOT IN (
+        SELECT DISTINCT cte_documento_id 
+        FROM mdfe_cte_relacionados 
+        WHERE cte_documento_id IS NOT NULL
+      )
+      ORDER BY c.data_emissao DESC, c.numero_cte DESC
+    `);
+
+    console.log("✅ CT-es emitidos disponíveis para MDF-e:", result.length);
+
+    return result.map((doc) => ({
+      ...doc,
+      empresa: {
+        razao_social: doc.empresa_razao_social,
+        cnpj: doc.empresa_cnpj,
+      },
+    }));
+  } catch (error) {
+    console.error("❌ Erro ao buscar CT-es emitidos para MDF-e:", error);
+    throw error;
+  }
+}
+
 // ===== MDF-e DOCUMENTOS =====
 
 export async function getMDFeDocumentos(): Promise<MDFeDocumento[]> {
@@ -1199,10 +1238,36 @@ export async function createMDFeDocumento(
   try {
     console.log("📝 Criando novo documento MDF-e:", documento);
 
+    // Validar se há CT-es selecionados
+    if (!documento.cte_ids || documento.cte_ids.length === 0) {
+      throw new Error("É necessário selecionar pelo menos um CT-e emitido para criar o MDF-e");
+    }
+
+    // Verificar se todos os CT-es estão emitidos
+    const ctesValidation = await query(
+      `
+      SELECT id, numero_cte, status 
+      FROM cte_documentos 
+      WHERE id = ANY($1) AND empresa_id = $2
+    `,
+      [documento.cte_ids, documento.empresa_id],
+    );
+
+    if (ctesValidation.length !== documento.cte_ids.length) {
+      throw new Error("Alguns CT-es selecionados não foram encontrados ou não pertencem à empresa");
+    }
+
+    const ctesNaoEmitidos = ctesValidation.filter(cte => cte.status !== 'emitido');
+    if (ctesNaoEmitidos.length > 0) {
+      throw new Error(`CT-es ${ctesNaoEmitidos.map(c => c.numero_cte).join(', ')} não estão emitidos`);
+    }
+
+    console.log("✅ CT-es validados:", ctesValidation.length);
+
     // Verificar se empresa existe e buscar dados
     const empresa = await queryOne(
       `
-      SELECT id, serie_padrao_mdfe, codigo_uf FROM empresas_fiscais WHERE id = $1
+      SELECT id, serie_padrao_mdfe, codigo_uf, proximo_numero_mdfe FROM empresas_fiscais WHERE id = $1
     `,
       [documento.empresa_id],
     );
@@ -1211,16 +1276,64 @@ export async function createMDFeDocumento(
       throw new Error("Empresa fiscal não encontrada");
     }
 
-    // Obter próximo número automaticamente se não fornecido
+    // APLICAR MESMA LÓGICA DE NUMERAÇÃO SEQUENCIAL DO CT-e
     let numeroFinal = documento.numero_mdfe;
     if (!numeroFinal || numeroFinal === "AUTO" || numeroFinal.trim() === "") {
-      const nextNumber = await query(
-        `
-        SELECT get_next_mdfe_number($1) as numero
-      `,
-        [documento.empresa_id],
-      );
-      numeroFinal = nextNumber[0].numero.toString();
+      console.log("🔒 Obtendo próximo número MDF-e da empresa cadastrada...");
+      
+      // Buscar último número real usado nos documentos desta empresa
+      const ultimoNumeroResult = await query(`
+        SELECT COALESCE(MAX(CAST(numero_mdfe AS INTEGER)), 0) as ultimo_numero
+        FROM mdfe_documentos
+        WHERE empresa_id = $1
+        AND numero_mdfe ~ '^[0-9]+$'
+      `, [documento.empresa_id]);
+
+      const ultimoNumeroReal = ultimoNumeroResult[0].ultimo_numero || 0;
+      const proximoNumeroCalculado = ultimoNumeroReal + 1;
+      
+      console.log("📋 ÚLTIMO NÚMERO MDF-e REAL NA BASE:", ultimoNumeroReal);
+      console.log("📋 PRÓXIMO NÚMERO MDF-e CALCULADO:", proximoNumeroCalculado);
+      console.log("📋 VALOR NA EMPRESA (campo):", empresa.proximo_numero_mdfe);
+      
+      // Usar o maior entre calculado e campo da empresa
+      numeroFinal = Math.max(proximoNumeroCalculado, empresa.proximo_numero_mdfe).toString();
+      console.log("📋 NÚMERO MDF-e FINAL ESCOLHIDO:", numeroFinal);
+
+      // Verificar se já existe (prevenção contra duplicatas)
+      const existeResult = await query(`
+        SELECT id FROM mdfe_documentos 
+        WHERE empresa_id = $1 AND numero_mdfe = $2
+      `, [documento.empresa_id, numeroFinal]);
+      
+      if (existeResult.length > 0) {
+        let tentativas = 0;
+        do {
+          numeroFinal = (parseInt(numeroFinal) + 1).toString();
+          tentativas++;
+          const novaVerificacao = await query(`
+            SELECT id FROM mdfe_documentos 
+            WHERE empresa_id = $1 AND numero_mdfe = $2
+          `, [documento.empresa_id, numeroFinal]);
+          
+          if (novaVerificacao.length === 0) break;
+          
+          if (tentativas > 100) {
+            throw new Error('Erro interno: não foi possível encontrar número MDF-e disponível');
+          }
+        } while (true);
+        
+        console.log('📋 Número MDF-e ajustado para evitar duplicata:', numeroFinal);
+      }
+
+      // Atualizar o próximo número na empresa
+      await query(`
+        UPDATE empresas_fiscais 
+        SET proximo_numero_mdfe = $2
+        WHERE id = $1
+      `, [documento.empresa_id, parseInt(numeroFinal) + 1]);
+      
+      console.log('📋 Próximo número MDF-e atualizado na empresa para:', parseInt(numeroFinal) + 1);
     }
 
     // Usar série padrão da empresa se não fornecida
@@ -1228,19 +1341,6 @@ export async function createMDFeDocumento(
 
     // SEMPRE usar código UF da empresa (não permitir override)
     const codigoUFFinal = empresa.codigo_uf || "35";
-
-    // Verificar se número/série já existe para esta empresa
-    const existingDoc = await queryOne(
-      `
-      SELECT id FROM mdfe_documentos 
-      WHERE empresa_id = $1 AND numero_mdfe = $2 AND serie = $3
-    `,
-      [documento.empresa_id, numeroFinal, serieFinal],
-    );
-
-    if (existingDoc) {
-      throw new Error("Número MDF-e e série já existem para esta empresa");
-    }
 
     const result = await queryOne(
       `
@@ -1274,7 +1374,20 @@ export async function createMDFeDocumento(
       throw new Error("Erro ao criar documento MDF-e");
     }
 
+    // Vincular CT-es ao MDF-e
+    console.log("🔗 Vinculando CT-es ao MDF-e...");
+    for (const cteId of documento.cte_ids) {
+      await query(
+        `
+        INSERT INTO mdfe_cte_relacionados (mdfe_documento_id, cte_documento_id, created_at)
+        VALUES ($1, $2, NOW())
+      `,
+        [result.id, cteId],
+      );
+    }
+
     console.log("✅ Documento MDF-e criado com sucesso:", result.id);
+    console.log("✅ CT-es vinculados:", documento.cte_ids.length);
     return result;
   } catch (error) {
     console.error("❌ Erro ao criar documento MDF-e:", error);
