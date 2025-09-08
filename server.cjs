@@ -1306,6 +1306,18 @@ async function createTables(client) {
           updated_at timestamptz DEFAULT now()
         )
       `
+    },
+    {
+      name: 'mdfe_cte_relacionados',
+      query: `
+        CREATE TABLE IF NOT EXISTS mdfe_cte_relacionados (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          mdfe_documento_id uuid NOT NULL,
+          cte_documento_id uuid NOT NULL,
+          created_at timestamptz DEFAULT now(),
+          UNIQUE(mdfe_documento_id, cte_documento_id)
+        )
+      `
     }
   ];
 

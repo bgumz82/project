@@ -18,12 +18,14 @@ import {
   updateMDFeDocumento, 
   deleteMDFeDocumento,
   getEmpresasFiscais,
+  getCTeEmitidosParaMDFe,
   updateDocumentFiles,
   formatCNPJ,
   formatChaveAcesso,
   getUFFromCode,
   type MDFeDocumento,
-  type MDFeDocumentoCreate
+  type MDFeDocumentoCreate,
+  type CTeDocumento
 } from '@/lib/api/fiscal'
 
 const STATUS_LABELS = {
@@ -44,6 +46,8 @@ export default function MDFe() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedDocumento, setSelectedDocumento] = useState<MDFeDocumento | null>(null)
   const [filterStatus, setFilterStatus] = useState<'todos' | 'pendente' | 'emitido' | 'cancelado' | 'encerrado'>('todos')
+  const [selectedCTes, setSelectedCTes] = useState<string[]>([])
+  const [showCTeSelection, setShowCTeSelection] = useState(false)
   const queryClient = useQueryClient()
 
   const { data: documentos, isLoading } = useQuery({
@@ -56,6 +60,12 @@ export default function MDFe() {
   const { data: empresas } = useQuery({
     queryKey: ['empresas-fiscais'],
     queryFn: getEmpresasFiscais
+  })
+
+  const { data: ctesEmitidos, isLoading: loadingCTes } = useQuery({
+    queryKey: ['ctes-emitidos-mdfe'],
+    queryFn: getCTeEmitidosParaMDFe,
+    enabled: showCTeSelection
   })
 
   const createMutation = useMutation({
@@ -102,21 +112,29 @@ export default function MDFe() {
 
   const resetForm = () => {
     setSelectedDocumento(null)
+    setSelectedCTes([])
+    setShowCTeSelection(false)
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     
+    // Validar CT-es selecionados para novos documentos
+    if (!selectedDocumento && selectedCTes.length === 0) {
+      toast.error('É necessário selecionar pelo menos um CT-e emitido para criar o MDF-e')
+      return
+    }
+    
     const documentoData: MDFeDocumentoCreate = {
       empresa_id: formData.get('empresa_id') as string,
-      numero_mdfe: formData.get('numero_mdfe') as string,
-      serie: formData.get('serie') as string,
+      numero_mdfe: formData.get('numero_mdfe') as string || undefined,
+      serie: formData.get('serie') as string || undefined,
       data_emissao: formData.get('data_emissao') as string,
-      codigo_uf: formData.get('codigo_uf') as string,
       forma_emissao: 1, // MDF-e sempre forma normal
       status: formData.get('status') as 'pendente' | 'emitido' | 'cancelado' | 'encerrado',
-      observacoes: formData.get('observacoes') as string || null
+      observacoes: formData.get('observacoes') as string || null,
+      cte_ids: selectedDocumento ? undefined : selectedCTes, // Só para novos documentos
     }
 
     if (selectedDocumento) {
@@ -124,6 +142,14 @@ export default function MDFe() {
     } else {
       createMutation.mutate(documentoData)
     }
+  }
+
+  const toggleCTeSelection = (cteId: string) => {
+    setSelectedCTes(prev => 
+      prev.includes(cteId) 
+        ? prev.filter(id => id !== cteId)
+        : [...prev, cteId]
+    )
   }
 
   const handleEdit = (documento: MDFeDocumento) => {
@@ -483,6 +509,74 @@ export default function MDFe() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   />
                 </div>
+
+                {/* Seleção de CT-es para novos documentos */}
+                {!selectedDocumento && (
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <div className="flex items-center mb-4">
+                      <TruckIcon className="h-5 w-5 text-blue-600 mr-2" />
+                      <h4 className="text-sm font-medium text-blue-900">
+                        CT-es Emitidos para Incluir no MDF-e *
+                      </h4>
+                    </div>
+                    
+                    {loadingCTes ? (
+                      <div className="text-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="text-sm text-blue-600 mt-2">Carregando CT-es emitidos...</p>
+                      </div>
+                    ) : ctesEmitidos && ctesEmitidos.length > 0 ? (
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {ctesEmitidos.map((cte) => (
+                          <label key={cte.id} className="flex items-center p-3 bg-white rounded-md border hover:bg-gray-50 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedCTes.includes(cte.id)}
+                              onChange={() => toggleCTeSelection(cte.id)}
+                              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                            />
+                            <div className="ml-3 flex-1">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <span className="text-sm font-medium text-gray-900">
+                                    CT-e #{cte.numero_cte} - Série {cte.serie}
+                                  </span>
+                                  <span className="ml-2 text-xs text-gray-500">
+                                    {format(parseISO(cte.data_emissao), 'dd/MM/yyyy')}
+                                  </span>
+                                </div>
+                                <span className="text-sm text-green-600 font-medium">
+                                  R$ {Number(cte.valor_prestacao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                Chave: {formatChaveAcesso(cte.chave_acesso)}
+                              </div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6">
+                        <ClipboardDocumentIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-500">
+                          Nenhum CT-e emitido disponível para incluir no MDF-e
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          CT-es devem estar com status "emitido" e não podem estar vinculados a outro MDF-e
+                        </p>
+                      </div>
+                    )}
+                    
+                    {selectedCTes.length > 0 && (
+                      <div className="mt-3 p-2 bg-blue-100 rounded-md">
+                        <p className="text-xs text-blue-800">
+                          <strong>{selectedCTes.length}</strong> CT-e(s) selecionado(s) para o MDF-e
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Informações da Chave de Acesso */}
                 {selectedDocumento?.chave_acesso && (
