@@ -2045,33 +2045,24 @@ app.post('/api/cte-documentos', (req, res, next) => {
       console.log('🏢 Empresa validada:', empresa.razao_social);
       console.log('✅ Passando para geração do número CT-e...');
 
-      // NOVA LÓGICA ROBUSTA - SEMPRE USAR ÚLTIMO NÚMERO REAL + 1
+      // USAR PRÓXIMO NÚMERO CADASTRADO NA EMPRESA
       let numeroFinal = data.numero_cte;
       
       if (!numeroFinal || numeroFinal === 'AUTO') {
-        console.log('🔒 Obtendo próximo número CT-e baseado nos documentos REAIS existentes...');
+        console.log('🔒 Obtendo próximo número CT-e da empresa cadastrada...');
         
-        // BUSCAR ÚLTIMO NÚMERO REAL usado nos documentos desta empresa
-        const ultimoNumeroResult = await client.query(`
-          SELECT COALESCE(MAX(CAST(numero_cte AS INTEGER)), 0) as ultimo_numero
-          FROM cte_documentos
-          WHERE empresa_id = $1
-          AND numero_cte ~ '^[0-9]+$'
-        `, [data.empresa_id]);
-
-        const ultimoNumero = ultimoNumeroResult.rows[0].ultimo_numero || 0;
-        numeroFinal = ultimoNumero + 1;
+        // USAR O CAMPO proximo_numero_cte DA EMPRESA
+        numeroFinal = empresa.proximo_numero_cte;
+        console.log('📋 Próximo número CT-e da empresa:', numeroFinal);
         
-        console.log('📋 Último número CT-e encontrado na base:', ultimoNumero);
-        console.log('📋 Próximo número CT-e calculado:', numeroFinal);
-        
-        // VERIFICAR SE JÁ EXISTE (prevenção contra duplicatas em concorrência)
+        // VERIFICAR SE JÁ EXISTE (prevenção contra duplicatas)
         const existeResult = await client.query(`
           SELECT id FROM cte_documentos 
           WHERE empresa_id = $1 AND numero_cte = $2
         `, [data.empresa_id, numeroFinal.toString()]);
         
         if (existeResult.rows.length > 0) {
+          console.log('⚠️ Número já existe, incrementando automaticamente...');
           // Se já existe, incrementar até encontrar número livre
           let tentativas = 0;
           do {
@@ -2091,6 +2082,15 @@ app.post('/api/cte-documentos', (req, res, next) => {
           
           console.log('📋 Número ajustado para evitar duplicata:', numeroFinal);
         }
+        
+        // ATUALIZAR O PRÓXIMO NÚMERO NA EMPRESA
+        await client.query(`
+          UPDATE empresas_fiscais 
+          SET proximo_numero_cte = $2
+          WHERE id = $1
+        `, [data.empresa_id, numeroFinal + 1]);
+        
+        console.log('📋 Próximo número atualizado na empresa para:', numeroFinal + 1);
       } else {
         // Converter número fornecido para integer
         numeroFinal = parseInt(numeroFinal, 10);
