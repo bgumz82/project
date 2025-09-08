@@ -2022,21 +2022,23 @@ app.post('/api/cte-documentos', (req, res, next) => {
       console.log('🏢 Empresa validada:', empresa.razao_social);
       console.log('✅ Passando para geração do número CT-e...');
 
-      // Obter próximo número se não fornecido
+      // Obter próximo número se não fornecido - COM LOCK PARA EVITAR CONCORRÊNCIA
       let numeroFinal = data.numero_cte;
-      let incrementarContador = false; // Flag para controlar o incremento
       
       if (!numeroFinal || numeroFinal === 'AUTO') {
-        // Buscar o próximo número usando o campo proximo_numero_cte da empresa
+        console.log('🔒 Obtendo próximo número CT-e com lock para evitar conflitos...');
+        
+        // Usar UPDATE com RETURNING para garantir atomicidade
         const empresaNumeroResult = await client.query(`
-          SELECT proximo_numero_cte FROM empresas_fiscais WHERE id = $1
+          UPDATE empresas_fiscais 
+          SET proximo_numero_cte = proximo_numero_cte + 1
+          WHERE id = $1
+          RETURNING proximo_numero_cte - 1 as numero_atual
         `, [data.empresa_id]);
 
         if (empresaNumeroResult.rows.length > 0) {
-          numeroFinal = empresaNumeroResult.rows[0].proximo_numero_cte || 1;
-          incrementarContador = true; // Marcar para incrementar APÓS criação bem-sucedida
-
-          console.log('📋 Próximo número CT-e da empresa:', numeroFinal);
+          numeroFinal = empresaNumeroResult.rows[0].numero_atual || 1;
+          console.log('📋 Número CT-e reservado atomicamente:', numeroFinal);
         } else {
           // Fallback: buscar último número da tabela
           const ultimoNumeroResult = await client.query(`
@@ -2390,16 +2392,6 @@ app.post('/api/cte-documentos', (req, res, next) => {
       ].filter(param => param !== undefined)); // Filtrar parâmetros undefined
 
       console.log('✅ Documento CT-e criado com sucesso:', result.rows[0].id);
-
-      // INCREMENTAR contador da empresa SOMENTE após criação bem-sucedida
-      if (incrementarContador) {
-        await client.query(`
-          UPDATE empresas_fiscais
-          SET proximo_numero_cte = proximo_numero_cte + 1
-          WHERE id = $1
-        `, [data.empresa_id]);
-        console.log('🔢 Contador da empresa incrementado para próximo CT-e');
-      }
 
       // LOG CRÍTICO - Ver o que foi REALMENTE salvo no banco
       console.log('🔍 VALORES SALVOS NO BANCO:');
@@ -2803,7 +2795,15 @@ createCrudRoutes('contas_receber', 'conta a receber');
 // Rotas específicas para CT-e
 app.get('/api/cte-documentos', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query(`SELECT * FROM cte_documentos ORDER BY created_at DESC`);
+    const result = await pool.query(`
+      SELECT 
+        c.*,
+        e.razao_social as empresa_razao_social,
+        e.cnpj as empresa_cnpj
+      FROM cte_documentos c
+      JOIN empresas_fiscais e ON c.empresa_id = e.id
+      ORDER BY c.data_emissao DESC, CAST(c.numero_cte AS INTEGER) DESC
+    `);
     res.json(result.rows);
   } catch (error) {
     console.error('Get CT-e documents error:', error);
