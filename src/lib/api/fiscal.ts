@@ -1164,11 +1164,32 @@ export async function deleteCTeDocumento(id: string): Promise<void> {
   }
 }
 
+// Função para mudar status de CT-e para emitido (para teste do MDF-e)
+export async function emitirCTeParaTeste(id: string): Promise<void> {
+  try {
+    console.log("🚀 Emitindo CT-e para teste:", id);
+
+    await query("UPDATE cte_documentos SET status = 'emitido' WHERE id = $1", [id]);
+    console.log("✅ CT-e status alterado para 'emitido' com sucesso");
+  } catch (error) {
+    console.error("❌ Erro ao emitir CT-e:", error);
+    throw error;
+  }
+}
+
 // ===== CT-es EMITIDOS PARA MDF-e =====
 
 export async function getCTeEmitidosParaMDFe(): Promise<CTeDocumento[]> {
   try {
     console.log("🔍 Buscando CT-es emitidos disponíveis para MDF-e");
+
+    // Primeiro verificar quantos CT-es existem por status
+    const statusCount = await query(`
+      SELECT status, COUNT(*) as total 
+      FROM cte_documentos 
+      GROUP BY status
+    `);
+    console.log("📊 CT-es por status:", statusCount);
 
     const result = await query(`
       SELECT 
@@ -1187,6 +1208,17 @@ export async function getCTeEmitidosParaMDFe(): Promise<CTeDocumento[]> {
     `);
 
     console.log("✅ CT-es emitidos disponíveis para MDF-e:", result.length);
+
+    // Se não houver CT-es emitidos, mostrar quais existem
+    if (result.length === 0) {
+      const todosCTes = await query(`
+        SELECT numero_cte, status, data_emissao 
+        FROM cte_documentos 
+        ORDER BY numero_cte DESC 
+        LIMIT 5
+      `);
+      console.log("🚨 Nenhum CT-e emitido encontrado. CT-es existentes:", todosCTes);
+    }
 
     return result.map((doc) => ({
       ...doc,
