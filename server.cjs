@@ -1397,34 +1397,7 @@ async function createForeignKeys(client) {
       references: 'empresas_fiscais(id)',
       name: 'cte_documentos_empresa_id_fkey'
     },
-    {
-      table: 'cte_documentos',
-      column: 'tomador_id',
-      references: 'cte_tomador(id)',
-      name: 'cte_documentos_tomador_id_fkey',
-      onDelete: 'SET NULL'
-    },
-    {
-      table: 'cte_documentos',
-      column: 'remetente_id',
-      references: 'cte_remetente(id)',
-      name: 'cte_documentos_remetente_id_fkey',
-      onDelete: 'SET NULL'
-    },
-    {
-      table: 'cte_documentos',
-      column: 'recebedor_id',
-      references: 'cte_recebedor(id)',
-      name: 'cte_documentos_recebedor_id_fkey',
-      onDelete: 'SET NULL'
-    },
-    {
-      table: 'cte_documentos',
-      column: 'destinatario_id',
-      references: 'cte_destinatario(id)',
-      name: 'cte_documentos_destinatario_id_fkey',
-      onDelete: 'SET NULL'
-    },
+    
     {
       table: 'cte_documentos',
       column: 'produto_predominante_id',
@@ -2192,6 +2165,17 @@ app.post('/api/cte-documentos', (req, res, next) => {
         }
       }
 
+      // LÓGICA ESPECIAL PARA CT-e RÁPIDO: Aplicar configuração do frete
+      if (data.tomador_id && ['remetente', 'destinatario'].includes(data.tomador_id)) {
+        // Se o tomador foi selecionado manualmente no CT-e Rápido, usar o valor selecionado
+        tomadorIdFinal = data.tomador_id;
+        console.log('✅ Tomador definido manualmente no CT-e Rápido:', tomadorIdFinal);
+      } else if (data.tomador_id && data.tomador_id !== 'AUTO') {
+        // Se foi selecionado um cliente específico como tomador
+        tomadorIdFinal = data.tomador_id;
+        console.log('✅ Cliente específico selecionado como tomador:', tomadorIdFinal);
+      }
+
       // 4. MAPEAR/CRIAR PRODUTO PREDOMINANTE pelo NCM da NF-e
       if (data.nfe_produto_ncm && !produtoPredominanteIdFinal) {
         console.log('🔍 Buscando produto por NCM:', data.nfe_produto_ncm);
@@ -2228,13 +2212,26 @@ app.post('/api/cte-documentos', (req, res, next) => {
         produto_predominante: produtoPredominanteIdFinal
       });
 
+      // NORMALIZAR PARTICIPANTES PARA INSERÇÃO NO BANCO
+      // Se tomador for "remetente" ou "destinatario", manter o valor literal
+      // Caso contrário, deve ser um UUID válido de cliente
+      let tomadorParaInserir = tomadorIdFinal;
+      let remetenteParaInserir = remetenteIdFinal;
+      let destinatarioParaInserir = destinatarioIdFinal;
+
+      // Se o tomador for valor literal, deixar como está
+      if (['remetente', 'destinatario', 'recebedor', 'tomador', 'outros'].includes(tomadorIdFinal)) {
+        tomadorParaInserir = tomadorIdFinal;
+        console.log('🏷️ Tomador é valor literal, mantendo:', tomadorParaInserir);
+      }
+
       // LOG EXTRA PARA DEBUG
       console.log('🔍 DEBUG - Valores que serão inseridos no banco:');
       console.log('  empresa_id:', data.empresa_id);
       console.log('  numeroFinal:', numeroFinal, 'tipo:', typeof numeroFinal);
-      console.log('  tomadorIdFinal:', tomadorIdFinal, 'tipo:', typeof tomadorIdFinal, '(deve ser "remetente" ou "destinatario")');
-      console.log('  remetenteIdFinal:', remetenteIdFinal, 'tipo:', typeof remetenteIdFinal);
-      console.log('  destinatarioIdFinal:', destinatarioIdFinal, 'tipo:', typeof destinatarioIdFinal);
+      console.log('  tomadorParaInserir:', tomadorParaInserir, 'tipo:', typeof tomadorParaInserir);
+      console.log('  remetenteParaInserir:', remetenteParaInserir, 'tipo:', typeof remetenteParaInserir);
+      console.log('  destinatarioParaInserir:', destinatarioParaInserir, 'tipo:', typeof destinatarioParaInserir);
 
       // VALIDAÇÃO FINAL - Verificar se algum participante foi criado/encontrado
       if (!tomadorIdFinal && !remetenteIdFinal && !destinatarioIdFinal) {
@@ -2309,10 +2306,10 @@ app.post('/api/cte-documentos', (req, res, next) => {
         codigoUFFinal,
         data.status || 'pendente',
         data.observacoes || null,
-        tomadorIdFinal || null,
-        remetenteIdFinal || null,
+        tomadorParaInserir || null,
+        remetenteParaInserir || null,
         data.recebedor_id || null,
-        destinatarioIdFinal || null,
+        destinatarioParaInserir || null,
         data.valor_prestacao || null,
         data.valor_receber || null,
         data.valor_tributos || null,
