@@ -2024,6 +2024,8 @@ app.post('/api/cte-documentos', (req, res, next) => {
 
       // Obter próximo número se não fornecido
       let numeroFinal = data.numero_cte;
+      let incrementarContador = false; // Flag para controlar o incremento
+      
       if (!numeroFinal || numeroFinal === 'AUTO') {
         // Buscar o próximo número usando o campo proximo_numero_cte da empresa
         const empresaNumeroResult = await client.query(`
@@ -2032,13 +2034,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
 
         if (empresaNumeroResult.rows.length > 0) {
           numeroFinal = empresaNumeroResult.rows[0].proximo_numero_cte || 1;
-
-          // Incrementar o contador na empresa após usar
-          await client.query(`
-            UPDATE empresas_fiscais
-            SET proximo_numero_cte = proximo_numero_cte + 1
-            WHERE id = $1
-          `, [data.empresa_id]);
+          incrementarContador = true; // Marcar para incrementar APÓS criação bem-sucedida
 
           console.log('📋 Próximo número CT-e da empresa:', numeroFinal);
         } else {
@@ -2394,6 +2390,16 @@ app.post('/api/cte-documentos', (req, res, next) => {
       ].filter(param => param !== undefined)); // Filtrar parâmetros undefined
 
       console.log('✅ Documento CT-e criado com sucesso:', result.rows[0].id);
+
+      // INCREMENTAR contador da empresa SOMENTE após criação bem-sucedida
+      if (incrementarContador) {
+        await client.query(`
+          UPDATE empresas_fiscais
+          SET proximo_numero_cte = proximo_numero_cte + 1
+          WHERE id = $1
+        `, [data.empresa_id]);
+        console.log('🔢 Contador da empresa incrementado para próximo CT-e');
+      }
 
       // LOG CRÍTICO - Ver o que foi REALMENTE salvo no banco
       console.log('🔍 VALORES SALVOS NO BANCO:');
