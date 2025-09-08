@@ -239,7 +239,7 @@ export async function getEmpresasFiscais(): Promise<EmpresaFiscal[]> {
       SELECT *
       FROM empresas_fiscais
       ORDER BY razao_social
-    `);
+    `, undefined, true); // 🎯 USAR BANCO PRINCIPAL
 
     console.log("✅ Empresas fiscais encontradas:", result.length);
     return result;
@@ -260,6 +260,7 @@ export async function getEmpresaFiscal(
       WHERE id = $1
     `,
       [id],
+      true // 🎯 USAR BANCO PRINCIPAL
     );
 
     return result;
@@ -287,6 +288,7 @@ export async function createEmpresaFiscal(
       SELECT id FROM empresas_fiscais WHERE cnpj = $1
     `,
       [cnpjLimpo],
+      true // 🎯 USAR BANCO PRINCIPAL
     );
 
     if (existingEmpresa) {
@@ -327,6 +329,7 @@ export async function createEmpresaFiscal(
         empresa.serie_padrao_mdfe || "001",
         empresa.path_arquivos ? (empresa.path_arquivos.startsWith('./') ? empresa.path_arquivos.substring(2) : empresa.path_arquivos.startsWith('/') ? empresa.path_arquivos.substring(1) : empresa.path_arquivos) : empresa.path_arquivos,
       ],
+      true // 🎯 USAR BANCO PRINCIPAL
     );
 
     if (!result) {
@@ -363,6 +366,7 @@ export async function updateEmpresaFiscal(
         SELECT id FROM empresas_fiscais WHERE cnpj = $1 AND id != $2
       `,
         [cnpjLimpo, id],
+        true // 🎯 USAR BANCO PRINCIPAL
       );
 
       if (existingEmpresa) {
@@ -498,6 +502,7 @@ export async function updateEmpresaFiscal(
       RETURNING *
     `,
       values,
+      true // 🎯 USAR BANCO PRINCIPAL
     );
 
     if (!result) {
@@ -522,6 +527,7 @@ export async function deleteEmpresaFiscal(id: string): Promise<void> {
       SELECT COUNT(*) as count FROM cte_documentos WHERE empresa_id = $1
     `,
       [id],
+      true // 🎯 USAR BANCO PRINCIPAL
     );
 
     const mdfeCount = await queryOne(
@@ -529,6 +535,7 @@ export async function deleteEmpresaFiscal(id: string): Promise<void> {
       SELECT COUNT(*) as count FROM mdfe_documentos WHERE empresa_id = $1
     `,
       [id],
+      true // 🎯 USAR BANCO PRINCIPAL
     );
 
     if (
@@ -540,7 +547,7 @@ export async function deleteEmpresaFiscal(id: string): Promise<void> {
       );
     }
 
-    await query("DELETE FROM empresas_fiscais WHERE id = $1", [id]);
+    await query("DELETE FROM empresas_fiscais WHERE id = $1", [id], true); // 🎯 USAR BANCO PRINCIPAL
     console.log("✅ Empresa fiscal excluída com sucesso");
   } catch (error) {
     console.error("❌ Erro ao excluir empresa fiscal:", error);
@@ -562,7 +569,7 @@ export async function getCTeDocumentos(): Promise<CTeDocumento[]> {
       FROM cte_documentos c
       JOIN empresas_fiscais e ON c.empresa_id = e.id
       ORDER BY c.data_emissao DESC, c.numero_cte DESC
-    `);
+    `, undefined, true); // 🎯 USAR BANCO PRINCIPAL
 
     console.log("✅ Documentos CT-e encontrados:", result.length);
 
@@ -605,6 +612,7 @@ export async function createCTeDocumento(
       SELECT id, serie_padrao_cte, codigo_uf, status FROM empresas_fiscais WHERE id = $1
     `,
       [documento.empresa_id],
+      true // 🎯 USAR BANCO PRINCIPAL
     );
 
     console.log("🏢 Empresa encontrada:", empresa);
