@@ -2286,7 +2286,30 @@ app.post('/api/cte-documentos', (req, res, next) => {
         });
       }
 
-      // Inserir documento CT-e
+      // Validar se client ainda está conectado antes de executar query
+      if (!client) {
+        throw new Error('Cliente de banco não está conectado');
+      }
+
+      console.log('🔧 Preparando inserção no banco de dados...');
+
+      // Validar parâmetros obrigatórios antes da inserção
+      if (!data.empresa_id) {
+        throw new Error('empresa_id é obrigatório');
+      }
+      if (!numeroFinal) {
+        throw new Error('número do CT-e é obrigatório');
+      }
+      if (!serieFinal) {
+        throw new Error('série do CT-e é obrigatória');
+      }
+      if (!data.data_emissao) {
+        throw new Error('data de emissão é obrigatória');
+      }
+
+      console.log('✅ Parâmetros validados, executando INSERT...');
+
+      // Inserir documento CT-e com tratamento de erro melhorado
       const result = await client.query(`
         INSERT INTO cte_documentos (
           empresa_id,
@@ -2387,7 +2410,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
         data.placa_veiculo || null,
         data.placa_reboque || null,
         data.associacao_frota_id || null
-      ]);
+      ].filter(param => param !== undefined)); // Filtrar parâmetros undefined
 
       console.log('✅ Documento CT-e criado com sucesso:', result.rows[0].id);
 
@@ -2407,15 +2430,34 @@ app.post('/api/cte-documentos', (req, res, next) => {
     }
 
   } catch (error) {
-    console.error('❌ Erro ao criar documento CT-e:', error);
-    console.error('❌ Stack trace completo:', error.stack);
-    console.error('❌ Tipo do erro:', typeof error);
-    console.error('❌ Nome do erro:', error.name);
-    console.error('❌ Mensagem do erro:', error.message);
+    console.error(`❌ [${requestId}] Erro ao criar documento CT-e:`, error);
+    console.error(`❌ [${requestId}] Stack trace completo:`, error.stack);
+    console.error(`❌ [${requestId}] Tipo do erro:`, typeof error);
+    console.error(`❌ [${requestId}] Nome do erro:`, error.name);
+    console.error(`❌ [${requestId}] Mensagem do erro:`, error.message);
+    
+    // Se for erro de SQL, incluir mais detalhes
+    if (error.code) {
+      console.error(`❌ [${requestId}] Código de erro SQL:`, error.code);
+      console.error(`❌ [${requestId}] Detalhes SQL:`, error.detail);
+      console.error(`❌ [${requestId}] Hint SQL:`, error.hint);
+      console.error(`❌ [${requestId}] Posição SQL:`, error.position);
+    }
+
+    // Mensagem de erro mais específica baseada no tipo
+    let errorMessage = 'Erro ao criar documento CT-e';
+    if (error.code === '23505') {
+      errorMessage = 'Erro: Documento CT-e com esse número já existe';
+    } else if (error.code === '23503') {
+      errorMessage = 'Erro: Referência a registro não encontrado (empresa, cliente, etc.)';
+    } else if (error.code === '23502') {
+      errorMessage = 'Erro: Campo obrigatório não preenchido';
+    }
 
     res.status(500).json({
-      error: 'Erro ao criar documento CT-e',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      requestId: requestId
     });
   }
 });
