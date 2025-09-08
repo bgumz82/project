@@ -2022,56 +2022,51 @@ app.post('/api/cte-documentos', (req, res, next) => {
       console.log('🏢 Empresa validada:', empresa.razao_social);
       console.log('✅ Passando para geração do número CT-e...');
 
-      // Obter próximo número se não fornecido - COM LOCK PARA EVITAR CONCORRÊNCIA
+      // NOVA LÓGICA ROBUSTA - SEMPRE USAR ÚLTIMO NÚMERO REAL + 1
       let numeroFinal = data.numero_cte;
       
       if (!numeroFinal || numeroFinal === 'AUTO') {
-        console.log('🔒 Obtendo próximo número CT-e com lock para evitar conflitos...');
+        console.log('🔒 Obtendo próximo número CT-e baseado nos documentos REAIS existentes...');
         
-        // Usar UPDATE com RETURNING para garantir atomicidade
-        console.log('🔍 DEBUGANDO EMPRESA_ID RECEBIDO:', data.empresa_id);
-        console.log('🔍 TIPO DO EMPRESA_ID:', typeof data.empresa_id);
-        
-        const empresaNumeroResult = await client.query(`
-          UPDATE empresas_fiscais 
-          SET proximo_numero_cte = proximo_numero_cte + 1
-          WHERE id = $1
-          RETURNING proximo_numero_cte - 1 as numero_atual, id as empresa_encontrada
+        // BUSCAR ÚLTIMO NÚMERO REAL usado nos documentos desta empresa
+        const ultimoNumeroResult = await client.query(`
+          SELECT COALESCE(MAX(CAST(numero_cte AS INTEGER)), 0) as ultimo_numero
+          FROM cte_documentos
+          WHERE empresa_id = $1
+          AND numero_cte ~ '^[0-9]+$'
         `, [data.empresa_id]);
+
+        const ultimoNumero = ultimoNumeroResult.rows[0].ultimo_numero || 0;
+        numeroFinal = ultimoNumero + 1;
         
-        console.log('🔍 RESULTADO DO UPDATE:', empresaNumeroResult.rows);
-        console.log('🔍 TOTAL DE ROWS AFETADAS:', empresaNumeroResult.rowCount);
-
-        if (empresaNumeroResult.rows.length > 0) {
-          numeroFinal = empresaNumeroResult.rows[0].numero_atual || 1;
-          console.log('📋 Número CT-e reservado atomicamente:', numeroFinal);
-        } else {
-          console.log('⚠️ Empresa não encontrada para UPDATE, criando entrada...');
-          
-          // Primeiro, tentar buscar o último número da tabela
-          const ultimoNumeroResult = await client.query(`
-            SELECT COALESCE(MAX(CAST(numero_cte AS INTEGER)), 0) + 1 as proximo_numero
-            FROM cte_documentos
-            WHERE empresa_id = $1
-            AND numero_cte ~ '^[0-9]+$'
-          `, [data.empresa_id]);
-
-          const proximoNumero = ultimoNumeroResult.rows[0].proximo_numero;
-          
-          // Tentar fazer INSERT da nova numeração para esta empresa
-          try {
-            await client.query(`
-              UPDATE empresas_fiscais 
-              SET proximo_numero_cte = $2
-              WHERE id = $1
-            `, [data.empresa_id, proximoNumero + 1]);
+        console.log('📋 Último número CT-e encontrado na base:', ultimoNumero);
+        console.log('📋 Próximo número CT-e calculado:', numeroFinal);
+        
+        // VERIFICAR SE JÁ EXISTE (prevenção contra duplicatas em concorrência)
+        const existeResult = await client.query(`
+          SELECT id FROM cte_documentos 
+          WHERE empresa_id = $1 AND numero_cte = $2
+        `, [data.empresa_id, numeroFinal.toString()]);
+        
+        if (existeResult.rows.length > 0) {
+          // Se já existe, incrementar até encontrar número livre
+          let tentativas = 0;
+          do {
+            numeroFinal++;
+            tentativas++;
+            const novaVerificacao = await client.query(`
+              SELECT id FROM cte_documentos 
+              WHERE empresa_id = $1 AND numero_cte = $2
+            `, [data.empresa_id, numeroFinal.toString()]);
             
-            numeroFinal = proximoNumero;
-            console.log('📋 Número CT-e inicializado para empresa:', numeroFinal);
-          } catch (error) {
-            console.log('⚠️ Erro ao inicializar numeração, usando fallback:', error.message);
-            numeroFinal = proximoNumero;
-          }
+            if (novaVerificacao.rows.length === 0) break;
+            
+            if (tentativas > 100) {
+              throw new Error('Erro interno: não foi possível encontrar número CT-e disponível');
+            }
+          } while (true);
+          
+          console.log('📋 Número ajustado para evitar duplicata:', numeroFinal);
         }
       } else {
         // Converter número fornecido para integer
