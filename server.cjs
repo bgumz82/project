@@ -2065,9 +2065,35 @@ app.post('/api/cte-documentos', (req, res, next) => {
       if (!numeroFinal || numeroFinal === 'AUTO') {
         console.log('🔒 Obtendo próximo número CT-e da empresa cadastrada...');
         
-        // USAR O CAMPO proximo_numero_cte DA EMPRESA
-        numeroFinal = empresa.proximo_numero_cte;
-        console.log('📋 Próximo número CT-e da empresa:', numeroFinal);
+        // 🔍 VERIFICAR NÚMEROS EXISTENTES PARA DEBUG
+        const numerosExistentes = await client.query(`
+          SELECT numero_cte 
+          FROM cte_documentos 
+          WHERE empresa_id = $1 
+          ORDER BY CAST(numero_cte AS INTEGER)
+        `, [data.empresa_id]);
+        
+        console.log('🔍 NÚMEROS CT-E JÁ EXISTENTES:', numerosExistentes.rows.map(r => r.numero_cte));
+        console.log('🔍 TOTAL DE CT-ES EXISTENTES:', numerosExistentes.rows.length);
+        
+        // CALCULAR PRÓXIMO NÚMERO CORRETO
+        const ultimoNumeroResult = await client.query(`
+          SELECT COALESCE(MAX(CAST(numero_cte AS INTEGER)), 0) as ultimo_numero
+          FROM cte_documentos
+          WHERE empresa_id = $1
+          AND numero_cte ~ '^[0-9]+$'
+        `, [data.empresa_id]);
+        
+        const ultimoNumeroReal = ultimoNumeroResult.rows[0].ultimo_numero || 0;
+        const proximoNumeroCalculado = ultimoNumeroReal + 1;
+        
+        console.log('📋 ÚLTIMO NÚMERO REAL NA BASE:', ultimoNumeroReal);
+        console.log('📋 PRÓXIMO NÚMERO CALCULADO:', proximoNumeroCalculado);
+        console.log('📋 VALOR NA EMPRESA (campo):', empresa.proximo_numero_cte);
+        
+        // USAR O MAIOR ENTRE CALCULADO E CAMPO DA EMPRESA
+        numeroFinal = Math.max(proximoNumeroCalculado, empresa.proximo_numero_cte);
+        console.log('📋 NÚMERO FINAL ESCOLHIDO:', numeroFinal);
         
         // VERIFICAR SE JÁ EXISTE (prevenção contra duplicatas)
         const existeResult = await client.query(`
