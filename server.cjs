@@ -685,6 +685,10 @@ async function createDatabaseStructure(client) {
     // 3. Criar tabelas principais
     await createTables(client);
 
+    console.log('🔧 Ajustando estrutura de cte_produtos...');
+    // 3.5. Ajustar estrutura de cte_produtos
+    await ensureCteProductsStructure(client);
+
     console.log('🔗 Criando foreign keys...');
     // 4. Criar foreign keys
     await createForeignKeys(client);
@@ -1114,8 +1118,8 @@ async function createTables(client) {
       query: `
         CREATE TABLE IF NOT EXISTS cte_produtos (
           id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-          cte_documento_id uuid NOT NULL,
-          sequencia integer NOT NULL,
+          cte_documento_id uuid,
+          sequencia integer NOT NULL DEFAULT 1,
           codigo_produto varchar(50),
           descricao_produto text NOT NULL,
           ncm_produto varchar(15),
@@ -1126,10 +1130,8 @@ async function createTables(client) {
           cfop varchar(4),
           valor_seguro decimal(12,2),
           valor_frete decimal(12,2),
-          CONSTRAINT fk_cte_documento
-            FOREIGN KEY(cte_documento_id)
-            REFERENCES cte_documentos(id)
-            ON DELETE CASCADE
+          created_at timestamptz DEFAULT now(),
+          updated_at timestamptz DEFAULT now()
         )
       `
     },
@@ -1318,6 +1320,53 @@ async function createTables(client) {
   }
 }
 
+// Função para adicionar coluna cte_documento_id em cte_produtos se não existir
+async function ensureCteProductsStructure(client) {
+  try {
+    // Verificar se a coluna cte_documento_id existe
+    const columnExists = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'cte_produtos' AND column_name = 'cte_documento_id'
+    `);
+
+    if (columnExists.rows.length === 0) {
+      console.log('🔧 Adicionando coluna cte_documento_id à tabela cte_produtos...');
+      await client.query(`
+        ALTER TABLE cte_produtos 
+        ADD COLUMN cte_documento_id uuid
+      `);
+      console.log('✅ Coluna cte_documento_id adicionada com sucesso');
+    } else {
+      console.log('✅ Coluna cte_documento_id já existe em cte_produtos');
+    }
+
+    // Agora adicionar a foreign key se não existir
+    const fkExists = await client.query(`
+      SELECT constraint_name 
+      FROM information_schema.table_constraints
+      WHERE constraint_name = 'cte_produtos_cte_documento_id_fkey' 
+      AND table_name = 'cte_produtos'
+    `);
+
+    if (fkExists.rows.length === 0) {
+      console.log('🔧 Adicionando foreign key cte_produtos_cte_documento_id_fkey...');
+      await client.query(`
+        ALTER TABLE cte_produtos
+        ADD CONSTRAINT cte_produtos_cte_documento_id_fkey
+        FOREIGN KEY (cte_documento_id) REFERENCES cte_documentos(id)
+        ON DELETE CASCADE
+      `);
+      console.log('✅ Foreign key cte_produtos_cte_documento_id_fkey criada');
+    } else {
+      console.log('✅ Foreign key cte_produtos_cte_documento_id_fkey já existe');
+    }
+
+  } catch (error) {
+    console.log('⚠️ Erro ao ajustar estrutura de cte_produtos:', error.message);
+  }
+}
+
 // Função para criar foreign keys
 async function createForeignKeys(client) {
   const foreignKeys = [
@@ -1404,13 +1453,6 @@ async function createForeignKeys(client) {
       references: 'cte_produtos(id)',
       name: 'cte_documentos_produto_predominante_id_fkey',
       onDelete: 'SET NULL'
-    },
-    {
-      table: 'cte_produtos',
-      column: 'cte_documento_id',
-      references: 'cte_documentos(id)',
-      name: 'cte_produtos_cte_documento_id_fkey',
-      onDelete: 'CASCADE'
     },
     {
       table: 'cte_nfe_relacionadas',
@@ -1654,8 +1696,8 @@ async function insertInitialData(client) {
 
   try {
     await client.query(`
-      INSERT INTO usuarios (email, nome, tipo, senha, ativo)
-      VALUES ('admin@empresa.com', 'Administrador', 'admin', $1, true)
+      INSERT INTO usuarios (id, email, nome, tipo, senha, ativo, created_at, updated_at)
+      VALUES (gen_random_uuid(), 'admin@empresa.com', 'Administrador', 'admin', $1, true, NOW(), NOW())
       ON CONFLICT (email) DO NOTHING
     `, [validHash]);
     console.log('✅ Usuário admin criado');
@@ -1705,34 +1747,34 @@ async function insertInitialData(client) {
   // Inserir estados brasileiros
   try {
     await client.query(`
-      INSERT INTO states (uf, name) VALUES
-      ('AC', 'Acre'),
-      ('AL', 'Alagoas'),
-      ('AP', 'Amapá'),
-      ('AM', 'Amazonas'),
-      ('BA', 'Bahia'),
-      ('CE', 'Ceará'),
-      ('DF', 'Distrito Federal'),
-      ('ES', 'Espírito Santo'),
-      ('GO', 'Goiás'),
-      ('MA', 'Maranhão'),
-      ('MT', 'Mato Grosso'),
-      ('MS', 'Mato Grosso do Sul'),
-      ('MG', 'Minas Gerais'),
-      ('PA', 'Pará'),
-      ('PB', 'Paraíba'),
-      ('PR', 'Paraná'),
-      ('PE', 'Pernambuco'),
-      ('PI', 'Piauí'),
-      ('RJ', 'Rio de Janeiro'),
-      ('RN', 'Rio Grande do Norte'),
-      ('RS', 'Rio Grande do Sul'),
-      ('RO', 'Rondônia'),
-      ('RR', 'Roraima'),
-      ('SC', 'Santa Catarina'),
-      ('SP', 'São Paulo'),
-      ('SE', 'Sergipe'),
-      ('TO', 'Tocantins')
+      INSERT INTO states (id, uf, name, created_at) VALUES
+      (gen_random_uuid(), 'AC', 'Acre', NOW()),
+      (gen_random_uuid(), 'AL', 'Alagoas', NOW()),
+      (gen_random_uuid(), 'AP', 'Amapá', NOW()),
+      (gen_random_uuid(), 'AM', 'Amazonas', NOW()),
+      (gen_random_uuid(), 'BA', 'Bahia', NOW()),
+      (gen_random_uuid(), 'CE', 'Ceará', NOW()),
+      (gen_random_uuid(), 'DF', 'Distrito Federal', NOW()),
+      (gen_random_uuid(), 'ES', 'Espírito Santo', NOW()),
+      (gen_random_uuid(), 'GO', 'Goiás', NOW()),
+      (gen_random_uuid(), 'MA', 'Maranhão', NOW()),
+      (gen_random_uuid(), 'MT', 'Mato Grosso', NOW()),
+      (gen_random_uuid(), 'MS', 'Mato Grosso do Sul', NOW()),
+      (gen_random_uuid(), 'MG', 'Minas Gerais', NOW()),
+      (gen_random_uuid(), 'PA', 'Pará', NOW()),
+      (gen_random_uuid(), 'PB', 'Paraíba', NOW()),
+      (gen_random_uuid(), 'PR', 'Paraná', NOW()),
+      (gen_random_uuid(), 'PE', 'Pernambuco', NOW()),
+      (gen_random_uuid(), 'PI', 'Piauí', NOW()),
+      (gen_random_uuid(), 'RJ', 'Rio de Janeiro', NOW()),
+      (gen_random_uuid(), 'RN', 'Rio Grande do Norte', NOW()),
+      (gen_random_uuid(), 'RS', 'Rio Grande do Sul', NOW()),
+      (gen_random_uuid(), 'RO', 'Rondônia', NOW()),
+      (gen_random_uuid(), 'RR', 'Roraima', NOW()),
+      (gen_random_uuid(), 'SC', 'Santa Catarina', NOW()),
+      (gen_random_uuid(), 'SP', 'São Paulo', NOW()),
+      (gen_random_uuid(), 'SE', 'Sergipe', NOW()),
+      (gen_random_uuid(), 'TO', 'Tocantins', NOW())
       ON CONFLICT (uf) DO NOTHING
     `);
     console.log('✅ Estados brasileiros criados');
@@ -1749,14 +1791,14 @@ async function insertInitialData(client) {
 
     if (spState.rows.length > 0 && mgState.rows.length > 0 && goState.rows.length > 0) {
       await client.query(`
-        INSERT INTO cities (cod_city, name, state_id) VALUES
-        ('3550308', 'São Paulo', $1),
-        ('3518800', 'Guarulhos', $1),
-        ('3509502', 'Campinas', $1),
-        ('3106200', 'Belo Horizonte', $2),
-        ('3131604', 'Iraí de Minas', $2),
-        ('5208707', 'Goiânia', $3),
-        ('5203302', 'Bela Vista de Goiás', $3)
+        INSERT INTO cities (id, cod_city, name, state_id, created_at) VALUES
+        (gen_random_uuid(), '3550308', 'São Paulo', $1, NOW()),
+        (gen_random_uuid(), '3518800', 'Guarulhos', $1, NOW()),
+        (gen_random_uuid(), '3509502', 'Campinas', $1, NOW()),
+        (gen_random_uuid(), '3106200', 'Belo Horizonte', $2, NOW()),
+        (gen_random_uuid(), '3131604', 'Iraí de Minas', $2, NOW()),
+        (gen_random_uuid(), '5208707', 'Goiânia', $3, NOW()),
+        (gen_random_uuid(), '5203302', 'Bela Vista de Goiás', $3, NOW())
         ON CONFLICT (cod_city) DO NOTHING
       `, [spState.rows[0].id, mgState.rows[0].id, goState.rows[0].id]);
       console.log('✅ Cidades importantes criadas');
@@ -1769,11 +1811,13 @@ async function insertInitialData(client) {
   try {
     await client.query(`
       INSERT INTO empresas_fiscais (
-        razao_social, nome_fantasia, cnpj, inscricao_estadual, endereco, cidade, estado,
-        uf_emissao_nfe, ambiente_nfce, ambiente_cte, serie_padrao_cte, status
+        razao_social, cnpj, inscricao_estadual, endereco, cidade, estado,
+        uf_emissao_nfe, ambiente_nfce, ambiente_cte, serie_padrao_cte, status,
+        codigo_uf, created_at, updated_at
       ) VALUES (
-        'EMPRESA DE EXEMPLO LTDA', 'EXEMPLO LTDA', '00.000.000/0001-00', '123.456.789.012',
-        'Rua das Amostras, 100', 'São Paulo', 'SP', 'SP', '1', '1', '001', 'ativo'
+        'EMPRESA DE EXEMPLO LTDA', '00.000.000/0001-00', '123.456.789.012',
+        'Rua das Amostras, 100', 'São Paulo', 'SP', 'SP', '1', '1', '001', 'ativo',
+        '35', NOW(), NOW()
       )
       ON CONFLICT (cnpj) DO NOTHING
     `);
