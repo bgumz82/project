@@ -1977,9 +1977,10 @@ app.post('/api/cte-documentos', (req, res, next) => {
   console.log('🔥 Body preview:', JSON.stringify(req.body, null, 2).substring(0, 500));
   next();
 }, authenticateToken, async (req, res) => {
+  const requestId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+  
   try {
     const data = req.body;
-    const requestId = Date.now().toString(36) + Math.random().toString(36).substr(2);
     console.log(`🚨 [${requestId}] === INÍCIO CRIAÇÃO CT-e ===`);
     console.log(`📝 [${requestId}] Dados RAW recebidos da interface:`, JSON.stringify(data, null, 2));
 
