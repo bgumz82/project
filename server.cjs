@@ -2221,37 +2221,14 @@ app.post('/api/cte-documentos', (req, res, next) => {
         console.log('✅ Cliente específico selecionado como tomador:', tomadorIdFinal);
       }
 
-      // 4. MAPEAR/CRIAR PRODUTO PREDOMINANTE pelo NCM da NF-e
-      if (data.nfe_produto_ncm && !produtoPredominanteIdFinal) {
-        console.log('🔍 Buscando produto por NCM:', data.nfe_produto_ncm);
-
-        // FORÇA USO DO POOL HARDCODED DIRETAMENTE
-        const produtoClient = await pool.connect();
-        const produtoResult = await produtoClient.query(
-          'SELECT id FROM cte_produtos WHERE ncm_produto = $1 LIMIT 1',
-          [data.nfe_produto_ncm]
-        );
-        produtoClient.release();
-
-        if (produtoResult.rows.length > 0) {
-          produtoPredominanteIdFinal = produtoResult.rows[0].id;
-          console.log('✅ Produto predominante encontrado:', produtoPredominanteIdFinal);
-        } else if (data.nfe_produto_descricao) {
-          // Criar produto automaticamente se não existir
-          console.log('📝 Criando produto automaticamente:', data.nfe_produto_descricao);
-
-          const novoProdutoResult = await client.query(`
-            INSERT INTO cte_produtos (id, cte_documento_id, sequencia, ncm_produto, descricao_produto)
-            VALUES (gen_random_uuid(), NULL, 1, $1, $2)
-            RETURNING id
-          `, [data.nfe_produto_ncm, data.nfe_produto_descricao]);
-
-          if (novoProdutoResult.rows.length > 0) {
-            produtoPredominanteIdFinal = novoProdutoResult.rows[0].id;
-            console.log('✅ Produto criado automaticamente:', produtoPredominanteIdFinal);
-          }
-        }
-      }
+      // 4. MAPEAR/CRIAR PRODUTO PREDOMINANTE pelo NCM da NF-e - TEMPORARIAMENTE DESABILITADO
+      // COMENTADO PARA RESOLVER PROBLEMA DE CONEXÃO DE BANCO
+      console.log('⚠️ Busca de produto temporariamente desabilitada devido a problema de conexão');
+      console.log('🔍 NCM informado na NF-e:', data.nfe_produto_ncm);
+      console.log('📝 Descrição informada na NF-e:', data.nfe_produto_descricao);
+      
+      // Produto será null por enquanto - CT-e será criado sem produto específico
+      produtoPredominanteIdFinal = null;
 
       console.log('📋 Participantes mapeados:', {
         tomador: tomadorIdFinal,
