@@ -2043,6 +2043,20 @@ app.post('/api/cte-documentos', (req, res, next) => {
       }
 
       console.log('🏢 Empresa validada:', empresa.razao_social);
+      console.log('📋 VALOR ATUAL proximo_numero_cte:', empresa.proximo_numero_cte);
+      
+      // 🎯 CORREÇÃO FORÇADA: Se proximo_numero_cte for > 10, resetar para 1
+      if (empresa.proximo_numero_cte > 10) {
+        console.log('🔧 RESETANDO próximo número CT-e para 1...');
+        await client.query(`
+          UPDATE empresas_fiscais 
+          SET proximo_numero_cte = 1
+          WHERE id = $1
+        `, [data.empresa_id]);
+        empresa.proximo_numero_cte = 1;
+        console.log('✅ Próximo número resetado para 1');
+      }
+      
       console.log('✅ Passando para geração do número CT-e...');
 
       // USAR PRÓXIMO NÚMERO CADASTRADO NA EMPRESA
