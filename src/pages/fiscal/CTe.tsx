@@ -1379,7 +1379,7 @@ export default function CTe() {
 
       // Buscar IDs dos participantes pelos CNPJs
       const remetenteQuery = `SELECT id FROM cadastros WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true LIMIT 1`
-      const destinatarioQuery = `SELECT id FROM cadastros WHERE cnpj = $2 AND tipo = 'cliente' AND ativo = true LIMIT 1`
+      const destinatarioQuery = `SELECT id FROM cadastros WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true LIMIT 1`
 
       try {
         const [remetenteResult, destinatarioResult] = await Promise.all([
