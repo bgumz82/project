@@ -44,20 +44,12 @@ export async function generateCTeXML(
   tomador: ClienteInfo | null,
   remetente: ClienteInfo,
   destinatario: ClienteInfo,
-  recebedor: ClienteInfo | null,
+  _recebedor: ClienteInfo | null,
   produto: ProdutoInfo
 ): Promise<string> {
 
   const dataEmissao = new Date(documento.data_emissao)
   const dataEmissaoFormatada = dataEmissao.toISOString().slice(0, 19) + '-03:00'
-
-  // Determinar quem é o tomador
-  let tomadorFinal = tomador
-  if (documento.tomador_id === 'remetente') {
-    tomadorFinal = remetente
-  } else if (documento.tomador_id === 'destinatario') {
-    tomadorFinal = destinatario
-  }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <CTe xmlns="http://www.portalfiscal.inf.br/cte">
@@ -80,15 +72,15 @@ export async function generateCTeXML(
 <verProc>4.00</verProc>
 <cMunEnv>${documento.cidade_inicio_ibge}</cMunEnv>
 <xMunEnv>${removeAccents(documento.cidade_inicio_nome || 'NAO INFORMADO').toUpperCase()}</xMunEnv>
-<UFEnv>${await getUFFromCityCode(documento.cidade_inicio_ibge)}</UFEnv>
+<UFEnv>${await getUFFromCityCode(documento.cidade_inicio_ibge || '3550308')}</UFEnv>
 <modal>01</modal>
 <tpServ>${documento.tipo_servico || '0'}</tpServ>
 <cMunIni>${documento.cidade_inicio_ibge}</cMunIni>
 <xMunIni>${removeAccents(documento.cidade_inicio_nome || 'NAO INFORMADO').toUpperCase()}</xMunIni>
-<UFIni>${await getUFFromCityCode(documento.cidade_inicio_ibge)}</UFIni>
+<UFIni>${await getUFFromCityCode(documento.cidade_inicio_ibge || '3550308')}</UFIni>
 <cMunFim>${documento.cidade_termino_ibge}</cMunFim>
 <xMunFim>${removeAccents(documento.cidade_termino_nome || 'NAO INFORMADO').toUpperCase()}</xMunFim>
-<UFFim>${await getUFFromCityCode(documento.cidade_termino_ibge)}</UFFim>
+<UFFim>${await getUFFromCityCode(documento.cidade_termino_ibge || '3550308')}</UFFim>
 <retira>1</retira>
 <xDetRetira>CONFORME SOLICITACAO</xDetRetira>
 <indIEToma>1</indIEToma>
@@ -366,7 +358,7 @@ async function getCityCode(cityName: string, uf: string): Promise<string> {
         return result[0].cod_city
       }
     } catch (dbError) {
-      console.log('⚠️ Erro na consulta SQL, usando fallback:', dbError.message)
+      console.log('⚠️ Erro na consulta SQL, usando fallback:', dbError instanceof Error ? dbError.message : String(dbError))
     }
 
     // Tentar usar fallback de cidades conhecidas
@@ -430,7 +422,7 @@ async function getUFFromCityCode(cityCode: string): Promise<string> {
         }
       }
     } catch (dbError) {
-      console.log('⚠️ Erro ao consultar banco, usando mapeamento por código:', dbError.message)
+      console.log('⚠️ Erro ao consultar banco, usando mapeamento por código:', dbError instanceof Error ? dbError.message : String(dbError))
     }
 
     console.log('⚠️ UF não encontrada na tabela, usando fallback final')
