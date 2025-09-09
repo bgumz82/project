@@ -1,0 +1,54 @@
+src/pages/fiscal/CTe.tsx:28:3 - error TS6133: 'getUFFromCode' is declared but its value is never read.
+
+28   getUFFromCode,
+     ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:35:8 - error TS6133: 'AssociacaoFrota' is declared but its value is never read.
+
+35   type AssociacaoFrota
+          ~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:111:10 - error TS6133: 'inicioSearchTerm' is declared but its value is never read.
+
+111   const [inicioSearchTerm, setInicioSearchTerm] = useState('')
+             ~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:112:10 - error TS6133: 'terminoSearchTerm' is declared but its value is never read.
+
+112   const [terminoSearchTerm, setTerminoSearchTerm] = useState('')
+             ~~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:113:10 - error TS6133: 'inicioResults' is declared but its value is never read.
+
+113   const [inicioResults, setInicioResults] = useState<Cidade[]>([])
+             ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:114:10 - error TS6133: 'terminoResults' is declared but its value is never read.
+
+114   const [terminoResults, setTerminoResults] = useState<Cidade[]>([])
+             ~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:543:15 - error TS6133: 'estadoInicio' is declared but its value is never read.
+
+543         const estadoInicio = estados.find(e => e.uf === selectedDocumento.uf_inicio);
+                  ~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:552:15 - error TS6133: 'estadoTermino' is declared but its value is never read.
+
+552         const estadoTermino = estados.find(e => e.uf === selectedDocumento.uf_termino);
+                  ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1140:9 - error TS6133: 'determinarCFOP' is declared but its value is never read.
+
+1140   const determinarCFOP = (ufOrigem: string, ufDestino: string) => {
+             ~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1280:15 - error TS2339: Property 'toast' does not exist on type '{ (message: Message, opts?: Partial<Pick<Toast, "id" | "className" | "style" | "icon" | "duration" | "ariaProps" | "position" | "iconTheme" | "removeDelay">> | undefined): string; ... 6 more ...; promise<T>(promise: Promise<...> | (() => Promise<...>), msgs: { ...; }, opts?: DefaultToastOptions | undefined): Promise...'.
+
+1280         toast.toast.error('Informe uma quantidade válida')
+                   ~~~~~
+
+src/pages/fiscal/CTe.tsx:1717:7 - error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+
+1717       numero_cte: formDataElement.get('numero_cte') === 'AUTO' || !formDataElement.get('numero_cte') ? null : formDataElement.get('numero_cte') as string,
