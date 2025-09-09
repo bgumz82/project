@@ -2847,44 +2847,10 @@ function generateRequestId() {
 
 // Rota para buscar documentos MDF-e
 app.get('/api/mdfe-documentos', authenticateToken, async (req, res) => {
-  let client;
-
   try {
-    console.log('🔍 Buscando documentos MDF-e para usuário:', req.user.email);
+    console.log('🔍 Buscando documentos MDF-e...');
 
-    // Buscar configuração de banco do usuário
-    const userConfigResult = await mainPool.query(`
-      SELECT dc.*
-      FROM usuarios u
-      JOIN database_configurations dc ON u.database_config_id = dc.id
-      WHERE u.id = $1 AND dc.ativo = true
-    `, [req.user.id]);
-
-    if (userConfigResult.rows.length === 0) {
-      console.log('⚠️ Usuário sem configuração específica, usando pool padrão');
-      client = await pool.connect();
-    } else {
-      const dbConfig = userConfigResult.rows[0];
-      console.log('🔗 Conectando ao banco do usuário:', dbConfig.nome_empresa);
-
-      const userPool = new Pool({
-        host: dbConfig.host,
-        port: dbConfig.port,
-        database: dbConfig.database_name,
-        user: dbConfig.username,
-        password: dbConfig.password,
-        ssl: dbConfig.ssl_enabled ? { rejectUnauthorized: false } : false,
-        max: 5,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 10000,
-      });
-
-      client = await userPool.connect();
-    }
-
-    console.log('🔍 Executando query para buscar MDF-e...');
-
-    const result = await client.query(`
+    const result = await pool.query(`
       SELECT 
         m.*,
         e.razao_social as empresa_razao_social,
@@ -2913,10 +2879,6 @@ app.get('/api/mdfe-documentos', authenticateToken, async (req, res) => {
       error: 'Erro ao buscar documentos MDF-e',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
-  } finally {
-    if (client) {
-      client.release();
-    }
   }
 });
 
