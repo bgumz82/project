@@ -1,0 +1,350 @@
+src/lib/api/cte-xml.ts:44:3 - error TS6133: 'tomador' is declared but its value is never read.
+
+44   tomador: ClienteInfo | null,
+     ~~~~~~~
+
+src/pages/fiscal/CTe.tsx:28:3 - error TS6133: 'getUFFromCode' is declared but its value is never read.
+
+28   getUFFromCode,
+     ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:35:8 - error TS6133: 'AssociacaoFrota' is declared but its value is never read.
+
+35   type AssociacaoFrota
+          ~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:111:10 - error TS6133: 'inicioSearchTerm' is declared but its value is never read.
+
+111   const [inicioSearchTerm, setInicioSearchTerm] = useState('')
+             ~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:112:10 - error TS6133: 'terminoSearchTerm' is declared but its value is never read.
+
+112   const [terminoSearchTerm, setTerminoSearchTerm] = useState('')
+             ~~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:113:10 - error TS6133: 'inicioResults' is declared but its value is never read.
+
+113   const [inicioResults, setInicioResults] = useState<Cidade[]>([])
+             ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:114:10 - error TS6133: 'terminoResults' is declared but its value is never read.
+
+114   const [terminoResults, setTerminoResults] = useState<Cidade[]>([])
+             ~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:543:15 - error TS6133: 'estadoInicio' is declared but its value is never read.
+
+543         const estadoInicio = estados.find(e => e.uf === selectedDocumento.uf_inicio);
+                  ~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:552:15 - error TS6133: 'estadoTermino' is declared but its value is never read.
+
+552         const estadoTermino = estados.find(e => e.uf === selectedDocumento.uf_termino);
+                  ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1140:9 - error TS6133: 'determinarCFOP' is declared but its value is never read.
+
+1140   const determinarCFOP = (ufOrigem: string, ufDestino: string) => {
+             ~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1717:7 - error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+
+1717       numero_cte: formDataElement.get('numero_cte') === 'AUTO' || !formDataElement.get('numero_cte') ? null : formDataElement.get('numero_cte') as string,
+           ~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:110:3
+    110   numero_cte?: string;
+          ~~~~~~~~~~
+    The expected type comes from property 'numero_cte' which is declared here on type 'CTeDocumentoCreate'
+
+src/pages/fiscal/CTe.tsx:1718:7 - error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+
+1718       serie: formDataElement.get('serie') as string || null,
+           ~~~~~
+
+  src/lib/api/fiscal.ts:111:3
+    111   serie?: string;
+          ~~~~~
+    The expected type comes from property 'serie' which is declared here on type 'CTeDocumentoCreate'
+
+src/pages/fiscal/CTe.tsx:1804:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1804       valor_prestacao: documento.valor_prestacao || '',
+           ~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1805:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1805       valor_receber: documento.valor_receber || '',
+           ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1806:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1806       valor_tributos: documento.valor_tributos || '',
+           ~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1807:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1807       valor_pedagio: documento.valor_pedagio || '',
+           ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1808:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1808       valor_seguro: documento.valor_seguro || '',
+           ~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1810:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1810       icms_bc_valor: documento.icms_bc_valor || '',
+           ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1811:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1811       icms_aliquota: documento.icms_aliquota || '',
+           ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1812:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1812       icms_valor: documento.icms_valor || '',
+           ~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1818:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1818       valor_carga: documento.valor_carga || '',
+           ~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1819:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1819       quantidade_carga: documento.quantidade_carga || '',
+           ~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1829:19 - error TS2551: Property 'cidade_inicio_codigo' does not exist on type 'CTeDocumento'. Did you mean 'cidade_inicio_ibge'?
+
+1829     if (documento.cidade_inicio_codigo) {
+                       ~~~~~~~~~~~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:91:3
+    91   cidade_inicio_ibge?: string | null;
+         ~~~~~~~~~~~~~~~~~~
+    'cidade_inicio_ibge' is declared here.
+
+src/pages/fiscal/CTe.tsx:1831:27 - error TS2551: Property 'cidade_inicio_codigo' does not exist on type 'CTeDocumento'. Did you mean 'cidade_inicio_ibge'?
+
+1831         codigo: documento.cidade_inicio_codigo,
+                               ~~~~~~~~~~~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:91:3
+    91   cidade_inicio_ibge?: string | null;
+         ~~~~~~~~~~~~~~~~~~
+    'cidade_inicio_ibge' is declared here.
+
+src/pages/fiscal/CTe.tsx:1833:23 - error TS2551: Property 'cidade_inicio_uf' does not exist on type 'CTeDocumento'. Did you mean 'cidade_inicio_ibge'?
+
+1833         uf: documento.cidade_inicio_uf || ''
+                           ~~~~~~~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:91:3
+    91   cidade_inicio_ibge?: string | null;
+         ~~~~~~~~~~~~~~~~~~
+    'cidade_inicio_ibge' is declared here.
+
+src/pages/fiscal/CTe.tsx:1837:19 - error TS2551: Property 'cidade_termino_codigo' does not exist on type 'CTeDocumento'. Did you mean 'cidade_termino_ibge'?
+
+1837     if (documento.cidade_termino_codigo) {
+                       ~~~~~~~~~~~~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:92:3
+    92   cidade_termino_ibge?: string | null;
+         ~~~~~~~~~~~~~~~~~~~
+    'cidade_termino_ibge' is declared here.
+
+src/pages/fiscal/CTe.tsx:1839:27 - error TS2551: Property 'cidade_termino_codigo' does not exist on type 'CTeDocumento'. Did you mean 'cidade_termino_ibge'?
+
+1839         codigo: documento.cidade_termino_codigo,
+                               ~~~~~~~~~~~~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:92:3
+    92   cidade_termino_ibge?: string | null;
+         ~~~~~~~~~~~~~~~~~~~
+    'cidade_termino_ibge' is declared here.
+
+src/pages/fiscal/CTe.tsx:1841:23 - error TS2551: Property 'cidade_termino_uf' does not exist on type 'CTeDocumento'. Did you mean 'cidade_termino_ibge'?
+
+1841         uf: documento.cidade_termino_uf || ''
+                           ~~~~~~~~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:92:3
+    92   cidade_termino_ibge?: string | null;
+         ~~~~~~~~~~~~~~~~~~~
+    'cidade_termino_ibge' is declared here.
+
+src/pages/fiscal/CTe.tsx:2234:32 - error TS2367: This comparison appears to be unintentional because the types '"pendente" | "cancelado" | "emitido"' and '"rascunho"' have no overlap.
+
+2234                               {documento.status === 'rascunho' && (
+                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:2243:67 - error TS2367: This comparison appears to be unintentional because the types '"pendente" | "cancelado"' and '"rascunho"' have no overlap.
+
+2243                               {(documento.status === 'emitido' || documento.status === 'rascunho') && (
+                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:2418:58 - error TS2551: Property 'hora_emissao' does not exist on type 'CTeDocumento'. Did you mean 'forma_emissao'?
+
+2418                         defaultValue={selectedDocumento?.hora_emissao || format(new Date(), 'HH:mm')}
+                                                              ~~~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:46:3
+    46   forma_emissao: number;
+         ~~~~~~~~~~~~~
+    'forma_emissao' is declared here.
+
+src/pages/fiscal/CTe.tsx:2527:45 - error TS2345: Argument of type '(prev: { [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }) => { ...; }' is not assignable to parameter of type 'SetStateAction<{ [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }>'.
+  Type '(prev: { [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }) => { ...; }' is not assignable to type '(prevState: { [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }) => { ...; }'.
+    Call signature return types '{ cidade_inicio_ibge: string; cidade_inicio_nome: string; uf_inicio: string | undefined; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; ... 19 more ...; cidade_termino_nome: string; }' and '{ [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }' are incompatible.
+      The types of 'uf_inicio' are incompatible between these types.
+        Type 'string | undefined' is not assignable to type 'string'.
+          Type 'undefined' is not assignable to type 'string'.
+
+2527                                 setFormData(prev => ({
+                                                 ~~~~~~~~~~
+2528                                   ...prev,
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ ...
+2531                                   uf_inicio: cidade.uf
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2532                                 }))
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:2598:45 - error TS2345: Argument of type '(prev: { [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }) => { ...; }' is not assignable to parameter of type 'SetStateAction<{ [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }>'.
+  Type '(prev: { [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }) => { ...; }' is not assignable to type '(prevState: { [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }) => { ...; }'.
+    Call signature return types '{ cidade_termino_ibge: string; cidade_termino_nome: string; uf_termino: string | undefined; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; ... 19 more ...; cidade_inicio_nome: string; }' and '{ [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }' are incompatible.
+      The types of 'uf_termino' are incompatible between these types.
+        Type 'string | undefined' is not assignable to type 'string'.
+          Type 'undefined' is not assignable to type 'string'.
+
+2598                                 setFormData(prev => ({
+                                                 ~~~~~~~~~~
+2599                                   ...prev,
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ ...
+2602                                   uf_termino: cidade.uf
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2603                                 }))
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:3194:27 - error TS2322: Type 'string' is not assignable to type 'number'.
+
+3194                           maxLength="44"
+                               ~~~~~~~~~
+
+  node_modules/@types/react/index.d.ts:3397:9
+    3397         maxLength?: number | undefined;
+                 ~~~~~~~~~
+    The expected type comes from property 'maxLength' which is declared here on type 'DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>'
+
+src/pages/fiscal/CTe.tsx:3223:27 - error TS2322: Type 'string' is not assignable to type 'number'.
+
+3223                           maxLength="44"
+                               ~~~~~~~~~
+
+  node_modules/@types/react/index.d.ts:3397:9
+    3397         maxLength?: number | undefined;
+                 ~~~~~~~~~
+    The expected type comes from property 'maxLength' which is declared here on type 'DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>'
+
+src/pages/fiscal/CTe.tsx:3251:27 - error TS2322: Type 'string' is not assignable to type 'number'.
+
+3251                           maxLength="44"
+                               ~~~~~~~~~
+
+  node_modules/@types/react/index.d.ts:3397:9
+    3397         maxLength?: number | undefined;
+                 ~~~~~~~~~
+    The expected type comes from property 'maxLength' which is declared here on type 'DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>'
+
+src/pages/fiscal/CTe.tsx:3279:27 - error TS2322: Type 'string' is not assignable to type 'number'.
+
+3279                           maxLength="44"
+                               ~~~~~~~~~
+
+  node_modules/@types/react/index.d.ts:3397:9
+    3397         maxLength?: number | undefined;
+                 ~~~~~~~~~
+    The expected type comes from property 'maxLength' which is declared here on type 'DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>'
+
+src/pages/fiscal/Dashboard.tsx:95:9 - error TS6133: 'fretesPendentes' is declared but its value is never read.
+
+95   const fretesPendentes = freteDocumentos?.filter(f => f.status === 'pendente').length || 0
+           ~~~~~~~~~~~~~~~
+
+src/pages/fiscal/Dashboard.tsx:96:9 - error TS6133: 'totalDocumentos' is declared but its value is never read.
+
+96   const totalDocumentos = (cteDocumentos?.length || 0) + (mdfeDocumentos?.length || 0) + (freteDocumentos?.length || 0)
+           ~~~~~~~~~~~~~~~
+
+src/pages/fiscal/Frete.tsx:3:1 - error TS6192: All imports in import declaration are unused.
+
+3 import { format, parseISO } from "date-fns";
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/Frete.tsx:30:7 - error TS6133: 'STATUS_LABELS' is declared but its value is never read.
+
+30 const STATUS_LABELS = {
+         ~~~~~~~~~~~~~
+
+src/pages/fiscal/Frete.tsx:36:7 - error TS6133: 'STATUS_COLORS' is declared but its value is never read.
+
+36 const STATUS_COLORS = {
+         ~~~~~~~~~~~~~
+
+src/pages/fiscal/Frete.tsx:79:9 - error TS6133: 'origemInputRef' is declared but its value is never read.
+
+79   const origemInputRef = useRef<HTMLInputElement>(null);
+           ~~~~~~~~~~~~~~
+
+src/pages/fiscal/Frete.tsx:80:9 - error TS6133: 'destinoInputRef' is declared but its value is never read.
+
+80   const destinoInputRef = useRef<HTMLInputElement>(null);
+           ~~~~~~~~~~~~~~~
+
+src/pages/fiscal/MDFe.tsx:22:3 - error TS6133: 'updateDocumentFiles' is declared but its value is never read.
+
+22   updateDocumentFiles,
+     ~~~~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/MDFe.tsx:26:3 - error TS6133: 'getUFFromCode' is declared but its value is never read.
+
+26   getUFFromCode,
+     ~~~~~~~~~~~~~
+
+src/pages/fiscal/MDFe.tsx:29:8 - error TS6133: 'CTeDocumento' is declared but its value is never read.
+
+29   type CTeDocumento
+          ~~~~~~~~~~~~
+
+src/pages/fiscal/MDFe.tsx:605:59 - error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+
+605                                 Chave: {formatChaveAcesso(cte.chave_acesso)}
+                                                              ~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/NovoCtEAuto.tsx:15:1 - error TS6133: 'AssociacaoFrota' is declared but its value is never read.
+
+15 import type { AssociacaoFrota } from '@/lib/api/fleet-associations'
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/NovoCtEAuto.tsx:16:1 - error TS6133: 'EmpresaFiscal' is declared but its value is never read.
+
+16 import type { EmpresaFiscal } from '@/lib/api/fiscal'
