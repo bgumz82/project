@@ -801,31 +801,33 @@ export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> 
         matricula: row.funcionario_matricula,
         cnh: row.funcionario_cnh,
         validade_cnh: row.funcionario_validade_cnh
-      } : null,
+      } : undefined,
       veiculo_principal: row.veiculo_principal_placa ? {
         placa: row.veiculo_principal_placa,
         modelo: row.veiculo_principal_modelo,
         marca: row.veiculo_principal_marca,
         tipo: row.veiculo_principal_tipo
-      } : null,
+      } : undefined,
       veiculo_reboque1: row.veiculo_reboque1_placa ? {
         placa: row.veiculo_reboque1_placa,
         modelo: row.veiculo_reboque1_modelo,
         marca: row.veiculo_reboque1_marca,
         tipo: row.veiculo_reboque1_tipo
-      } : null,
+      } : undefined,
       veiculo_reboque2: row.veiculo_reboque2_placa ? {
         placa: row.veiculo_reboque2_placa,
         modelo: row.veiculo_reboque2_modelo,
-        marca: row.veiculo_reboque2_marca,
+        marca: r
+
+ow.veiculo_reboque2_marca,
         tipo: row.veiculo_reboque2_tipo
-      } : null,
+      } : undefined,
       veiculo_implemento: row.veiculo_implemento_placa ? {
         placa: row.veiculo_implemento_placa,
         modelo: row.veiculo_implemento_modelo,
         marca: row.veiculo_implemento_marca,
         tipo: row.veiculo_implemento_tipo
-      } : null
+      } : undefined
     }
 
     console.log('✅ Dados mapeados final:', associacao)
