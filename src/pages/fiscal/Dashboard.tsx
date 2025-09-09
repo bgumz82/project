@@ -11,8 +11,8 @@ import {
 import { getEmpresasFiscais, getCTeDocumentos, getMDFeDocumentos, getFreteDocumentos } from '@/lib/api/fiscal'
 
 export default function DashboardFiscal() {
-  const { 
-    data: empresas, 
+  const {
+    data: empresas,
     isLoading: isLoadingEmpresas,
     error: empresasError,
     refetch: refetchEmpresas
@@ -23,7 +23,7 @@ export default function DashboardFiscal() {
     retry: 3
   })
 
-  const { 
+  const {
     data: cteDocumentos,
     isLoading: isLoadingCTe
   } = useQuery({
@@ -33,7 +33,7 @@ export default function DashboardFiscal() {
     retry: 3
   })
 
-  const { 
+  const {
     data: mdfeDocumentos,
     isLoading: isLoadingMDFe
   } = useQuery({
@@ -43,7 +43,7 @@ export default function DashboardFiscal() {
     retry: 3
   })
 
-  const { 
+  const {
     data: freteDocumentos,
     isLoading: isLoadingFrete
   } = useQuery({
@@ -92,7 +92,7 @@ export default function DashboardFiscal() {
   const empresasAtivas = empresas?.filter(e => e.status === 'ativo').length || 0
   const ctesPendentes = cteDocumentos?.filter(c => c.status === 'pendente').length || 0
   const mdfesPendentes = mdfeDocumentos?.filter(m => m.status === 'pendente').length || 0
-  
+
 
   return (
     <div className="py-6">
@@ -302,7 +302,7 @@ export default function DashboardFiscal() {
                           ? 'bg-yellow-100 text-yellow-800'
                           : 'bg-red-100 text-red-800'
                       }`}>
-                        {cte.status === 'emitido' ? 'Emitido' : 
+                        {cte.status === 'emitido' ? 'Emitido' :
                          cte.status === 'pendente' ? 'Pendente' : 'Cancelado'}
                       </span>
                     </div>
@@ -351,7 +351,7 @@ export default function DashboardFiscal() {
                           ? 'bg-yellow-100 text-yellow-800'
                           : 'bg-red-100 text-red-800'
                       }`}>
-                        {mdfe.status === 'emitido' ? 'Emitido' : 
+                        {mdfe.status === 'emitido' ? 'Emitido' :
                          mdfe.status === 'encerrado' ? 'Encerrado' :
                          mdfe.status === 'pendente' ? 'Pendente' : 'Cancelado'}
                       </span>

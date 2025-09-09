@@ -17,16 +17,13 @@ import {
   createMDFeDocumento,
   updateMDFeDocumento,
   deleteMDFeDocumento,
+  generateMDFeFiles,
   getEmpresasFiscais,
   getCTeEmitidosParaMDFe,
-  updateDocumentFiles,
-  generateMDFeFiles,
   formatCNPJ,
   formatChaveAcesso,
-  getUFFromCode,
   type MDFeDocumento,
   type MDFeDocumentoCreate,
-  type CTeDocumento
 } from '@/lib/api/fiscal'
 
 const STATUS_LABELS = {

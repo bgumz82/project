@@ -43,7 +43,7 @@ export async function generateCTeXML(
   empresa: EmpresaInfo,
   remetente: ClienteInfo | null,
   destinatario: ClienteInfo | null,
-  recebedor: ClienteInfo | null
+  recebedor: ClienteInfo | null,
 ): Promise<string> {
 
   const dataEmissao = new Date(documento.data_emissao)
@@ -91,7 +91,7 @@ ${documento.observacoes ? `<compl>
 </compl>` : ''}
 <emit>
 <CNPJ>${empresa.cnpj?.replace(/\D/g, '') || '00000000000000'}</CNPJ>
-<IE>${empresa.ie || 'ISENTO'}</IE>
+<IE>${empresa.ie || 'ISENTO</IE>'}</IE>
 <xNome>${empresa.razao_social || 'NAO INFORMADO'}</xNome>
 <enderEmit>
 <xLgr>${removeAccents(parseEndereco(empresa.endereco_completo, empresa.cidade, empresa.estado, empresa.cep).logradouro).toUpperCase()}</xLgr>

@@ -54,7 +54,7 @@ interface NFEData {
 export default function NovoCtEAuto() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  
+
   const [chaveNFE, setChaveNFE] = useState('')
   const [chaveValida, setChaveValida] = useState<boolean | null>(null)
   const [empresaSelecionada, setEmpresaSelecionada] = useState<string>('')
@@ -69,12 +69,12 @@ export default function NovoCtEAuto() {
   // Função para formatar nome do motorista com placa do último reboque
   const formatarNomeMotorista = (associacao: any) => {
     if (!associacao?.funcionario?.nome) return 'Motorista não informado'
-    
+
     const primeiroNome = associacao.funcionario.nome.split(' ')[0]
-    
+
     // Determinar placa do último reboque (priorizando reboque2 para Bi-Trem)
     let placaUltimoReboque = ''
-    
+
     if (associacao.veiculo_reboque2?.placa) {
       // Se tem reboque2, é Bi-Trem - usar sempre o 2º reboque
       placaUltimoReboque = associacao.veiculo_reboque2.placa
@@ -88,7 +88,7 @@ export default function NovoCtEAuto() {
       // Se não tem reboque, usar placa do veículo principal
       placaUltimoReboque = associacao.veiculo_principal?.placa || 'SEM_PLACA'
     }
-    
+
     return `${primeiroNome} - ${placaUltimoReboque}`
   }
 
@@ -110,7 +110,7 @@ export default function NovoCtEAuto() {
   const consultarNFE = async (chave: string) => {
     try {
       console.log('🔍 Consultando NF-e via servidor:', chave)
-      
+
       const response = await fetch('/api/consultar-nfe', {
         method: 'POST',
         headers: { 
@@ -128,7 +128,7 @@ export default function NovoCtEAuto() {
 
       const result = await response.json()
       console.log('✅ Resposta recebida do servidor:', result)
-      
+
       return result
     } catch (error) {
       console.error('❌ Erro ao consultar NF-e:', error)
@@ -140,13 +140,13 @@ export default function NovoCtEAuto() {
   const verificarCliente = async (cnpj: string) => {
     try {
       console.log('🔍 Verificando cliente no banco remoto:', cnpj)
-      
+
       const result = await query(`
         SELECT id FROM cadastros 
         WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
         LIMIT 1
       `, [cnpj])
-      
+
       const existe = result.length > 0
       console.log('✅ Cliente existe no banco remoto:', existe)
       return existe
@@ -159,14 +159,14 @@ export default function NovoCtEAuto() {
   // Função para cadastrar cliente automaticamente (usando banco remoto)
   const cadastrarClienteNFE = async (tipo: 'remetente' | 'destinatario') => {
     if (!nfeData) return
-    
+
     setCadastrandoCliente(tipo)
-    
+
     try {
       const dadosCliente = tipo === 'remetente' ? nfeData.remetente : nfeData.destinatario
-      
+
       console.log('📝 Cadastrando cliente no banco remoto:', dadosCliente)
-      
+
       // Inserir no banco remoto usando query com todos os campos obrigatórios
       await query(`
         INSERT INTO cadastros (
@@ -185,19 +185,19 @@ export default function NovoCtEAuto() {
         null, // telefone
         null // emails como null
       ])
-      
+
       toast.success(`${tipo === 'remetente' ? 'Remetente' : 'Destinatário'} cadastrado com sucesso!`)
-      
+
       // Atualizar status
       if (tipo === 'remetente') {
         setRemetenteExiste(true)
       } else {
         setDestinatarioExiste(true)
       }
-      
+
       // Invalidar cache dos cadastros para recarregar lista atualizada
       queryClient.invalidateQueries({ queryKey: ['cadastros'] })
-      
+
     } catch (error) {
       console.error('❌ Erro ao cadastrar cliente no banco remoto:', error)
       toast.error('Erro ao cadastrar cliente')
@@ -212,11 +212,11 @@ export default function NovoCtEAuto() {
     onSuccess: async (data) => {
       setNfeData(data)
       toast.success('NF-e consultada com sucesso!')
-      
+
       // Verificar se remetente e destinatário existem
       const remetenteExists = await verificarCliente(data.remetente.cnpj)
       const destinatarioExists = await verificarCliente(data.destinatario.cnpj)
-      
+
       setRemetenteExiste(remetenteExists)
       setDestinatarioExiste(destinatarioExists)
     },
@@ -250,7 +250,7 @@ export default function NovoCtEAuto() {
     // Remove espaços e caracteres especiais
     const chaveFormatada = value.replace(/\s/g, '').replace(/\D/g, '')
     setChaveNFE(chaveFormatada)
-    
+
     // Valida a chave
     if (chaveFormatada.length === 44) {
       const isValid = validarChaveAcesso(chaveFormatada)
@@ -258,7 +258,7 @@ export default function NovoCtEAuto() {
     } else {
       setChaveValida(null)
     }
-    
+
     // Reset dados da NF-e se chave mudou
     setNfeData(null)
   }
@@ -292,11 +292,11 @@ export default function NovoCtEAuto() {
     }
 
     // ==== VALIDAÇÕES E MAPEAMENTO AUTOMÁTICO ====
-    
+
     // 1. CFOP - Regras específicas para empresa emitente MG
     const estadoOrigem = nfeData.remetente.estado
     const estadoDestino = nfeData.destinatario.estado
-    
+
     let cfop = '6352' // Padrão
     if (estadoOrigem === 'GO' && estadoDestino === 'GO') {
       cfop = '5932' // GO→GO
@@ -307,41 +307,41 @@ export default function NovoCtEAuto() {
     } else if (estadoOrigem === 'MG' && estadoDestino === 'MG') {
       cfop = '5352' // MG→MG
     }
-    
+
     // 2. INÍCIO E TÉRMINO DA PRESTAÇÃO - Baseado nos endereços da NF-e
     const cidade_inicio_nome = nfeData.remetente.cidade
     const uf_inicio = nfeData.remetente.estado
     const cidade_termino_nome = nfeData.destinatario.cidade
     const uf_termino = nfeData.destinatario.estado
-    
+
     // 3. TOMADOR - Por padrão é o destinatário da NF-e (quem recebe a mercadoria)
     const tomador_id = null // Será mapeado pelo backend baseado no CNPJ do destinatário
-    
+
     // 4. REMETENTE E DESTINATÁRIO - Usar os mesmos da NF-e
     const remetente_id = null // Será mapeado pelo backend baseado no CNPJ do remetente
     const destinatario_id = null // Será mapeado pelo backend baseado no CNPJ do destinatário
-    
+
     // 5. SERVIÇOS E IMPOSTOS - Valor do frete baseado na carga
     const valor_carga = nfeData.produto.valor_total
     const quantidade_carga = nfeData.produto.quantidade_total
-    
+
     // Calcular frete como percentual da carga (3% padrão para combustível)
     const percentual_frete = 0.03 // 3% do valor da carga
     const frete_base = Math.round(valor_carga * percentual_frete * 100) / 100
-    
+
     // PEDÁGIO E SEGURO - Regras do CT-e Rápido
     const valor_pedagio = Math.round(frete_base * 0.15 * 100) / 100 // 15% do frete base
     const valor_seguro = Math.round(valor_carga * 0.001 * 100) / 100 // 0.1% do valor da carga
     const valor_outros = valor_seguro // Seguro vai em "outros"
-    
+
     // VALOR TOTAL DA PRESTAÇÃO = frete base + pedágio
     const valor_prestacao = Math.round((frete_base + valor_pedagio) * 100) / 100
     const valor_receber = valor_prestacao
-    
+
     // ICMS - Regras específicas para empresa emitente MG
     let icms_aliquota = 0
     let icms_situacao_tributaria = '40' // Isenção
-    
+
     if (estadoOrigem === 'GO' && estadoDestino === 'GO') {
       icms_aliquota = 0 // Isenção
       icms_situacao_tributaria = '40'
@@ -355,22 +355,22 @@ export default function NovoCtEAuto() {
       icms_aliquota = 0 // Isenção
       icms_situacao_tributaria = '40'
     }
-    
+
     const icms_bc_valor = icms_aliquota > 0 ? valor_prestacao : 0
     const icms_valor = icms_aliquota > 0 ? Math.round(icms_bc_valor * (icms_aliquota / 100) * 100) / 100 : 0
-    
+
     // 6. DADOS FISCAIS - Produto predominante baseado na NF-e
     const produto_predominante_id = null // Será criado automaticamente baseado no NCM da NF-e
-    
+
     // 7. OBSERVAÇÕES AUTOMÁTICAS
     const placas = []
     if (associacao.veiculo_principal?.placa) placas.push(associacao.veiculo_principal.placa)
     if (associacao.veiculo_reboque1?.placa) placas.push(associacao.veiculo_reboque1.placa)
     if (associacao.veiculo_reboque2?.placa) placas.push(associacao.veiculo_reboque2.placa)
     if (associacao.veiculo_implemento?.placa) placas.push(associacao.veiculo_implemento.placa)
-    
+
     const placasTexto = placas.length > 0 ? `Placas: ${placas.join(', ')}.` : ''
-    
+
     // Extrair Doc. Transporte das observações da NF-e
     let docTransporte = ''
     if (nfeData.observacoes) {
@@ -379,7 +379,7 @@ export default function NovoCtEAuto() {
         docTransporte = `Doc. Transporte: ${match[1]}.`
       }
     }
-    
+
     const observacoes = [
       docTransporte,
       placasTexto
@@ -394,19 +394,19 @@ export default function NovoCtEAuto() {
       serie: empresa.serie_padrao_cte || '001',
       codigo_uf: empresa.codigo_uf || '35',
       status: 'pendente' as const,
-      
+
       // REGRAS CFOP E PRESTAÇÃO
       cfop,
       cidade_inicio_nome,
       uf_inicio,
       cidade_termino_nome,
       uf_termino,
-      
+
       // PARTICIPANTES
       tomador_id,
       remetente_id,
       destinatario_id,
-      
+
       // SERVIÇOS E IMPOSTOS
       valor_prestacao,
       valor_receber,
@@ -417,16 +417,16 @@ export default function NovoCtEAuto() {
       icms_bc_valor,
       icms_aliquota,
       icms_valor,
-      
+
       // DADOS FISCAIS
       valor_carga,
       quantidade_carga,
       produto_predominante_id,
-      
+
       // DADOS BÁSICOS
       tipo_servico: '0',
       finalidade_cte: '0',
-      
+
       // TRANSPORTE
       associacao_frota_id: associacaoSelecionada,
       motorista_nome: associacao.funcionario?.nome || null,
@@ -435,10 +435,10 @@ export default function NovoCtEAuto() {
       motorista_validade_cnh: associacao.funcionario?.validade_cnh ? new Date(associacao.funcionario.validade_cnh).toISOString().split('T')[0] : null,
       placa_veiculo: associacao.veiculo_principal?.placa || null,
       placa_reboque: associacao.veiculo_reboque1?.placa || associacao.veiculo_reboque2?.placa || associacao.veiculo_implemento?.placa || null,
-      
+
       // OBSERVAÇÕES
       observacoes,
-      
+
       // DADOS ADICIONAIS DA NFE PARA MAPEAMENTO NO BACKEND
       nfe_remetente_cnpj: nfeData.remetente.cnpj,
       nfe_remetente_razao_social: nfeData.remetente.razao_social,
@@ -597,7 +597,7 @@ export default function NovoCtEAuto() {
                 <h3 className="text-lg font-medium text-gray-900 mb-4">
                   Dados da NF-e Consultada
                 </h3>
-                
+
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center justify-between mb-2">

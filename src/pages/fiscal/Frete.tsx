@@ -24,6 +24,7 @@ import {
   type FreteDocumentoCreate,
   type Cidade,
 } from "@/lib/api/fiscal";
+import toast from "react-hot-toast";
 
 const STATUS_LABELS = {
   pendente: "Pendente",
