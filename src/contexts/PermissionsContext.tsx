@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 // Original code used this import: import { getUserModulePermissions } from '../lib/api/permissions'
 // The changes snippet uses the original query function, so we revert to that.
 import { query } from '@/lib/db'
@@ -132,7 +132,7 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
     permissions,
     loading,
     hasPermission,
-    loadPermissions
+    refreshPermissions: loadPermissions
   }), [permissions, loading, hasPermission, loadPermissions])
 
   return (
