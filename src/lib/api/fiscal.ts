@@ -1884,11 +1884,27 @@ export async function generateMDFeFiles(documentoId: string): Promise<void> {
 
     console.log("✅ Documento MDF-e encontrado:", documento.numero_mdfe);
 
-    // Buscar CT-es relacionados ao MDF-e
+    // Buscar CT-es relacionados ao MDF-e com informações de veículos, motoristas e produtos
     const ctesRelacionados = await query(`
-      SELECT c.*, mcr.id as relacao_id
+      SELECT c.*, mcr.id as relacao_id,
+             -- Informações do veículo principal
+             vp.placa as veiculo_placa, vp.renavam as veiculo_renavam, 
+             vp.tara_kg as veiculo_tara, vp.carga_kg as veiculo_capacidade,
+             vp.uf_registro as veiculo_uf,
+             -- Informações do reboque  
+             vr.placa as reboque_placa, vr.renavam as reboque_renavam,
+             vr.tara_kg as reboque_tara, vr.carga_kg as reboque_capacidade,
+             vr.uf_registro as reboque_uf,
+             -- Informações do motorista
+             f.nome as motorista_nome, f.cpf as motorista_cpf,
+             -- Informações do produto
+             p.nome as produto_nome, p.tipo_carga as produto_tipo_carga
       FROM mdfe_cte_relacionados mcr
       JOIN cte_documentos c ON mcr.cte_documento_id = c.id
+      LEFT JOIN veiculos vp ON c.placa_veiculo = vp.placa
+      LEFT JOIN veiculos vr ON c.placa_reboque = vr.placa  
+      LEFT JOIN funcionarios f ON c.motorista_cpf = f.cpf
+      LEFT JOIN cte_produtos p ON c.produto_predominante_id = p.id
       WHERE mcr.mdfe_documento_id = $1
       ORDER BY c.numero_cte
     `, [documentoId]);
