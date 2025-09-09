@@ -1989,6 +1989,14 @@ function generateMDFeXML(documento: any, ctesRelacionados: any[]): string {
   const dataEmissao = new Date(documento.data_emissao).toISOString().split('T')[0];
   const horaEmissao = new Date(documento.data_emissao).toTimeString().split(' ')[0];
 
+  // Calcular totais dos CT-es relacionados
+  const totalValorCarga = ctesRelacionados.reduce((sum, cte) => sum + parseFloat(cte.valor_carga || 0), 0);
+  const totalQuantidadeCarga = ctesRelacionados.reduce((sum, cte) => sum + parseFloat(cte.quantidade_carga || 0), 0);
+
+  // Pegar dados do primeiro CT-e para veículos e motorista (assumindo mesmo conjunto)
+  const primeiroCtE = ctesRelacionados[0] || {};
+  const produtoPredominante = ctesRelacionados.find(cte => cte.produto_nome) || {};
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <MDFe xmlns="http://www.portalfiscal.inf.br/mdfe">
   <infMDFe versao="3.00" Id="MDFe${documento.chave_acesso}">
@@ -2035,22 +2043,48 @@ function generateMDFeXML(documento: any, ctesRelacionados: any[]): string {
     <infModal versaoModal="3.00">
       <rodo>
         <infANTT>
-          <RNTRC>${documento.empresa_rntrc || '12345678'}</RNTRC>
+          <RNTRC>${documento.empresa_rntrc || '47424276'}</RNTRC>
+          <infContratante>
+            <CNPJ>${documento.empresa_cnpj}</CNPJ>
+          </infContratante>
         </infANTT>
         <veicTracao>
-          <cInt>001</cInt>
-          <placa>${documento.placa_veiculo || 'ABC1234'}</placa>
-          <RENAVAM>000000000</RENAVAM>
-          <tara>8000</tara>
-          <capKG>20000</capKG>
-          <capM3>60</capM3>
+          <cInt>${primeiroCtE.veiculo_placa ? primeiroCtE.veiculo_placa.substring(3) : '0001'}</cInt>
+          <placa>${primeiroCtE.veiculo_placa || 'ABC1234'}</placa>
+          <RENAVAM>${primeiroCtE.veiculo_renavam || '00000000000'}</RENAVAM>
+          <tara>${primeiroCtE.veiculo_tara || 9000}</tara>
+          <capKG>${primeiroCtE.veiculo_capacidade || 21000}</capKG>
+          ${primeiroCtE.motorista_nome && primeiroCtE.motorista_cpf ? `<condutor>
+            <xNome>${primeiroCtE.motorista_nome}</xNome>
+            <CPF>${primeiroCtE.motorista_cpf.replace(/\D/g, '')}</CPF>
+          </condutor>` : ''}
           <tpRod>01</tpRod>
           <tpCar>00</tpCar>
-          <UF>MG</UF>
+          <UF>${primeiroCtE.veiculo_uf || 'MG'}</UF>
         </veicTracao>
-        <codAgPorto>12345</codAgPorto>
+        ${primeiroCtE.reboque_placa ? `<veicReboque>
+          <cInt>${primeiroCtE.reboque_placa.substring(3)}</cInt>
+          <placa>${primeiroCtE.reboque_placa}</placa>
+          <RENAVAM>${primeiroCtE.reboque_renavam || '00000000000'}</RENAVAM>
+          <tara>${primeiroCtE.reboque_tara || 9500}</tara>
+          <capKG>${primeiroCtE.reboque_capacidade || 35000}</capKG>
+          <tpCar>00</tpCar>
+          <UF>${primeiroCtE.reboque_uf || 'MG'}</UF>
+        </veicReboque>` : ''}
       </rodo>
     </infModal>
+    <prodPred>
+      <tpCarga>${produtoPredominante.produto_tipo_carga || '02'}</tpCarga>
+      <xProd>${produtoPredominante.produto_nome || 'MERCADORIAS EM GERAL'}</xProd>
+      <infLotacao>
+        <infLocalCarrega>
+          <CEP>38510000</CEP>
+        </infLocalCarrega>
+        <infLocalDescarrega>
+          <CEP>75240000</CEP>
+        </infLocalDescarrega>
+      </infLotacao>
+    </prodPred>
     <infDoc>
 ${ctesRelacionados.map(cte => `      <infMunDescarga>
         <cMunDescarga>${cte.cidade_termino_ibge || '3132404'}</cMunDescarga>
@@ -2062,9 +2096,9 @@ ${ctesRelacionados.map(cte => `      <infMunDescarga>
     </infDoc>
     <tot>
       <qCTe>${ctesRelacionados.length}</qCTe>
-      <vCarga>${documento.valor_carga || '0.00'}</vCarga>
+      <vCarga>${totalValorCarga.toFixed(2)}</vCarga>
       <cUnid>01</cUnid>
-      <qCarga>${documento.quantidade_carga || '0.000'}</qCarga>
+      <qCarga>${totalQuantidadeCarga.toFixed(4)}</qCarga>
     </tot>
   </infMDFe>
 </MDFe>`;
