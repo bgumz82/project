@@ -8,6 +8,9 @@ const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const xml2js = require('xml2js');
+const { Client } = require('pg');
+const fs = require('fs').promises;
+const pathLib = require('path');
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -685,10 +688,6 @@ async function createDatabaseStructure(client) {
     // 3. Criar tabelas principais
     await createTables(client);
 
-    console.log('🔧 Ajustando estrutura de cte_produtos...');
-    // 3.5. Ajustar estrutura de cte_produtos
-    await ensureCteProductsStructure(client);
-
     console.log('🔗 Criando foreign keys...');
     // 4. Criar foreign keys
     await createForeignKeys(client);
@@ -1054,6 +1053,8 @@ async function createTables(client) {
           proximo_numero_cte integer DEFAULT 1,
           serie_padrao_nfce varchar(3) DEFAULT '1',
           serie_padrao_cte varchar(3) DEFAULT '1',
+          serie_padrao_mdfe varchar(3) DEFAULT '1',
+          proximo_numero_mdfe integer DEFAULT 1,
           status varchar(20) DEFAULT 'ativo' CHECK (status IN ('ativo', 'inativo', 'suspenso')),
           created_at timestamptz DEFAULT now(),
           updated_at timestamptz DEFAULT now()
@@ -1108,6 +1109,7 @@ async function createTables(client) {
           placa_veiculo varchar(10),
           placa_reboque varchar(10),
           associacao_frota_id uuid,
+          xml_gerado boolean DEFAULT false,
           created_at timestamptz DEFAULT now(),
           updated_at timestamptz DEFAULT now()
         )
@@ -1318,6 +1320,27 @@ async function createTables(client) {
           UNIQUE(mdfe_documento_id, cte_documento_id)
         )
       `
+    },
+    {
+      name: 'mdfe_documentos',
+      query: `
+        CREATE TABLE IF NOT EXISTS mdfe_documentos (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          empresa_id uuid NOT NULL,
+          numero_mdfe varchar(10) NOT NULL,
+          serie varchar(3) NOT NULL,
+          data_emissao timestamptz NOT NULL DEFAULT now(),
+          data_saida timestamptz,
+          data_encerramento timestamptz,
+          codigo_uf varchar(2),
+          forma_emissao integer DEFAULT 1 CHECK (forma_emissao IN (1, 2, 3)),
+          status varchar(20) DEFAULT 'pendente' CHECK (status IN ('pendente', 'emitido', 'encerrado', 'cancelado', 'inutilizado')),
+          observacoes text,
+          xml_gerado boolean DEFAULT false,
+          created_at timestamptz DEFAULT now(),
+          updated_at timestamptz DEFAULT now()
+        )
+      `
     }
   ];
 
@@ -1329,53 +1352,6 @@ async function createTables(client) {
     } catch (error) {
       console.log(`⚠️ Erro na tabela ${table.name}:`, error.message);
     }
-  }
-}
-
-// Função para adicionar coluna cte_documento_id em cte_produtos se não existir
-async function ensureCteProductsStructure(client) {
-  try {
-    // Verificar se a coluna cte_documento_id existe
-    const columnExists = await client.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'cte_produtos' AND column_name = 'cte_documento_id'
-    `);
-
-    if (columnExists.rows.length === 0) {
-      console.log('🔧 Adicionando coluna cte_documento_id à tabela cte_produtos...');
-      await client.query(`
-        ALTER TABLE cte_produtos 
-        ADD COLUMN cte_documento_id uuid
-      `);
-      console.log('✅ Coluna cte_documento_id adicionada com sucesso');
-    } else {
-      console.log('✅ Coluna cte_documento_id já existe em cte_produtos');
-    }
-
-    // Agora adicionar a foreign key se não existir
-    const fkExists = await client.query(`
-      SELECT constraint_name 
-      FROM information_schema.table_constraints
-      WHERE constraint_name = 'cte_produtos_cte_documento_id_fkey' 
-      AND table_name = 'cte_produtos'
-    `);
-
-    if (fkExists.rows.length === 0) {
-      console.log('🔧 Adicionando foreign key cte_produtos_cte_documento_id_fkey...');
-      await client.query(`
-        ALTER TABLE cte_produtos
-        ADD CONSTRAINT cte_produtos_cte_documento_id_fkey
-        FOREIGN KEY (cte_documento_id) REFERENCES cte_documentos(id)
-        ON DELETE CASCADE
-      `);
-      console.log('✅ Foreign key cte_produtos_cte_documento_id_fkey criada');
-    } else {
-      console.log('✅ Foreign key cte_produtos_cte_documento_id_fkey já existe');
-    }
-
-  } catch (error) {
-    console.log('⚠️ Erro ao ajustar estrutura de cte_produtos:', error.message);
   }
 }
 
@@ -1458,7 +1434,7 @@ async function createForeignKeys(client) {
       references: 'empresas_fiscais(id)',
       name: 'cte_documentos_empresa_id_fkey'
     },
-    
+
     {
       table: 'cte_documentos',
       column: 'produto_predominante_id',
@@ -1549,6 +1525,26 @@ async function createForeignKeys(client) {
       references: 'cities(id)',
       name: 'cte_tomador_endereco_cidade_id_fkey',
       onDelete: 'SET NULL'
+    },
+    {
+      table: 'mdfe_cte_relacionados',
+      column: 'mdfe_documento_id',
+      references: 'mdfe_documentos(id)',
+      name: 'mdfe_cte_relacionados_mdfe_documento_id_fkey',
+      onDelete: 'CASCADE'
+    },
+    {
+      table: 'mdfe_cte_relacionados',
+      column: 'cte_documento_id',
+      references: 'cte_documentos(id)',
+      name: 'mdfe_cte_relacionados_cte_documento_id_fkey',
+      onDelete: 'CASCADE'
+    },
+    {
+      table: 'mdfe_documentos',
+      column: 'empresa_id',
+      references: 'empresas_fiscais(id)',
+      name: 'mdfe_documentos_empresa_id_fkey'
     }
   ];
 
@@ -1600,7 +1596,12 @@ async function createIndexes(client) {
     'CREATE INDEX IF NOT EXISTS idx_cte_remetente_cte_documento_id ON cte_remetente(cte_documento_id)',
     'CREATE INDEX IF NOT EXISTS idx_cte_recebedor_cte_documento_id ON cte_recebedor(cte_documento_id)',
     'CREATE INDEX IF NOT EXISTS idx_cte_destinatario_cte_documento_id ON cte_destinatario(cte_documento_id)',
-    'CREATE INDEX IF NOT EXISTS idx_cte_tomador_cte_documento_id ON cte_tomador(cte_documento_id)'
+    'CREATE INDEX IF NOT EXISTS idx_cte_tomador_cte_documento_id ON cte_tomador(cte_documento_id)',
+    'CREATE INDEX IF NOT EXISTS idx_mdfe_documentos_empresa_id ON mdfe_documentos(empresa_id)',
+    'CREATE INDEX IF NOT EXISTS idx_mdfe_documentos_numero_mdfe ON mdfe_documentos(numero_mdfe)',
+    'CREATE INDEX IF NOT EXISTS idx_mdfe_documentos_data_emissao ON mdfe_documentos(data_emissao)',
+    'CREATE INDEX IF NOT EXISTS idx_mdfe_cte_relacionados_mdfe_id ON mdfe_cte_relacionados(mdfe_documento_id)',
+    'CREATE INDEX IF NOT EXISTS idx_mdfe_cte_relacionados_cte_id ON mdfe_cte_relacionados(cte_documento_id)'
   ];
 
   for (const indexQuery of indexes) {
@@ -1648,9 +1649,11 @@ async function createFunctionsAndTriggers(client) {
           (user_id_param, 'permissoes', true, true, true, true),
           (user_id_param, 'configuracoes_banco', true, true, true, true),
           (user_id_param, 'financeiro', true, true, true, false),
-          (user_id_param, 'relatorios', true, true, false, false);
+          (user_id_param, 'relatorios', true, true, false, false),
+          (user_id_param, 'cte', true, true, true, true),
+          (user_id_param, 'mdfe', true, true, true, true);
 
-          permission_count := 13;
+          permission_count := 15;
 
         ELSIF user_type_param = 'operador_checklist' THEN
           INSERT INTO user_permissions (user_id, module, can_access, can_create, can_edit, can_delete) VALUES
@@ -1824,11 +1827,12 @@ async function insertInitialData(client) {
     await client.query(`
       INSERT INTO empresas_fiscais (
         razao_social, cnpj, inscricao_estadual, endereco, cidade, estado,
-        uf_emissao_nfe, ambiente_nfce, ambiente_cte, serie_padrao_cte, status,
+        uf_emissao_nfe, ambiente_nfce, ambiente_cte, serie_padrao_cte, serie_padrao_mdfe, status,
         codigo_uf, created_at, updated_at
       ) VALUES (
         'EMPRESA DE EXEMPLO LTDA', '00.000.000/0001-00', '123.456.789.012',
-        'Rua das Amostras, 100', 'São Paulo', 'SP', 'SP', '1', '1', '001', 'ativo',
+        'Rua das Amostras, 100', 'São Paulo', 'SP',
+        'SP', '1', '1', '001', '001', 'ativo',
         '35', NOW(), NOW()
       )
       ON CONFLICT (cnpj) DO NOTHING
@@ -1845,7 +1849,7 @@ async function getUserDatabasePool(userId) {
     console.log('🔍 Buscando configuração de banco para usuário:', userId);
 
     // Buscar configuração de banco do usuário
-    const userConfigResult = await pool.query(`
+    const userConfigResult = await mainPool.query(`
       SELECT dc.*
       FROM usuarios u
       JOIN database_configurations dc ON u.database_config_id = dc.id
@@ -1880,6 +1884,39 @@ async function getUserDatabasePool(userId) {
     console.error('❌ Erro ao obter pool do usuário:', error);
     console.log('🔄 Retornando pool padrão como fallback');
     return pool; // Fallback para pool padrão
+  }
+}
+
+// Função para obter configuração de banco do usuário como objeto
+async function getUserDbConfig(userEmail) {
+  try {
+    const result = await mainPool.query(`
+      SELECT dc.*
+      FROM usuarios u
+      JOIN database_configurations dc ON u.database_config_id = dc.id
+      WHERE u.email = $1 AND dc.ativo = true
+    `, [userEmail]);
+
+    if (result.rows.length > 0) {
+      return {
+        ...result.rows[0],
+        configuracao_padrao: {
+          host: result.rows[0].host,
+          port: result.rows[0].port,
+          database: result.rows[0].database_name,
+          user: result.rows[0].username,
+          password: result.rows[0].password,
+          ssl: result.rows[0].ssl_enabled,
+          max: result.rows[0].max_connections,
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: result.rows[0].timeout_seconds * 1000
+        }
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('❌ Erro ao obter configuração de banco do usuário:', error);
+    return null;
   }
 }
 
@@ -1990,7 +2027,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
   next();
 }, authenticateToken, async (req, res) => {
   const requestId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-  
+
   try {
     const data = req.body;
     console.log(`🚨 [${requestId}] === INÍCIO CRIAÇÃO CT-e ===`);
@@ -2025,12 +2062,12 @@ app.post('/api/cte-documentos', (req, res, next) => {
     } else {
       const dbConfig = userConfigResult.rows[0];
       console.log('🔗 Conectando ao banco do usuário:', dbConfig.nome_empresa);
-      
+
       const userPool = new Pool({
         connectionString: dbConfig.connection_string,
         ssl: dbConfig.ssl_enabled
       });
-      
+
       client = await userPool.connect();
     }
 
@@ -2056,7 +2093,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
 
       console.log('🏢 Empresa validada:', empresa.razao_social);
       console.log('📋 VALOR ATUAL proximo_numero_cte:', empresa.proximo_numero_cte);
-      
+
       // 🎯 CORREÇÃO FORÇADA: Se proximo_numero_cte for > 10, resetar para 1
       if (empresa.proximo_numero_cte > 10) {
         console.log('🔧 RESETANDO próximo número CT-e para 1...');
@@ -2068,15 +2105,15 @@ app.post('/api/cte-documentos', (req, res, next) => {
         empresa.proximo_numero_cte = 1;
         console.log('✅ Próximo número resetado para 1');
       }
-      
+
       console.log('✅ Passando para geração do número CT-e...');
 
       // USAR PRÓXIMO NÚMERO CADASTRADO NA EMPRESA
       let numeroFinal = data.numero_cte;
-      
+
       if (!numeroFinal || numeroFinal === 'AUTO') {
         console.log('🔒 Obtendo próximo número CT-e da empresa cadastrada...');
-        
+
         // 🔍 VERIFICAR NÚMEROS EXISTENTES PARA DEBUG
         const numerosExistentes = await client.query(`
           SELECT numero_cte 
@@ -2084,10 +2121,10 @@ app.post('/api/cte-documentos', (req, res, next) => {
           WHERE empresa_id = $1 
           ORDER BY CAST(numero_cte AS INTEGER)
         `, [data.empresa_id]);
-        
+
         console.log('🔍 NÚMEROS CT-E JÁ EXISTENTES:', numerosExistentes.rows.map(r => r.numero_cte));
         console.log('🔍 TOTAL DE CT-ES EXISTENTES:', numerosExistentes.rows.length);
-        
+
         // CALCULAR PRÓXIMO NÚMERO CORRETO
         const ultimoNumeroResult = await client.query(`
           SELECT COALESCE(MAX(CAST(numero_cte AS INTEGER)), 0) as ultimo_numero
@@ -2095,24 +2132,24 @@ app.post('/api/cte-documentos', (req, res, next) => {
           WHERE empresa_id = $1
           AND numero_cte ~ '^[0-9]+$'
         `, [data.empresa_id]);
-        
+
         const ultimoNumeroReal = ultimoNumeroResult.rows[0].ultimo_numero || 0;
         const proximoNumeroCalculado = ultimoNumeroReal + 1;
-        
+
         console.log('📋 ÚLTIMO NÚMERO REAL NA BASE:', ultimoNumeroReal);
         console.log('📋 PRÓXIMO NÚMERO CALCULADO:', proximoNumeroCalculado);
         console.log('📋 VALOR NA EMPRESA (campo):', empresa.proximo_numero_cte);
-        
+
         // USAR O MAIOR ENTRE CALCULADO E CAMPO DA EMPRESA
         numeroFinal = Math.max(proximoNumeroCalculado, empresa.proximo_numero_cte);
         console.log('📋 NÚMERO FINAL ESCOLHIDO:', numeroFinal);
-        
+
         // VERIFICAR SE JÁ EXISTE (prevenção contra duplicatas)
         const existeResult = await client.query(`
           SELECT id FROM cte_documentos 
           WHERE empresa_id = $1 AND numero_cte = $2
         `, [data.empresa_id, numeroFinal.toString()]);
-        
+
         if (existeResult.rows.length > 0) {
           console.log('⚠️ Número já existe, incrementando automaticamente...');
           // Se já existe, incrementar até encontrar número livre
@@ -2124,24 +2161,24 @@ app.post('/api/cte-documentos', (req, res, next) => {
               SELECT id FROM cte_documentos 
               WHERE empresa_id = $1 AND numero_cte = $2
             `, [data.empresa_id, numeroFinal.toString()]);
-            
+
             if (novaVerificacao.rows.length === 0) break;
-            
+
             if (tentativas > 100) {
               throw new Error('Erro interno: não foi possível encontrar número CT-e disponível');
             }
           } while (true);
-          
+
           console.log('📋 Número ajustado para evitar duplicata:', numeroFinal);
         }
-        
+
         // ATUALIZAR O PRÓXIMO NÚMERO NA EMPRESA
         await client.query(`
           UPDATE empresas_fiscais 
           SET proximo_numero_cte = $2
           WHERE id = $1
         `, [data.empresa_id, numeroFinal + 1]);
-        
+
         console.log('📋 Próximo número atualizado na empresa para:', numeroFinal + 1);
       } else {
         // Converter número fornecido para integer
@@ -2316,7 +2353,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
       console.log('⚠️ Busca de produto temporariamente desabilitada devido a problema de conexão');
       console.log('🔍 NCM informado na NF-e:', data.nfe_produto_ncm);
       console.log('📝 Descrição informada na NF-e:', data.nfe_produto_descricao);
-      
+
       // Produto será null por enquanto - CT-e será criado sem produto específico
       produtoPredominanteIdFinal = null;
 
@@ -2506,7 +2543,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
     console.error(`❌ [${requestId}] Tipo do erro:`, typeof error);
     console.error(`❌ [${requestId}] Nome do erro:`, error.name);
     console.error(`❌ [${requestId}] Mensagem do erro:`, error.message);
-    
+
     // Se for erro de SQL, incluir mais detalhes
     if (error.code) {
       console.error(`❌ [${requestId}] Código de erro SQL:`, error.code);
@@ -2533,363 +2570,17 @@ app.post('/api/cte-documentos', (req, res, next) => {
   }
 });
 
-// Rota de teste do banco
-app.get('/api/health', async (req, res) => {
-  try {
-    await pool.query('SELECT NOW()');
-    res.json({ status: 'ok', database: 'connected' });
-  } catch (error) {
-    console.error('Health check error:', error);
-    res.status(500).json({ status: 'error', database: 'disconnected' });
-  }
-});
-
-// ROTA ESPECÍFICA PARA POSTOS - DEVE VIR ANTES DAS ROTAS GENÉRICAS
-app.get('/api/postos', authenticateToken, async (req, res) => {
-  try {
-    console.log('=== EXECUTANDO ROTA ESPECÍFICA PARA POSTOS ===');
-
-    const query = `
-      SELECT
-        id,
-        nome,
-        COALESCE(endereco, 'Endereço não informado') as endereco,
-        COALESCE(cidade, 'Não informado') as cidade,
-        COALESCE(estado, 'SP') as estado,
-        COALESCE(cep, '00000-000') as cep,
-        telefone,
-        cnpj,
-        COALESCE(ativo, true) as ativo,
-        created_at,
-        updated_at
-      FROM cadastros
-      WHERE tipo = 'abastecimento'
-      ORDER BY nome
-    `;
-
-    console.log('Query SQL para postos:', query);
-
-    const result = await pool.query(query);
-
-    console.log('=== RESULTADO DA QUERY POSTOS ===');
-    console.log('Número de registros:', result.rows.length);
-
-    if (result.rows.length > 0) {
-      console.log('Primeiro posto completo do backend:', JSON.stringify(result.rows[0], null, 2));
-      console.log('Campos do primeiro posto:', Object.keys(result.rows[0]));
-    }
-
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Erro ao buscar postos:', error);
-    res.status(500).json({ error: 'Erro ao buscar postos' });
-  }
-});
-
-// Função para consultar dados da NF-e
-async function getNFeData(chaveNFE) {
-  try {
-    if (!chaveNFE || chaveNFE.length !== 44) {
-      throw new Error('Chave de acesso NF-e deve ter 44 dígitos');
-    }
-
-    const token = '44B4845C-05F4-7E99-2DFF-8EAE5746E9BA';
-    const url = `https://www.roveri.inf.br/consultas/nfe.php?token=${token}&chave=${chaveNFE}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Fleet-Management-System/1.0',
-        'Accept': 'application/json, text/plain, */*'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
-    }
-
-    const responseText = await response.text();
-    console.log('📄 Resposta do webservice:', responseText);
-
-    // Verificar se é um erro em formato de mensagem
-    if (responseText.includes('Chave inválida') || responseText.includes('erro') || responseText.includes('error')) {
-      throw new Error(`Erro do webservice: ${responseText}`);
-    }
-
-    // Tentar fazer parse como JSON primeiro
-    let nfeData;
-    try {
-      nfeData = JSON.parse(responseText);
-      console.log('✅ Dados JSON recebidos:', nfeData);
-    } catch (jsonError) {
-      // Se não for JSON válido, assumir que é XML
-      if (responseText.includes('<?xml')) {
-        console.log('📄 Resposta em formato XML, fazendo parse...');
-        const parser = new xml2js.Parser({ explicitArray: false });
-        const parsed = await parser.parseStringPromise(responseText);
-
-        // Extrair dados principais da NF-e
-        const infNFe = parsed?.nfeProc?.NFe?.infNFe || parsed?.NFe?.infNFe;
-
-        if (infNFe) {
-          nfeData = {
-            remetente: {
-              razao_social: infNFe.emit?.xNome || '',
-              cnpj: infNFe.emit?.CNPJ || '',
-              ie: infNFe.emit?.IE || '',
-              endereco: `${infNFe.emit?.enderEmit?.xLgr || ''}, ${infNFe.emit?.enderEmit?.nro || ''}`,
-              cidade: infNFe.emit?.enderEmit?.xMun || '',
-              estado: infNFe.emit?.enderEmit?.UF || '',
-              cep: infNFe.emit?.enderEmit?.CEP || ''
-            },
-            destinatario: {
-              razao_social: infNFe.dest?.xNome || '',
-              cnpj: infNFe.dest?.CNPJ || '',
-              ie: infNFe.dest?.IE || '',
-              endereco: `${infNFe.dest?.enderDest?.xLgr || ''}, ${infNFe.dest?.enderDest?.nro || ''}`,
-              cidade: infNFe.dest?.enderDest?.xMun || '',
-              estado: infNFe.dest?.enderDest?.UF || '',
-              cep: infNFe.dest?.enderDest?.CEP || ''
-            },
-            produto: {
-              descricao: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.xProd : infNFe.det?.prod?.xProd || '',
-              codigo_ncm: Array.isArray(infNFe.det) ? infNFe.det[0]?.prod?.NCM : infNFe.det?.prod?.NCM || '',
-              valor_total: parseFloat(infNFe.total?.ICMSTot?.vNF || 0),
-              peso_total: parseFloat(infNFe.total?.ICMSTot?.vPeso || 0),
-              quantidade_total: Array.isArray(infNFe.det) ?
-                infNFe.det.reduce((acc, item) => acc + parseFloat(item.prod?.qCom || 0), 0) :
-                parseFloat(infNFe.det?.prod?.qCom || 0)
-            },
-            transporte: {
-              valor_frete: parseFloat(infNFe.total?.ICMSTot?.vFrete || 0),
-              modal_transporte: infNFe.transp?.modFrete || '1'
-            },
-            numero_nfe: infNFe.ide?.nNF || '',
-            serie: infNFe.ide?.serie || '',
-            data_emissao: infNFe.ide?.dhEmi || infNFe.ide?.dEmi || '',
-            chave_acesso: chaveNFE,
-            observacoes: infNFe.infAdic?.infCpl || ''
-          };
-        } else {
-          throw new Error('XML da NF-e não possui estrutura válida');
-        }
-      } else {
-        throw new Error(`Resposta não é JSON nem XML válido: ${responseText}`);
-      }
-    }
-
-    console.log('✅ Dados da NF-e processados:', nfeData);
-    return nfeData;
-  } catch (error) {
-    console.error('❌ Erro ao consultar NF-e:', error.message);
-    return null;
-  }
-}
-
-// Rota para criação automática de CT-e a partir de NF-e
-app.post('/api/fiscal/cte-auto-test', async (req, res) => {
-  try {
-    console.log('🚀 Iniciando criação automática de CT-e...');
-    const data = req.body;
-    console.log('📝 Dados recebidos:', data);
-
-    // Verificar campos obrigatórios
-    if (!data.empresa_id) {
-      return res.status(400).json({ error: 'empresa_id é obrigatório' });
-    }
-    if (!data.chave_nfe) {
-      return res.status(400).json({ error: 'chave_nfe é obrigatória' });
-    }
-
-    // Buscar dados da NF-e
-    console.log('🔍 Consultando NF-e:', data.chave_nfe);
-    const nfeData = await getNFeData(data.chave_nfe);
-
-    if (!nfeData) {
-      return res.status(400).json({ error: 'NF-e não encontrada ou inválida' });
-    }
-
-    // Para teste, usar o banco principal diretamente
-    const client = await pool.connect();
-
-    try {
-      // Montar dados para criação do CT-e
-      const cteData = {
-        empresa_id: data.empresa_id,
-        numero_cte: data.numero_cte || 'AUTO',
-        nfe_remetente_cnpj: nfeData.remetente?.cnpj,
-        nfe_remetente_razao_social: nfeData.remetente?.razao_social,
-        nfe_destinatario_cnpj: nfeData.destinatario?.cnpj,
-        nfe_destinatario_razao_social: nfeData.destinatario?.razao_social,
-        produto_predominante_id: nfeData.produto?.id,
-        valor_prestacao: nfeData.produto?.valor_total || 0,
-        observacoes: `CT-e criado automaticamente a partir da NF-e ${data.chave_nfe}`
-      };
-
-      console.log('📋 Dados do CT-e montados:', cteData);
-
-      // Simular criação básica de CT-e por enquanto
-      const result = await client.query(`
-        INSERT INTO cte_documentos (
-          empresa_id, numero_cte, serie, data_emissao, codigo_uf,
-          valor_prestacao, observacoes
-        ) VALUES (
-          $1, $2, '001', NOW(), '31',
-          $3, $4
-        ) RETURNING id, numero_cte, valor_prestacao
-      `, [
-        cteData.empresa_id,
-        88888, // número fixo para teste
-        cteData.valor_prestacao,
-        cteData.observacoes
-      ]);
-
-      console.log('✅ CT-e criado automaticamente com sucesso!');
-      res.json({
-        success: true,
-        message: 'CT-e criado automaticamente a partir da NF-e',
-        data: result.rows[0]
-      });
-
-    } catch (error) {
-      console.error('❌ Erro ao criar CT-e automaticamente:', error);
-      if (client) client.release();
-      res.status(500).json({
-        error: 'Erro ao criar CT-e automaticamente',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
-    }
-
-  } catch (error) {
-    console.error('❌ Erro geral na criação automática:', error);
-    res.status(500).json({
-      error: 'Erro na criação automática de CT-e',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-});
-
-// Função para criar rotas CRUD genéricas
-const createCrudRoutes = (tableName, entityName) => {
-  // Get all
-  app.get(`/api/${tableName}`, authenticateToken, async (req, res) => {
-    try {
-      const result = await pool.query(`SELECT * FROM ${tableName} ORDER BY created_at DESC`);
-      res.json(result.rows);
-    } catch (error) {
-      console.error(`Get ${entityName} error:`, error);
-      res.status(500).json({ error: `Erro ao buscar ${entityName}` });
-    }
-  });
-
-  // Get by ID
-  app.get(`/api/${tableName}/:id`, authenticateToken, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const result = await pool.query(`SELECT * FROM ${tableName} WHERE id = $1`, [id]);
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: `${entityName} não encontrado` });
-      }
-
-      res.json(result.rows[0]);
-    } catch (error) {
-      console.error(`Get ${entityName} by ID error:`, error);
-      res.status(500).json({ error: `Erro ao buscar ${entityName}` });
-    }
-  });
-
-  // Create
-  app.post(`/api/${tableName}`, authenticateToken, async (req, res) => {
-    try {
-      const data = req.body;
-      const columns = Object.keys(data);
-      const values = Object.values(data);
-      const placeholders = values.map((_, index) => `$${index + 1}`).join(', ');
-
-      const query = `
-        INSERT INTO ${tableName} (${columns.join(', ')}, created_at, updated_at)
-        VALUES (${placeholders}, NOW(), NOW())
-        RETURNING *
-      `;
-
-      const result = await pool.query(query, values);
-      res.status(201).json(result.rows[0]);
-    } catch (error) {
-      console.error(`Create ${entityName} error:`, error);
-      res.status(500).json({ error: `Erro ao criar ${entityName}` });
-    }
-  });
-
-  // Update
-  app.put(`/api/${tableName}/:id`, authenticateToken, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const data = req.body;
-      const columns = Object.keys(data);
-      const values = Object.values(data);
-
-      const setClause = columns.map((col, index) => `${col} = $${index + 2}`).join(', ');
-
-      const query = `
-        UPDATE ${tableName}
-        SET ${setClause}, updated_at = NOW()
-        WHERE id = $1
-        RETURNING *
-      `;
-
-      const result = await pool.query(query, [id, ...values]);
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: `${entityName} não encontrado` });
-      }
-
-      res.json(result.rows[0]);
-    } catch (error) {
-      console.error(`Update ${entityName} error:`, error);
-      res.status(500).json({ error: `Erro ao atualizar ${entityName}` });
-    }
-  });
-
-  // Delete
-  app.delete(`/api/${tableName}/:id`, authenticateToken, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const result = await pool.query(`DELETE FROM ${tableName} WHERE id = $1 RETURNING *`, [id]);
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: `${entityName} não encontrado` });
-      }
-
-      res.json({ message: `${entityName} deletado com sucesso` });
-    } catch (error) {
-      console.error(`Delete ${entityName} error:`, error);
-      res.status(500).json({ error: `Erro ao deletar ${entityName}` });
-    }
-  });
-};
-
-// Criar rotas CRUD para diferentes entidades
-createCrudRoutes('usuarios', 'usuário');
-createCrudRoutes('veiculos', 'veículo');
-createCrudRoutes('abastecimentos', 'abastecimento');
-createCrudRoutes('manutencoes', 'manutenção');
-createCrudRoutes('checklists', 'checklist');
-createCrudRoutes('funcionarios', 'funcionário');
-createCrudRoutes('cadastros', 'cadastro');
-createCrudRoutes('empresas_fiscais', 'empresa fiscal');
-
 // Rotas específicas para o módulo financeiro
-createCrudRoutes('centros_custo', 'centro de custo');
-createCrudRoutes('contas_pagar', 'conta a pagar');
-createCrudRoutes('contas_receber', 'conta a receber');
+// createCrudRoutes('centros_custo', 'centro de custo');
+// createCrudRoutes('contas_pagar', 'conta a pagar');
+// createCrudRoutes('contas_receber', 'conta a receber');
 
 // ===== ROTAS MDF-e DOCUMENTOS =====
 
 // Rota para excluir documento MDF-e
 app.delete('/api/mdfe-documentos/:id', authenticateToken, async (req, res) => {
   let client;
-  
+
   try {
     const { id } = req.params;
     console.log('🗑️ Iniciando exclusão do MDF-e:', id);
@@ -2914,7 +2605,7 @@ app.delete('/api/mdfe-documentos/:id', authenticateToken, async (req, res) => {
 
     // Validar se pode ser excluído (não pode estar emitido ou encerrado)
     if (mdfe.status === 'emitido' || mdfe.status === 'encerrado') {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: `Não é possível excluir MDF-e ${mdfe.numero_mdfe} pois está com status "${mdfe.status}". Apenas MDF-es pendentes ou cancelados podem ser excluídos.`
       });
     }
@@ -2939,7 +2630,7 @@ app.delete('/api/mdfe-documentos/:id', authenticateToken, async (req, res) => {
           DELETE FROM mdfe_cte_relacionados 
           WHERE mdfe_documento_id = $1
         `, [id]);
-        
+
         console.log(`✅ Relacionamentos CT-e/MDF-e removidos: ${ctesRelacionados.rows.length}`);
       }
 
@@ -2991,7 +2682,7 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
     // Conectar ao banco do usuário
     console.log(`🔍 [${requestId}] USANDO BANCO DO USUÁRIO: ${req.user.email}`);
     const userDbConfig = await getUserDbConfig(req.user.email);
-    
+
     if (!userDbConfig || !userDbConfig.configuracao_padrao) {
       throw new Error('Configuração de banco de dados do usuário não encontrada');
     }
@@ -3048,7 +2739,7 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
     let numeroFinal = data.numero_mdfe;
     if (!numeroFinal || numeroFinal === "AUTO" || numeroFinal.trim() === "") {
       console.log('🔒 Obtendo próximo número MDF-e da empresa cadastrada...');
-      
+
       // Buscar último número real usado nos documentos desta empresa
       const ultimoNumeroResult = await client.query(`
         SELECT COALESCE(MAX(CAST(numero_mdfe AS INTEGER)), 0) as ultimo_numero
@@ -3059,11 +2750,11 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
 
       const ultimoNumeroReal = ultimoNumeroResult.rows[0].ultimo_numero || 0;
       const proximoNumeroCalculado = ultimoNumeroReal + 1;
-      
+
       console.log('📋 ÚLTIMO NÚMERO MDF-e REAL NA BASE:', ultimoNumeroReal);
       console.log('📋 PRÓXIMO NÚMERO MDF-e CALCULADO:', proximoNumeroCalculado);
       console.log('📋 VALOR NA EMPRESA (campo):', empresaData.proximo_numero_mdfe);
-      
+
       // Usar o maior entre calculado e campo da empresa
       numeroFinal = Math.max(proximoNumeroCalculado, empresaData.proximo_numero_mdfe);
       console.log('📋 NÚMERO MDF-e FINAL ESCOLHIDO:', numeroFinal);
@@ -3074,7 +2765,7 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
         SET proximo_numero_mdfe = $2
         WHERE id = $1
       `, [data.empresa_id, numeroFinal + 1]);
-      
+
       console.log('📋 Próximo número MDF-e atualizado na empresa para:', numeroFinal + 1);
     }
 
@@ -3088,19 +2779,23 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
         numero_mdfe,
         serie,
         data_emissao,
+        data_saida,
+        data_encerramento,
         codigo_uf,
         forma_emissao,
         status,
         observacoes,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
       RETURNING *
     `, [
       data.empresa_id,
       numeroFinal.toString(),
       serieFinal,
       data.data_emissao,
+      data.data_saida,
+      data.data_encerramento,
       empresaData.codigo_uf || "31",
       data.forma_emissao || 1,
       data.status || "pendente",
@@ -3132,7 +2827,7 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error(`❌ [${requestId}] Erro ao criar documento MDF-e:`, error);
-    res.status(400).json({ 
+    res.status(400).json({
       error: error.message || 'Erro interno do servidor',
       details: error.stack
     });
@@ -3143,12 +2838,17 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
   }
 });
 
+// Função auxiliar para gerar ID de requisição
+function generateRequestId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
 // ===== ROTAS ESPECÍFICAS PARA MDF-e =====
 
 // Rota para buscar documentos MDF-e
 app.get('/api/mdfe-documentos', authenticateToken, async (req, res) => {
   let client;
-  
+
   try {
     console.log('🔍 Buscando documentos MDF-e para usuário:', req.user.email);
 
@@ -3181,7 +2881,7 @@ app.get('/api/mdfe-documentos', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Erro ao buscar documentos MDF-e:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro ao buscar documentos MDF-e',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -3345,19 +3045,15 @@ app.post('/api/upload-xml', async (req, res) => {
     console.log("📁 Recebendo arquivo XML para salvar:", path);
 
     // Criar diretório se não existir
-    const fs = require('fs').promises;
-    const pathLib = require('path');
-
-    const fullPath = pathLib.join(__dirname, path);
-    const directory = pathLib.dirname(fullPath);
+    const directory = pathLib.dirname(pathLib.join(__dirname, path));
 
     // Criar diretórios recursivamente
     await fs.mkdir(directory, { recursive: true });
 
     // Salvar arquivo
-    await fs.writeFile(fullPath, content, 'utf8');
+    await fs.writeFile(pathLib.join(__dirname, path), content, 'utf8');
 
-    console.log("✅ Arquivo XML salvo com sucesso:", fullPath);
+    console.log("✅ Arquivo XML salvo com sucesso:", pathLib.join(__dirname, path));
 
     res.json({
       success: true,
