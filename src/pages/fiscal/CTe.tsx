@@ -3720,16 +3720,17 @@ export default function CTe() {
                           ? 'border-red-300 bg-red-50'
                           : 'border-gray-300'
                       }`}
-                                <p className="mt-1 text-xs text-gray-500">
-              {formRapido.chave_nfe.length > 0 && (
-                <span className={formRapido.chave_nfe.length === 44 ? 'text-green-600' : 'text-red-600'}>
-                  {formRapido.chave_nfe.length}/44 dígitos
-                  {formRapido.chave_nfe.length === 44 && ' ✓ Válida'}
-                  {formRapido.chave_nfe.length > 0 && formRapido.chave_nfe.length !== 44 && ' ⚠️ Incompleta'}
-                </span>
-              )}
-              {formRapido.chave_nfe.length === 0 && 'Cole ou digite a chave da NF-e (remove espaços automaticamente)'}
-            </p>
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {formRapido.chave_nfe.length > 0 && (
+                        <span className={formRapido.chave_nfe.length === 44 ? 'text-green-600' : 'text-red-600'}>
+                          {formRapido.chave_nfe.length}/44 dígitos
+                          {formRapido.chave_nfe.length === 44 && ' ✓ Válida'}
+                          {formRapido.chave_nfe.length > 0 && formRapido.chave_nfe.length !== 44 && ' ⚠️ Incompleta'}
+                        </span>
+                      )}
+                      {formRapido.chave_nfe.length === 0 && 'Cole ou digite a chave da NF-e (remove espaços automaticamente)'}
+                    </p></old_str>
             {formRapido.chave_nfe.length === 44 && (
               <p className="mt-1 text-xs text-blue-600">
                 🏢 CNPJ do remetente (extraído): {extrairCNPJDaChave(formRapido.chave_nfe)}
