@@ -1264,13 +1264,24 @@ export async function getMDFeDocumentos(): Promise<MDFeDocumento[]> {
     console.log("🔍 Buscando documentos MDF-e");
 
     const response = await fetch('/api/mdfe-documentos', {
+      method: 'GET',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
       }
     });
 
     if (!response.ok) {
-      throw new Error('Erro ao buscar documentos MDF-e');
+      const errorText = await response.text();
+      console.error("❌ Erro na resposta:", response.status, errorText);
+      throw new Error(`Erro ${response.status}: ${errorText}`);
+    }
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const responseText = await response.text();
+      console.error("❌ Resposta não é JSON:", responseText.substring(0, 200));
+      throw new Error('Servidor retornou HTML ao invés de JSON. Verifique se a rota está configurada corretamente.');
     }
 
     const documentos = await response.json();
