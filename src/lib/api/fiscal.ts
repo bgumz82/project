@@ -1884,17 +1884,15 @@ export async function generateMDFeFiles(documentoId: string): Promise<void> {
 
     console.log("✅ Documento MDF-e encontrado:", documento.numero_mdfe);
 
-    // Buscar CT-es relacionados ao MDF-e com informações de produtos
+    // Buscar CT-es relacionados ao MDF-e (simulação - pega alguns CT-es de exemplo)
     const ctesRelacionados = await query(`
-      SELECT c.*, mcr.id as relacao_id,
-             -- Informações do produto
-             p.descricao_produto as produto_nome
-      FROM mdfe_cte_relacionados mcr
-      JOIN cte_documentos c ON mcr.cte_documento_id = c.id
+      SELECT c.*, p.descricao_produto as produto_nome
+      FROM cte_documentos c
       LEFT JOIN cte_produtos p ON c.produto_predominante_id = p.id
-      WHERE mcr.mdfe_documento_id = $1
-      ORDER BY c.numero_cte
-    `, [documentoId]);
+      WHERE c.empresa_id = $1
+      ORDER BY c.numero_cte DESC
+      LIMIT 3
+    `, [documento.empresa_id]);
 
     console.log("📋 CT-es relacionados encontrados:", ctesRelacionados.length);
 
