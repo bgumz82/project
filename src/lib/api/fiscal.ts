@@ -181,11 +181,15 @@ export interface MDFeDocumento {
   pdf_gerado_em: string | null;
   created_at: string;
   updated_at: string;
-  empresa?: {
-    razao_social: string;
-    cnpj: string;
-  };
-  ctes_vinculados?: CTeDocumento[];
+  empresa?: EmpresaFiscal;
+  ctes_vinculados?: Array<{
+    id: string
+    numero_cte: string
+    serie: string
+    data_emissao: string
+    chave_acesso?: string
+    status: string
+  }>
 }
 
 export interface MDFeDocumentoCreate {
@@ -745,12 +749,12 @@ export async function createCTeDocumento(
       },
       body: JSON.stringify(documento)
     });
-    
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || 'Erro ao criar documento CT-e');
     }
-    
+
     const result = await response.json();
 
     // Verificar se a chave de acesso foi gerada e forçar regeneração se necessário
@@ -1229,7 +1233,7 @@ export async function getCTeEmitidosParaMDFe(): Promise<CTeDocumento[]> {
     `;
 
     console.log("🔍 Query SQL que será executada:", querySQL);
-    
+
     const result = await query(querySQL);
 
     console.log("✅ CT-es emitidos disponíveis para MDF-e:", result.length);
@@ -1370,7 +1374,7 @@ export async function createMDFeDocumento(
     let numeroFinal = documento.numero_mdfe;
     if (!numeroFinal || numeroFinal === "AUTO" || numeroFinal.trim() === "") {
       console.log("🔒 Obtendo próximo número MDF-e da empresa cadastrada...");
-      
+
       // Buscar último número real usado nos documentos desta empresa
       const ultimoNumeroResult = await query(`
         SELECT COALESCE(MAX(CAST(numero_mdfe AS INTEGER)), 0) as ultimo_numero
@@ -1381,11 +1385,11 @@ export async function createMDFeDocumento(
 
       const ultimoNumeroReal = ultimoNumeroResult[0].ultimo_numero || 0;
       const proximoNumeroCalculado = ultimoNumeroReal + 1;
-      
+
       console.log("📋 ÚLTIMO NÚMERO MDF-e REAL NA BASE:", ultimoNumeroReal);
       console.log("📋 PRÓXIMO NÚMERO MDF-e CALCULADO:", proximoNumeroCalculado);
       console.log("📋 VALOR NA EMPRESA (campo):", empresa.proximo_numero_mdfe);
-      
+
       // Usar o maior entre calculado e campo da empresa
       numeroFinal = Math.max(proximoNumeroCalculado, empresa.proximo_numero_mdfe).toString();
       console.log("📋 NÚMERO MDF-e FINAL ESCOLHIDO:", numeroFinal);
@@ -1395,7 +1399,7 @@ export async function createMDFeDocumento(
         SELECT id FROM mdfe_documentos 
         WHERE empresa_id = $1 AND numero_mdfe = $2
       `, [documento.empresa_id, numeroFinal]);
-      
+
       if (existeResult.length > 0) {
         let tentativas = 0;
         do {
@@ -1405,14 +1409,14 @@ export async function createMDFeDocumento(
             SELECT id FROM mdfe_documentos 
             WHERE empresa_id = $1 AND numero_mdfe = $2
           `, [documento.empresa_id, numeroFinal]);
-          
+
           if (novaVerificacao.length === 0) break;
-          
+
           if (tentativas > 100) {
             throw new Error('Erro interno: não foi possível encontrar número MDF-e disponível');
           }
         } while (true);
-        
+
         console.log('📋 Número MDF-e ajustado para evitar duplicata:', numeroFinal);
       }
 
@@ -1422,7 +1426,7 @@ export async function createMDFeDocumento(
         SET proximo_numero_mdfe = $2
         WHERE id = $1
       `, [documento.empresa_id, parseInt(numeroFinal) + 1]);
-      
+
       console.log('📋 Próximo número MDF-e atualizado na empresa para:', parseInt(numeroFinal) + 1);
     }
 
@@ -1608,7 +1612,7 @@ export async function deleteMDFeDocumento(id: string): Promise<void> {
 
     const result = await response.json();
     console.log("✅ Documento MDF-e excluído com sucesso:", result.message);
-    
+
     if (result.ctesLiberados && result.ctesLiberados.length > 0) {
       console.log("🔗 CT-es liberados:", result.ctesLiberados);
     }
@@ -1934,7 +1938,7 @@ export async function generateMDFeFiles(documentoId: string): Promise<void> {
     // Construir caminhos dos arquivos
     const basePath = documento.empresa_path || `uploads/fiscal/${documento.empresa_cnpj}`;
     const fileName = `${documento.chave_acesso}-mdfe`;
-    
+
     // Estrutura de pastas: {empresa_path}/mdfe/
     const xmlPath = `${basePath}/mdfe/${fileName}.xml`;
     const pdfPath = `${basePath}/mdfe/${fileName}-damdfe.pdf`;
@@ -1952,7 +1956,7 @@ export async function generateMDFeFiles(documentoId: string): Promise<void> {
     // Salvar arquivo XML fisicamente
     try {
       const fullXmlPath = `${basePath}/mdfe/${fileName}.xml`;
-      
+
       console.log("💾 Salvando arquivo XML...");
       console.log("📁 Salvando arquivo em:", fullXmlPath);
       const response = await fetch('/api/upload-xml', {
@@ -2298,12 +2302,12 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
     console.error("❌ Tipo do erro:", typeof error);
     console.error("❌ Stack trace:", error instanceof Error ? error.stack : 'Sem stack trace');
     console.error("❌ Mensagem:", error instanceof Error ? error.message : String(error));
-    
+
     // Melhorar a mensagem de erro
     const errorMessage = error instanceof Error 
       ? error.message 
       : 'Erro desconhecido na geração de arquivos CT-e';
-    
+
     throw new Error(errorMessage);
   }
 }
