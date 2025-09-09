@@ -185,6 +185,7 @@ export interface MDFeDocumento {
     razao_social: string;
     cnpj: string;
   };
+  ctes_vinculados?: CTeDocumento[];
 }
 
 export interface MDFeDocumentoCreate {
@@ -1253,6 +1254,33 @@ export async function getCTeEmitidosParaMDFe(): Promise<CTeDocumento[]> {
     }));
   } catch (error) {
     console.error("❌ Erro ao buscar CT-es emitidos para MDF-e:", error);
+    throw error;
+  }
+}
+
+// Função para buscar CT-es vinculados a um MDF-e
+export async function getCTesVinculadosMDFe(mdfeId: string): Promise<CTeDocumento[]> {
+  try {
+    console.log("🔍 Buscando CT-es vinculados ao MDF-e:", mdfeId);
+
+    const result = await query(`
+      SELECT 
+        c.id,
+        c.numero_cte,
+        c.serie,
+        c.data_emissao,
+        c.chave_acesso,
+        c.status
+      FROM cte_documentos c
+      JOIN mdfe_cte_relacionados mcr ON c.id = mcr.cte_documento_id
+      WHERE mcr.mdfe_documento_id = $1
+      ORDER BY c.numero_cte
+    `, [mdfeId]);
+
+    console.log("✅ CT-es vinculados encontrados:", result.length);
+    return result;
+  } catch (error) {
+    console.error("❌ Erro ao buscar CT-es vinculados:", error);
     throw error;
   }
 }

@@ -282,7 +282,10 @@ export default function MDFe() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        Número/Série
+                        Número MDF-e
+                      </th>
+                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                        CT-e Vinculado
                       </th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                         Empresa
@@ -308,13 +311,31 @@ export default function MDFe() {
                     {filteredDocumentos?.map((documento) => (
                       <tr key={documento.id}>
                         <td className="px-3 py-4 text-sm">
-                          <div>
-                            <div className="font-mono font-medium text-gray-900">
-                              {documento.numero_mdfe.padStart(9, '0')}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              Série: {documento.serie} • UF: {getUFFromCode(documento.codigo_uf)} • Forma: Normal
-                            </div>
+                          <div className="font-mono font-medium text-gray-900">
+                            {documento.numero_mdfe.padStart(9, '0')}
+                          </div>
+                        </td>
+                        <td className="px-3 py-4 text-sm text-gray-500">
+                          <div className="space-y-1">
+                            {documento.ctes_vinculados && documento.ctes_vinculados.length > 0 ? (
+                              <>
+                                <div className="text-xs text-gray-600">
+                                  <span className="font-medium">CT-es ({documento.ctes_vinculados.length}):</span>
+                                </div>
+                                <div className="text-xs text-gray-800 space-y-1">
+                                  {documento.ctes_vinculados.map((cte, index) => (
+                                    <div key={cte.id} className="font-mono">
+                                      #{cte.numero_cte} - Série {cte.serie}
+                                      {index < documento.ctes_vinculados!.length - 1 && <span className="text-gray-400"> •</span>}
+                                    </div>
+                                  ))}
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-xs text-gray-400">
+                                Nenhum CT-e vinculado
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="px-3 py-4 text-sm text-gray-500">

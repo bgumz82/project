@@ -2026,7 +2026,8 @@ app.post('/api/cte-documentos', (req, res, next) => {
   console.log('🔥 Body preview:', JSON.stringify(req.body, null, 2).substring(0, 500));
   next();
 }, authenticateToken, async (req, res) => {
-  const requestId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+  const requestId = generateRequestId();
+  let client;
 
   try {
     const data = req.body;
@@ -2046,7 +2047,6 @@ app.post('/api/cte-documentos', (req, res, next) => {
 
     // 🎯 USAR BANCO DO USUÁRIO - MESMA LÓGICA DE /api/db/query
     const userId = req.user.id;
-    let client;
 
     // Buscar configuração de banco do usuário
     const userConfigResult = await mainPool.query(`
@@ -2075,8 +2075,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
       // Validar empresa no banco correto do usuário
       const empresaResult = await client.query(
         'SELECT * FROM empresas_fiscais WHERE id = $1',
-        [data.empresa_id]
-      );
+        [data.      data.empresa_id]);
 
       console.log(`📋 [${requestId}] Resultado da query empresa:`, empresaResult.rows.length, 'registros');
 
@@ -2098,7 +2097,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
       if (empresa.proximo_numero_cte > 10) {
         console.log('🔧 RESETANDO próximo número CT-e para 1...');
         await client.query(`
-          UPDATE empresas_fiscais 
+          UPDATE empresas_fiscais
           SET proximo_numero_cte = 1
           WHERE id = $1
         `, [data.empresa_id]);
@@ -2116,9 +2115,9 @@ app.post('/api/cte-documentos', (req, res, next) => {
 
         // 🔍 VERIFICAR NÚMEROS EXISTENTES PARA DEBUG
         const numerosExistentes = await client.query(`
-          SELECT numero_cte 
-          FROM cte_documentos 
-          WHERE empresa_id = $1 
+          SELECT numero_cte
+          FROM cte_documentos
+          WHERE empresa_id = $1
           ORDER BY CAST(numero_cte AS INTEGER)
         `, [data.empresa_id]);
 
@@ -2146,7 +2145,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
 
         // VERIFICAR SE JÁ EXISTE (prevenção contra duplicatas)
         const existeResult = await client.query(`
-          SELECT id FROM cte_documentos 
+          SELECT id FROM cte_documentos
           WHERE empresa_id = $1 AND numero_cte = $2
         `, [data.empresa_id, numeroFinal.toString()]);
 
@@ -2158,7 +2157,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
             numeroFinal++;
             tentativas++;
             const novaVerificacao = await client.query(`
-              SELECT id FROM cte_documentos 
+              SELECT id FROM cte_documentos
               WHERE empresa_id = $1 AND numero_cte = $2
             `, [data.empresa_id, numeroFinal.toString()]);
 
@@ -2174,7 +2173,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
 
         // ATUALIZAR O PRÓXIMO NÚMERO NA EMPRESA
         await client.query(`
-          UPDATE empresas_fiscais 
+          UPDATE empresas_fiscais
           SET proximo_numero_cte = $2
           WHERE id = $1
         `, [data.empresa_id, numeroFinal + 1]);
@@ -2210,7 +2209,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
       let destinatarioIdFinal = data.destinatario_id;
       let produtoPredominanteIdFinal = data.produto_predominante_id;
 
-      // 1. MAPEAR REMETENTE pelo CNPJ da NF-e
+      // 1. MAPEAR REMETENTE PELO CNPJ DA NF-E
       if (data.nfe_remetente_cnpj && !remetenteIdFinal) {
         console.log('🔍 Buscando remetente por CNPJ:', data.nfe_remetente_cnpj);
 
@@ -2252,7 +2251,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
         }
       }
 
-      // 2. MAPEAR DESTINATÁRIO pelo CNPJ da NF-e
+      // 2. MAPEAR DESTINATÁRIO PELO CNPJ DA NF-E
       if (data.nfe_destinatario_cnpj && !destinatarioIdFinal) {
         console.log('🔍 Buscando destinatário por CNPJ:', data.nfe_destinatario_cnpj);
 
@@ -2348,7 +2347,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
         console.log('✅ Cliente específico selecionado como tomador:', tomadorIdFinal);
       }
 
-      // 4. MAPEAR/CRIAR PRODUTO PREDOMINANTE pelo NCM da NF-e - TEMPORARIAMENTE DESABILITADO
+      // 4. MAPEAR/CRIAR PRODUTO PREDOMINANTE PELO NCM DA NF-E - TEMPORARIAMENTE DESABILITADO
       // COMENTADO PARA RESOLVER PROBLEMA DE CONEXÃO DE BANCO
       console.log('⚠️ Busca de produto temporariamente desabilitada devido a problema de conexão');
       console.log('🔍 NCM informado na NF-e:', data.nfe_produto_ncm);
@@ -2592,7 +2591,7 @@ app.delete('/api/mdfe-documentos/:id', authenticateToken, async (req, res) => {
     // Verificar se o MDF-e existe e seu status
     const mdfeResult = await client.query(`
       SELECT id, numero_mdfe, status, empresa_id
-      FROM mdfe_documentos 
+      FROM mdfe_documentos
       WHERE id = $1
     `, [id]);
 
@@ -2627,7 +2626,7 @@ app.delete('/api/mdfe-documentos/:id', authenticateToken, async (req, res) => {
       // 1. Remover relacionamentos CT-e/MDF-e
       if (ctesRelacionados.rows.length > 0) {
         await client.query(`
-          DELETE FROM mdfe_cte_relacionados 
+          DELETE FROM mdfe_cte_relacionados
           WHERE mdfe_documento_id = $1
         `, [id]);
 
@@ -2636,7 +2635,7 @@ app.delete('/api/mdfe-documentos/:id', authenticateToken, async (req, res) => {
 
       // 2. Excluir o documento MDF-e
       await client.query(`
-        DELETE FROM mdfe_documentos 
+        DELETE FROM mdfe_documentos
         WHERE id = $1
       `, [id]);
 
@@ -2706,8 +2705,8 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
 
     // Verificar se todos os CT-es estão emitidos e pertencem à empresa
     const ctesValidation = await client.query(`
-      SELECT id, numero_cte, status, chave_acesso 
-      FROM cte_documentos 
+      SELECT id, numero_cte, status, chave_acesso
+      FROM cte_documentos
       WHERE id = ANY($1) AND empresa_id = $2
     `, [data.cte_ids, data.empresa_id]);
 
@@ -2761,7 +2760,7 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
 
       // Atualizar o próximo número na empresa
       await client.query(`
-        UPDATE empresas_fiscais 
+        UPDATE empresas_fiscais
         SET proximo_numero_mdfe = $2
         WHERE id = $1
       `, [data.empresa_id, numeroFinal + 1]);
@@ -2809,7 +2808,7 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
     const mdfeDoc = result.rows[0];
 
     // Vincular CT-es ao MDF-e
-    console.log('🔗 Vinculando CT-es ao MDF-e...');
+    console.log('🔗 Vincular CT-es ao MDF-e...');
     for (const cteId of data.cte_ids) {
       await client.query(`
         INSERT INTO mdfe_cte_relacionados (mdfe_documento_id, cte_documento_id, created_at)
@@ -2851,7 +2850,7 @@ app.get('/api/mdfe-documentos', authenticateToken, async (req, res) => {
     console.log('🔍 Buscando documentos MDF-e...');
 
     const result = await pool.query(`
-      SELECT 
+      SELECT
         m.*,
         e.razao_social as empresa_razao_social,
         e.cnpj as empresa_cnpj
@@ -2860,18 +2859,49 @@ app.get('/api/mdfe-documentos', authenticateToken, async (req, res) => {
       ORDER BY m.data_emissao DESC, CAST(m.numero_mdfe AS INTEGER) DESC
     `);
 
-    console.log(`✅ Documentos MDF-e encontrados: ${result.rows.length}`);
+    // Para cada MDF-e, buscar os CT-es vinculados
+    const documentosComCTes = await Promise.all(
+      result.rows.map(async (mdfe) => {
+        try {
+          const ctesResult = await pool.query(`
+            SELECT
+              c.id,
+              c.numero_cte,
+              c.serie,
+              c.data_emissao,
+              c.chave_acesso,
+              c.status
+            FROM cte_documentos c
+            JOIN mdfe_cte_relacionados mcr ON c.id = mcr.cte_documento_id
+            WHERE mcr.mdfe_documento_id = $1
+            ORDER BY c.numero_cte
+          `, [mdfe.id]);
 
-    // Mapear os dados para incluir empresa
-    const documentos = result.rows.map(doc => ({
-      ...doc,
-      empresa: {
-        razao_social: doc.empresa_razao_social,
-        cnpj: doc.empresa_cnpj
-      }
-    }));
+          return {
+            ...mdfe,
+            empresa: {
+              razao_social: mdfe.empresa_razao_social,
+              cnpj: mdfe.empresa_cnpj,
+            },
+            ctes_vinculados: ctesResult.rows
+          };
+        } catch (error) {
+          console.error(`❌ Erro ao buscar CT-es do MDF-e ${mdfe.numero_mdfe}:`, error);
+          return {
+            ...mdfe,
+            empresa: {
+              razao_social: mdfe.empresa_razao_social,
+              cnpj: mdfe.empresa_cnpj,
+            },
+            ctes_vinculados: []
+          };
+        }
+      })
+    );
 
-    res.json(documentos);
+    console.log('✅ Documentos MDF-e encontrados:', documentosComCTes.length);
+
+    res.json(documentosComCTes);
 
   } catch (error) {
     console.error('❌ Erro ao buscar documentos MDF-e:', error);
@@ -2886,7 +2916,7 @@ app.get('/api/mdfe-documentos', authenticateToken, async (req, res) => {
 app.get('/api/cte-documentos', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT 
+      SELECT
         c.*,
         e.razao_social as empresa_razao_social,
         e.cnpj as empresa_cnpj
