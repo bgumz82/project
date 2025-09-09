@@ -817,9 +817,7 @@ export async function getAssociacoesAtivasParaCTe(): Promise<AssociacaoFrota[]> 
       veiculo_reboque2: row.veiculo_reboque2_placa ? {
         placa: row.veiculo_reboque2_placa,
         modelo: row.veiculo_reboque2_modelo,
-        marca: r
-
-ow.veiculo_reboque2_marca,
+        marca: row.veiculo_reboque2_marca,
         tipo: row.veiculo_reboque2_tipo
       } : undefined,
       veiculo_implemento: row.veiculo_implemento_placa ? {

@@ -736,7 +736,7 @@ export default function CTe() {
     console.log('👨‍💼 Matrícula do funcionário:', funcionario?.matricula)
 
     if (!funcionario) {
-      console.log('❌ Funcionário não encontrado na associação')
+      console.log('❌ FuncionÁrio não encontrado na associação')
       setMotoristaInfo({
         nome: 'Nome não informado',
         cnh: 'CNH não informada',
@@ -1237,7 +1237,7 @@ export default function CTe() {
         return
       }
 
-      // Limpar e validar chave NF-e
+      // Limpar e validar chave de NF-e
       const chaveNFeLimpa = formRapido.chave_nfe.replace(/\s/g, '') // Remove todos os espaços
       if (!chaveNFeLimpa || chaveNFeLimpa.length !== 44) {
         toast.error('Informe uma chave de NF-e válida (44 dígitos). Chave atual tem ' + chaveNFeLimpa.length + ' dígitos.')
@@ -1277,7 +1277,7 @@ export default function CTe() {
       }
 
       if (!formRapido.quantidade || parseFloat(formRapido.quantidade) <= 0) {
-        toast.toast.error('Informe uma quantidade válida')
+        toast.error('Informe uma quantidade válida')
         setIsSubmittingRapido(false)
         return
       }
@@ -1805,15 +1805,15 @@ export default function CTe() {
       valor_receber: documento.valor_receber || '',
       valor_tributos: documento.valor_tributos || '',
       valor_pedagio: documento.valor_pedagio || '',
-      valor_outros: documento.valor_outros || '',
-      // DADOS FISCAIS
-      cfop: documento.cfop || '',
-      finalidade_cte: documento.finalidade_cte || '',
-      tipo_servico: documento.tipo_servico || '',
+      valor_seguro: documento.valor_seguro || '',
       icms_situacao_tributaria: documento.icms_situacao_tributaria || '',
       icms_bc_valor: documento.icms_bc_valor || '',
       icms_aliquota: documento.icms_aliquota || '',
       icms_valor: documento.icms_valor || '',
+      // DADOS FISCAIS
+      cfop: documento.cfop || '',
+      finalidade_cte: documento.finalidade_cte || '',
+      tipo_servico: documento.tipo_servico || '',
       // DADOS DA CARGA
       valor_carga: documento.valor_carga || '',
       quantidade_carga: documento.quantidade_carga || '',
