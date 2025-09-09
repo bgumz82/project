@@ -318,19 +318,13 @@ export default function MDFe() {
                         <td className="px-3 py-4 text-sm text-gray-500">
                           <div className="space-y-1">
                             {documento.ctes_vinculados && documento.ctes_vinculados.length > 0 ? (
-                              <>
-                                <div className="text-xs text-gray-600">
-                                  <span className="font-medium">CT-es ({documento.ctes_vinculados.length}):</span>
-                                </div>
-                                <div className="text-xs text-gray-800 space-y-1">
-                                  {documento.ctes_vinculados.map((cte, index) => (
-                                    <div key={cte.id} className="font-mono">
-                                      #{String(cte.numero_cte).padStart(9, '0')} - Série {cte.serie}
-                                      {index < documento.ctes_vinculados!.length - 1 && <span className="text-gray-400"> •</span>}
-                                    </div>
-                                  ))}
-                                </div>
-                              </>
+                              <div className="space-y-1">
+                                {documento.ctes_vinculados.map((cte) => (
+                                  <div key={cte.id} className="font-mono font-medium text-gray-900">
+                                    {String(cte.numero_cte).padStart(9, '0')}
+                                  </div>
+                                ))}
+                              </div>
                             ) : (
                               <div className="text-xs text-gray-400">
                                 Nenhum CT-e vinculado
