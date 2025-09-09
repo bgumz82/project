@@ -21,7 +21,6 @@ import {
   ChevronRightIcon,
 } from '@heroicons/react/24/outline'
 import { usePermissions } from '@/contexts/PermissionsContext'
-import { cn } from '@/lib/utils' // Assumindo que 'cn' está disponível para combinar classes CSS
 
 interface NavigationItem {
   name: string
