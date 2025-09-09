@@ -1918,7 +1918,7 @@ export async function generateMDFeFiles(documentoId: string): Promise<void> {
       const fullXmlPath = `uploads/fiscal/${documento.empresa_cnpj}/mdfe`;
       
       console.log("💾 Salvando arquivo XML...");
-      const response = await fetch('/api/upload-file', {
+      const response = await fetch('/api/upload-xml', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
