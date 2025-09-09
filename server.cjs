@@ -2886,6 +2886,99 @@ createCrudRoutes('contas_receber', 'conta a receber');
 
 // ===== ROTAS MDF-e DOCUMENTOS =====
 
+// Rota para excluir documento MDF-e
+app.delete('/api/mdfe-documentos/:id', authenticateToken, async (req, res) => {
+  let client;
+  
+  try {
+    const { id } = req.params;
+    console.log('🗑️ Iniciando exclusão do MDF-e:', id);
+
+    // Obter pool correto para o usuário
+    const userPool = await getUserDatabasePool(req.user.id);
+    client = await userPool.connect();
+
+    // Verificar se o MDF-e existe e seu status
+    const mdfeResult = await client.query(`
+      SELECT id, numero_mdfe, status, empresa_id
+      FROM mdfe_documentos 
+      WHERE id = $1
+    `, [id]);
+
+    if (mdfeResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Documento MDF-e não encontrado' });
+    }
+
+    const mdfe = mdfeResult.rows[0];
+    console.log(`📋 MDF-e encontrado: ${mdfe.numero_mdfe}, Status: ${mdfe.status}`);
+
+    // Validar se pode ser excluído (não pode estar emitido ou encerrado)
+    if (mdfe.status === 'emitido' || mdfe.status === 'encerrado') {
+      return res.status(400).json({ 
+        error: `Não é possível excluir MDF-e ${mdfe.numero_mdfe} pois está com status "${mdfe.status}". Apenas MDF-es pendentes ou cancelados podem ser excluídos.`
+      });
+    }
+
+    // Buscar CT-es relacionados antes de excluir
+    const ctesRelacionados = await client.query(`
+      SELECT cte_documento_id, c.numero_cte
+      FROM mdfe_cte_relacionados mcr
+      JOIN cte_documentos c ON mcr.cte_documento_id = c.id
+      WHERE mcr.mdfe_documento_id = $1
+    `, [id]);
+
+    console.log(`🔗 CT-es relacionados encontrados: ${ctesRelacionados.rows.length}`);
+
+    // Iniciar transação para garantir consistência
+    await client.query('BEGIN');
+
+    try {
+      // 1. Remover relacionamentos CT-e/MDF-e
+      if (ctesRelacionados.rows.length > 0) {
+        await client.query(`
+          DELETE FROM mdfe_cte_relacionados 
+          WHERE mdfe_documento_id = $1
+        `, [id]);
+        
+        console.log(`✅ Relacionamentos CT-e/MDF-e removidos: ${ctesRelacionados.rows.length}`);
+      }
+
+      // 2. Excluir o documento MDF-e
+      await client.query(`
+        DELETE FROM mdfe_documentos 
+        WHERE id = $1
+      `, [id]);
+
+      console.log(`✅ MDF-e ${mdfe.numero_mdfe} excluído com sucesso`);
+
+      // Commit da transação
+      await client.query('COMMIT');
+
+      res.json({
+        success: true,
+        message: `MDF-e ${mdfe.numero_mdfe} excluído com sucesso`,
+        ctesLiberados: ctesRelacionados.rows.map(r => r.numero_cte)
+      });
+
+    } catch (transactionError) {
+      // Rollback em caso de erro
+      await client.query('ROLLBACK');
+      throw transactionError;
+    }
+
+  } catch (error) {
+    console.error('❌ Erro ao excluir documento MDF-e:', error);
+    res.status(500).json({
+      error: 'Erro ao excluir documento MDF-e',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
 // Rota para criar documento MDF-e
 app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
   const requestId = generateRequestId();
@@ -3046,6 +3139,55 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
   } finally {
     if (client) {
       await client.end();
+    }
+  }
+});
+
+// ===== ROTAS ESPECÍFICAS PARA MDF-e =====
+
+// Rota para buscar documentos MDF-e
+app.get('/api/mdfe-documentos', authenticateToken, async (req, res) => {
+  let client;
+  
+  try {
+    console.log('🔍 Buscando documentos MDF-e para usuário:', req.user.email);
+
+    // Obter pool correto para o usuário
+    const userPool = await getUserDatabasePool(req.user.id);
+    client = await userPool.connect();
+
+    const result = await client.query(`
+      SELECT 
+        m.*,
+        e.razao_social as empresa_razao_social,
+        e.cnpj as empresa_cnpj
+      FROM mdfe_documentos m
+      JOIN empresas_fiscais e ON m.empresa_id = e.id
+      ORDER BY m.data_emissao DESC, CAST(m.numero_mdfe AS INTEGER) DESC
+    `);
+
+    console.log(`✅ Documentos MDF-e encontrados: ${result.rows.length}`);
+
+    // Mapear os dados para incluir empresa
+    const documentos = result.rows.map(doc => ({
+      ...doc,
+      empresa: {
+        razao_social: doc.empresa_razao_social,
+        cnpj: doc.empresa_cnpj
+      }
+    }));
+
+    res.json(documentos);
+
+  } catch (error) {
+    console.error('❌ Erro ao buscar documentos MDF-e:', error);
+    res.status(500).json({ 
+      error: 'Erro ao buscar documentos MDF-e',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  } finally {
+    if (client) {
+      client.release();
     }
   }
 });

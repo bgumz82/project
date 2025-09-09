@@ -1263,25 +1263,20 @@ export async function getMDFeDocumentos(): Promise<MDFeDocumento[]> {
   try {
     console.log("🔍 Buscando documentos MDF-e");
 
-    const result = await query(`
-      SELECT 
-        m.*,
-        e.razao_social as empresa_razao_social,
-        e.cnpj as empresa_cnpj
-      FROM mdfe_documentos m
-      JOIN empresas_fiscais e ON m.empresa_id = e.id
-      ORDER BY m.data_emissao DESC, m.numero_mdfe DESC
-    `);
+    const response = await fetch('/api/mdfe-documentos', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
+      }
+    });
 
-    console.log("✅ Documentos MDF-e encontrados:", result.length);
+    if (!response.ok) {
+      throw new Error('Erro ao buscar documentos MDF-e');
+    }
 
-    return result.map((doc) => ({
-      ...doc,
-      empresa: {
-        razao_social: doc.empresa_razao_social,
-        cnpj: doc.empresa_cnpj,
-      },
-    }));
+    const documentos = await response.json();
+    console.log("✅ Documentos MDF-e encontrados:", documentos.length);
+
+    return documentos;
   } catch (error) {
     console.error("❌ Erro ao buscar documentos MDF-e:", error);
     throw error;
@@ -1559,8 +1554,25 @@ export async function deleteMDFeDocumento(id: string): Promise<void> {
   try {
     console.log("🗑️ Excluindo documento MDF-e:", id);
 
-    await query("DELETE FROM mdfe_documentos WHERE id = $1", [id]);
-    console.log("✅ Documento MDF-e excluído com sucesso");
+    // Fazer a exclusão via API do servidor que já tem toda a lógica implementada
+    const response = await fetch(`/api/mdfe-documentos/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erro ao excluir documento MDF-e');
+    }
+
+    const result = await response.json();
+    console.log("✅ Documento MDF-e excluído com sucesso:", result.message);
+    
+    if (result.ctesLiberados && result.ctesLiberados.length > 0) {
+      console.log("🔗 CT-es liberados:", result.ctesLiberados);
+    }
   } catch (error) {
     console.error("❌ Erro ao excluir documento MDF-e:", error);
     throw error;

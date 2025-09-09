@@ -102,7 +102,8 @@ export default function MDFe() {
     mutationFn: deleteMDFeDocumento,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mdfe-documentos'] })
-      toast.success('Documento MDF-e excluído com sucesso!')
+      queryClient.invalidateQueries({ queryKey: ['ctes-emitidos-mdfe'] }) // Atualizar CT-es disponíveis
+      toast.success('Documento MDF-e excluído com sucesso! CT-es relacionados foram liberados para novo agrupamento.')
     },
     onError: (error: any) => {
       console.error('Error deleting MDF-e:', error)
@@ -157,9 +158,17 @@ export default function MDFe() {
     setIsModalOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este documento MDF-e?')) {
-      deleteMutation.mutate(id)
+  const handleDelete = async (documento: MDFeDocumento) => {
+    // Verificar status antes de permitir exclusão
+    if (documento.status === 'emitido' || documento.status === 'encerrado') {
+      toast.error(`Não é possível excluir MDF-e ${documento.numero_mdfe.padStart(9, '0')} pois está ${documento.status}. Apenas MDF-es pendentes ou cancelados podem ser excluídos.`)
+      return
+    }
+
+    const message = `Tem certeza que deseja excluir o MDF-e ${documento.numero_mdfe.padStart(9, '0')}?\n\nEsta ação irá:\n• Remover o documento MDF-e\n• Liberar os CT-es relacionados para novo agrupamento\n\nEsta ação não pode ser desfeita.`
+    
+    if (window.confirm(message)) {
+      deleteMutation.mutate(documento.id)
     }
   }
 
@@ -374,9 +383,18 @@ export default function MDFe() {
                             <PencilIcon className="h-5 w-5" />
                           </button>
                           <button
-                            onClick={() => handleDelete(documento.id)}
-                            className="text-red-600 hover:text-red-900"
-                            title="Excluir"
+                            onClick={() => handleDelete(documento)}
+                            className={`${
+                              documento.status === 'emitido' || documento.status === 'encerrado'
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-red-600 hover:text-red-900'
+                            }`}
+                            title={
+                              documento.status === 'emitido' || documento.status === 'encerrado'
+                                ? `Não é possível excluir MDF-e ${documento.status}`
+                                : 'Excluir'
+                            }
+                            disabled={documento.status === 'emitido' || documento.status === 'encerrado'}
                           >
                             <TrashIcon className="h-5 w-5" />
                           </button>
