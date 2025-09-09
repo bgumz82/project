@@ -641,9 +641,6 @@ export async function createCTeDocumento(
     // Usar série padrão da empresa se não fornecida
     const serieFinal = documento.serie || empresa.serie_padrao_cte || "001";
 
-    // SEMPRE usar código UF da empresa (não permitir override)
-    const codigoUFFinal = empresa.codigo_uf || "35";
-
     // Verificar se número/série já existe para esta empresa
     const existingDoc = await queryOne(
       `
@@ -691,54 +688,6 @@ export async function createCTeDocumento(
     });
 
     // A chave de acesso do CT-e será gerada automaticamente pelo trigger do banco
-
-    // Converter undefined para null para evitar erros SQL
-    const documentoLimpo = {
-      ...documento,
-      serie: documento.serie || '001',
-      codigo_uf: documento.codigo_uf || '35',
-      forma_emissao: documento.forma_emissao || 1,
-      status: documento.status || 'pendente',
-      // Converter undefined para null em todos os campos opcionais
-      observacoes: documento.observacoes || null,
-      tomador_id: documento.tomador_id || null,
-      remetente_id: documento.remetente_id || null,
-      recebedor_id: documento.recebedor_id || null,
-      destinatario_id: documento.destinatario_id || null,
-      valor_prestacao: documento.valor_prestacao || null,
-      valor_receber: documento.valor_receber || null,
-      valor_tributos: documento.valor_tributos || null,
-      icms_situacao_tributaria: documento.icms_situacao_tributaria || null,
-      icms_bc_valor: documento.icms_bc_valor || null,
-      icms_aliquota: documento.icms_aliquota || null,
-      icms_valor: documento.icms_valor || null,
-      valor_carga: documento.valor_carga || null,
-      quantidade_carga: documento.quantidade_carga || null,
-      produto_predominante_id: documento.produto_predominante_id || null,
-      chave_acesso_1: documento.chave_acesso_1 || null,
-      chave_acesso_2: documento.chave_acesso_2 || null,
-      chave_acesso_3: documento.chave_acesso_3 || null,
-      chave_acesso_4: documento.chave_acesso_4 || null,
-      tipo_servico: documento.tipo_servico || null,
-      finalidade_cte: documento.finalidade_cte || null,
-      cfop: documento.cfop || null,
-      cidade_inicio_ibge: documento.cidade_inicio_ibge || null,
-      cidade_termino_ibge: documento.cidade_termino_ibge || null,
-      uf_inicio: documento.uf_inicio || null,
-      uf_termino: documento.uf_termino || null,
-      cidade_inicio_nome: documento.cidade_inicio_nome || null,
-      cidade_termino_nome: documento.cidade_termino_nome || null,
-      rntrc: documento.rntrc || null,
-      motorista_nome: documento.motorista_nome || null,
-      motorista_cnh: documento.motorista_cnh || null,
-      motorista_matricula: documento.motorista_matricula || null,
-      motorista_validade_cnh: documento.motorista_validade_cnh || null,
-      placa_veiculo: documento.placa_veiculo || null,
-      placa_reboque: documento.placa_reboque || null,
-      associacao_frota_id: documento.associacao_frota_id || null,
-      valor_pedagio: documento.valor_pedagio || null,
-      valor_seguro: documento.valor_seguro || null
-    };
 
     // Usar API do servidor ao invés de query direta
     const response = await fetch('/api/cte-documentos', {
