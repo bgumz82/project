@@ -12,10 +12,10 @@ import {
   DocumentArrowDownIcon,
   ClipboardDocumentIcon,
 } from '@heroicons/react/24/outline'
-import { 
-  getMDFeDocumentos, 
-  createMDFeDocumento, 
-  updateMDFeDocumento, 
+import {
+  getMDFeDocumentos,
+  createMDFeDocumento,
+  updateMDFeDocumento,
   deleteMDFeDocumento,
   getEmpresasFiscais,
   getCTeEmitidosParaMDFe,
@@ -122,13 +122,13 @@ export default function MDFe() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
-    
+
     // Validar CT-es selecionados para novos documentos
     if (!selectedDocumento && selectedCTes.length === 0) {
       toast.error('É necessário selecionar pelo menos um CT-e emitido para criar o MDF-e')
       return
     }
-    
+
     const documentoData: MDFeDocumentoCreate = {
       empresa_id: formData.get('empresa_id') as string,
       numero_mdfe: formData.get('numero_mdfe') as string || undefined,
@@ -148,8 +148,8 @@ export default function MDFe() {
   }
 
   const toggleCTeSelection = (cteId: string) => {
-    setSelectedCTes(prev => 
-      prev.includes(cteId) 
+    setSelectedCTes(prev =>
+      prev.includes(cteId)
         ? prev.filter(id => id !== cteId)
         : [...prev, cteId]
     )
@@ -168,7 +168,7 @@ export default function MDFe() {
     }
 
     const message = `Tem certeza que deseja excluir o MDF-e ${documento.numero_mdfe.padStart(9, '0')}?\n\nEsta ação irá:\n• Remover o documento MDF-e\n• Liberar os CT-es relacionados para novo agrupamento\n\nEsta ação não pode ser desfeita.`
-    
+
     if (window.confirm(message)) {
       deleteMutation.mutate(documento.id)
     }
@@ -213,8 +213,8 @@ export default function MDFe() {
         stack: error instanceof Error ? error.stack : 'Sem stack'
       })
       // Exibe mensagem de erro específica
-      const errorMessage = error instanceof Error 
-        ? error.message 
+      const errorMessage = error instanceof Error
+        ? error.message
         : `Erro ao gerar arquivos MDF-e: ${String(error)}`;
       toast.error(errorMessage)
     } finally {
@@ -222,8 +222,8 @@ export default function MDFe() {
     }
   }
 
-  const filteredDocumentos = filterStatus === 'todos' 
-    ? documentos 
+  const filteredDocumentos = filterStatus === 'todos'
+    ? documentos
     : documentos?.filter(d => d.status === filterStatus)
 
   if (isLoading) {
@@ -369,15 +369,15 @@ export default function MDFe() {
                         <td className="px-3 py-4 text-sm">
                           <div className="flex items-center space-x-1">
                             <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                              documento.xml_gerado 
-                                ? 'bg-green-100 text-green-800' 
+                              documento.xml_gerado
+                                ? 'bg-green-100 text-green-800'
                                 : 'bg-gray-100 text-gray-800'
                             }`}>
                               XML {documento.xml_gerado ? '✓' : '○'}
                             </span>
                             <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                              documento.pdf_gerado 
-                                ? 'bg-blue-100 text-blue-800' 
+                              documento.pdf_gerado
+                                ? 'bg-blue-100 text-blue-800'
                                 : 'bg-gray-100 text-gray-800'
                             }`}>
                               PDF {documento.pdf_gerado ? '✓' : '○'}
@@ -571,7 +571,7 @@ export default function MDFe() {
                         CT-es Emitidos para Incluir no MDF-e *
                       </h4>
                     </div>
-                    
+
                     {loadingCTes ? (
                       <div className="text-center py-4">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
@@ -619,7 +619,7 @@ export default function MDFe() {
                         </p>
                       </div>
                     )}
-                    
+
                     {selectedCTes.length > 0 && (
                       <div className="mt-3 p-2 bg-blue-100 rounded-md">
                         <p className="text-xs text-blue-800">

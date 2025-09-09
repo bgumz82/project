@@ -12,8 +12,7 @@ import { toast } from 'react-hot-toast'
 import { getAssociacoesFrota } from '@/lib/api/fleet-associations'
 import { validarChaveAcesso, createCTeDocumento, getEmpresasFiscais } from '@/lib/api/fiscal'
 import { query } from '@/lib/db'
-import type { AssociacaoFrota } from '@/lib/api/fleet-associations'
-import type { EmpresaFiscal } from '@/lib/api/fiscal'
+
 
 interface NFEData {
   remetente: {

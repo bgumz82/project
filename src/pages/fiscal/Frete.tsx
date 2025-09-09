@@ -1,7 +1,5 @@
 import { useState, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, parseISO } from "date-fns";
-import toast from "react-hot-toast";
 import {
   PencilIcon,
   TrashIcon,
@@ -286,7 +284,7 @@ export default function Frete() {
 
   const handleEdit = async (documento: FreteDocumento) => {
     setSelectedDocumento(documento);
-    
+
     // Preencher campos de cidade se existirem
     if (documento.cidade_origem_ibge) {
       try {
@@ -299,7 +297,7 @@ export default function Frete() {
         console.error("Erro ao buscar cidade de origem:", error);
       }
     }
-    
+
     if (documento.cidade_destino_ibge) {
       try {
         const cidadeDestino = await getCidadePorCodigo(documento.cidade_destino_ibge);
@@ -311,7 +309,7 @@ export default function Frete() {
         console.error("Erro ao buscar cidade de destino:", error);
       }
     }
-    
+
     setIsModalOpen(true);
   };
 
@@ -694,10 +692,10 @@ export default function Frete() {
                           }}
                           placeholder="Digite o nome da cidade de origem..."
                           className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pl-10 ${
-                            searchOrigemTerm && !selectedCidadeOrigemIbge 
-                              ? 'border-yellow-300 bg-yellow-50' 
-                              : selectedCidadeOrigemIbge 
-                                ? 'border-green-300 bg-green-50' 
+                            searchOrigemTerm && !selectedCidadeOrigemIbge
+                              ? 'border-yellow-300 bg-yellow-50'
+                              : selectedCidadeOrigemIbge
+                                ? 'border-green-300 bg-green-50'
                                 : 'border-gray-300'
                           }`}
                         />
@@ -728,7 +726,7 @@ export default function Frete() {
                           value={selectedCidadeOrigemIbge || selectedDocumento?.cidade_origem_ibge || ""}
                           required
                         />
-                        
+
                         {searchOrigemTerm && !selectedCidadeOrigemIbge && (
                           <p className="mt-1 text-xs text-yellow-600">
                             ⚠️ Selecione uma cidade da lista que aparece
@@ -760,10 +758,10 @@ export default function Frete() {
                           }}
                           placeholder="Digite o nome da cidade de destino..."
                           className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pl-10 ${
-                            searchDestinoTerm && !selectedCidadeDestinoIbge 
-                              ? 'border-yellow-300 bg-yellow-50' 
-                              : selectedCidadeDestinoIbge 
-                                ? 'border-green-300 bg-green-50' 
+                            searchDestinoTerm && !selectedCidadeDestinoIbge
+                              ? 'border-yellow-300 bg-yellow-50'
+                              : selectedCidadeDestinoIbge
+                                ? 'border-green-300 bg-green-50'
                                 : 'border-gray-300'
                           }`}
                         />
@@ -794,7 +792,7 @@ export default function Frete() {
                           value={selectedCidadeDestinoIbge || selectedDocumento?.cidade_destino_ibge || ""}
                           required
                         />
-                        
+
                         {searchDestinoTerm && !selectedCidadeDestinoIbge && (
                           <p className="mt-1 text-xs text-yellow-600">
                             ⚠️ Selecione uma cidade da lista que aparece

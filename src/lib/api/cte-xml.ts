@@ -41,11 +41,9 @@ interface ProdutoInfo {
 export async function generateCTeXML(
   documento: CTeDocumento,
   empresa: EmpresaInfo,
-  tomador: ClienteInfo | null,
-  remetente: ClienteInfo,
-  destinatario: ClienteInfo,
-  _recebedor: ClienteInfo | null,
-  produto: ProdutoInfo
+  remetente: ClienteInfo | null,
+  destinatario: ClienteInfo | null,
+  recebedor: ClienteInfo | null
 ): Promise<string> {
 
   const dataEmissao = new Date(documento.data_emissao)
@@ -147,11 +145,11 @@ ${(() => {
   const valorPedagio = parseFloat(documento.valor_pedagio as any) || 0;
   const valorSeguro = parseFloat(documento.valor_seguro as any) || 0;
   const valorICMS = parseFloat(documento.icms_valor as any) || 0;
-  
+
   const valorFreteBase = valorPrestacao - valorPedagio - valorSeguro - valorICMS;
-  
+
   let componentes = '';
-  
+
   // Componente FRETE (sempre presente)
   if (valorFreteBase > 0) {
     componentes += `<Comp>
@@ -160,7 +158,7 @@ ${(() => {
 </Comp>
 `;
   }
-  
+
   // Componente PEDAGIO (quando houver)
   if (valorPedagio > 0) {
     componentes += `<Comp>
@@ -169,7 +167,7 @@ ${(() => {
 </Comp>
 `;
   }
-  
+
   // Componente SEGURO (quando houver)
   if (valorSeguro > 0) {
     componentes += `<Comp>
@@ -178,7 +176,7 @@ ${(() => {
 </Comp>
 `;
   }
-  
+
   // Componente ICMS (quando houver)
   if (valorICMS > 0) {
     componentes += `<Comp>
@@ -187,7 +185,7 @@ ${(() => {
 </Comp>
 `;
   }
-  
+
   return componentes;
 })()}
 </vPrest>
@@ -274,7 +272,7 @@ function parseEndereco(enderecoCompleto: string | undefined | null, cidade?: str
       cep: (partes[5] || '00000000').replace(/\D/g, '')
     }
   }
-  
+
   // Se tem 5 partes, pode ser: "Rua Exemplo, 123, Centro, Cidade, UF" (sem CEP)
   if (partes.length === 5) {
     return {
@@ -397,7 +395,7 @@ async function getUFFromCityCode(cityCode: string): Promise<string> {
     // Primeiro tentar usar o mapeamento por código IBGE (mais rápido e confiável)
     const ufFromCode = getUFFromCode(cityCode?.substring(0, 2) || '35')
     console.log('📍 UF do mapeamento por código:', ufFromCode)
-    
+
     // Se conseguiu mapear por código, usar esse resultado
     if (ufFromCode !== 'SP' || cityCode?.substring(0, 2) === '35') {
       return ufFromCode
@@ -441,7 +439,7 @@ function getUFFromCode(codigo: string): string {
     "33": "RJ", "24": "RN", "43": "RS", "11": "RO", "14": "RR", "42": "SC",
     "35": "SP", "28": "SE", "17": "TO"
   }
-  
+
   const uf = ufMap[codigo] || "SP"
   console.log('🗺️ Mapeamento código para UF - Código:', codigo, '→ UF:', uf)
   return uf

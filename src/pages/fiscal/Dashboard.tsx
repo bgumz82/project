@@ -92,8 +92,7 @@ export default function DashboardFiscal() {
   const empresasAtivas = empresas?.filter(e => e.status === 'ativo').length || 0
   const ctesPendentes = cteDocumentos?.filter(c => c.status === 'pendente').length || 0
   const mdfesPendentes = mdfeDocumentos?.filter(m => m.status === 'pendente').length || 0
-  const fretesPendentes = freteDocumentos?.filter(f => f.status === 'pendente').length || 0
-  const totalDocumentos = (cteDocumentos?.length || 0) + (mdfeDocumentos?.length || 0) + (freteDocumentos?.length || 0)
+  
 
   return (
     <div className="py-6">
