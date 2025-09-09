@@ -1884,26 +1884,13 @@ export async function generateMDFeFiles(documentoId: string): Promise<void> {
 
     console.log("✅ Documento MDF-e encontrado:", documento.numero_mdfe);
 
-    // Buscar CT-es relacionados ao MDF-e com informações de veículos, motoristas e produtos
+    // Buscar CT-es relacionados ao MDF-e com informações de produtos
     const ctesRelacionados = await query(`
       SELECT c.*, mcr.id as relacao_id,
-             -- Informações do veículo principal
-             vp.placa as veiculo_placa, vp.renavam as veiculo_renavam, 
-             vp.tara_kg as veiculo_tara, vp.carga_kg as veiculo_capacidade,
-             vp.uf_registro as veiculo_uf,
-             -- Informações do reboque  
-             vr.placa as reboque_placa, vr.renavam as reboque_renavam,
-             vr.tara_kg as reboque_tara, vr.carga_kg as reboque_capacidade,
-             vr.uf_registro as reboque_uf,
-             -- Informações do motorista
-             f.nome as motorista_nome, f.cpf as motorista_cpf,
              -- Informações do produto
-             p.nome as produto_nome, p.tipo_carga as produto_tipo_carga
+             p.descricao_produto as produto_nome
       FROM mdfe_cte_relacionados mcr
       JOIN cte_documentos c ON mcr.cte_documento_id = c.id
-      LEFT JOIN veiculos vp ON c.placa_veiculo = vp.placa
-      LEFT JOIN veiculos vr ON c.placa_reboque = vr.placa  
-      LEFT JOIN funcionarios f ON c.motorista_cpf = f.cpf
       LEFT JOIN cte_produtos p ON c.produto_predominante_id = p.id
       WHERE mcr.mdfe_documento_id = $1
       ORDER BY c.numero_cte
@@ -2049,32 +2036,32 @@ function generateMDFeXML(documento: any, ctesRelacionados: any[]): string {
           </infContratante>
         </infANTT>
         <veicTracao>
-          <cInt>${primeiroCtE.veiculo_placa ? primeiroCtE.veiculo_placa.substring(3) : '0001'}</cInt>
-          <placa>${primeiroCtE.veiculo_placa || 'ABC1234'}</placa>
-          <RENAVAM>${primeiroCtE.veiculo_renavam || '00000000000'}</RENAVAM>
-          <tara>${primeiroCtE.veiculo_tara || 9000}</tara>
-          <capKG>${primeiroCtE.veiculo_capacidade || 21000}</capKG>
-          ${primeiroCtE.motorista_nome && primeiroCtE.motorista_cpf ? `<condutor>
+          <cInt>${primeiroCtE.placa_veiculo ? primeiroCtE.placa_veiculo.substring(3) : '0001'}</cInt>
+          <placa>${primeiroCtE.placa_veiculo || 'ABC1234'}</placa>
+          <RENAVAM>00000000000</RENAVAM>
+          <tara>9000</tara>
+          <capKG>21000</capKG>
+          ${primeiroCtE.motorista_nome ? `<condutor>
             <xNome>${primeiroCtE.motorista_nome}</xNome>
-            <CPF>${primeiroCtE.motorista_cpf.replace(/\D/g, '')}</CPF>
+            <CPF>00000000000</CPF>
           </condutor>` : ''}
           <tpRod>01</tpRod>
           <tpCar>00</tpCar>
-          <UF>${primeiroCtE.veiculo_uf || 'MG'}</UF>
+          <UF>MG</UF>
         </veicTracao>
-        ${primeiroCtE.reboque_placa ? `<veicReboque>
-          <cInt>${primeiroCtE.reboque_placa.substring(3)}</cInt>
-          <placa>${primeiroCtE.reboque_placa}</placa>
-          <RENAVAM>${primeiroCtE.reboque_renavam || '00000000000'}</RENAVAM>
-          <tara>${primeiroCtE.reboque_tara || 9500}</tara>
-          <capKG>${primeiroCtE.reboque_capacidade || 35000}</capKG>
+        ${primeiroCtE.placa_reboque ? `<veicReboque>
+          <cInt>${primeiroCtE.placa_reboque.substring(3)}</cInt>
+          <placa>${primeiroCtE.placa_reboque}</placa>
+          <RENAVAM>00000000000</RENAVAM>
+          <tara>9500</tara>
+          <capKG>35000</capKG>
           <tpCar>00</tpCar>
-          <UF>${primeiroCtE.reboque_uf || 'MG'}</UF>
+          <UF>MG</UF>
         </veicReboque>` : ''}
       </rodo>
     </infModal>
     <prodPred>
-      <tpCarga>${produtoPredominante.produto_tipo_carga || '02'}</tpCarga>
+      <tpCarga>02</tpCarga>
       <xProd>${produtoPredominante.produto_nome || 'MERCADORIAS EM GERAL'}</xProd>
       <infLotacao>
         <infLocalCarrega>
