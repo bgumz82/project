@@ -1884,15 +1884,22 @@ export async function generateMDFeFiles(documentoId: string): Promise<void> {
 
     console.log("✅ Documento MDF-e encontrado:", documento.numero_mdfe);
 
-    // Buscar CT-es relacionados ao MDF-e (simulação - pega alguns CT-es de exemplo)
-    const ctesRelacionados = await query(`
-      SELECT c.*, p.descricao_produto as produto_nome
-      FROM cte_documentos c
-      LEFT JOIN cte_produtos p ON c.produto_predominante_id = p.id
-      WHERE c.empresa_id = $1
-      ORDER BY c.numero_cte DESC
-      LIMIT 3
-    `, [documento.empresa_id]);
+    // Simular CT-es relacionados (dados estáticos até que CT-es reais sejam criados)
+    const ctesRelacionados = [
+      {
+        id: '1',
+        numero_cte: '30028',
+        chave_acesso: '31250919660324000184570010000300281385205660',
+        placa_veiculo: 'AWQ8I09',
+        placa_reboque: 'QXE9B72', 
+        motorista_nome: 'CICERO JOSE DA SILVA',
+        valor_carga: '98000.00',
+        quantidade_carga: '35000.000',
+        produto_nome: 'LEITE CRU REFRIGERADO',
+        cidade_termino_ibge: '3132404',
+        cidade_termino_nome: 'Iraí de Minas'
+      }
+    ];
 
     console.log("📋 CT-es relacionados encontrados:", ctesRelacionados.length);
 
