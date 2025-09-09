@@ -20,6 +20,7 @@ import {
   getEmpresasFiscais,
   getCTeEmitidosParaMDFe,
   updateDocumentFiles,
+  generateMDFeFiles,
   formatCNPJ,
   formatChaveAcesso,
   getUFFromCode,
@@ -48,6 +49,7 @@ export default function MDFe() {
   const [filterStatus, setFilterStatus] = useState<'todos' | 'pendente' | 'emitido' | 'cancelado' | 'encerrado'>('todos')
   const [selectedCTes, setSelectedCTes] = useState<string[]>([])
   const [showCTeSelection, setShowCTeSelection] = useState(false)
+  const [isGeneratingFiles, setIsGeneratingFiles] = useState(false)
   const queryClient = useQueryClient()
 
   const { data: documentos, isLoading } = useQuery({
@@ -186,23 +188,37 @@ export default function MDFe() {
     toast.success('Chave de acesso copiada!')
   }
 
-  const handleGenerateFiles = async (documento: MDFeDocumento) => {
+  const handleGenerateFiles = async (id: string) => {
+    setIsGeneratingFiles(true)
     try {
-      toast.success('Gerando arquivos XML e PDF...')
-      
-      // Simular geração de arquivos (aqui você integraria com seu sistema de geração)
-      await updateDocumentFiles('mdfe', documento.id, {
-        xmlGerado: true,
-        pdfGerado: true
-      })
-      
-      // Atualizar lista
+      // Verifica se o documento já tem XML gerado
+      const documento = documentos?.find(d => d.id === id)
+
+      if (documento?.xml_gerado) {
+        // Se já tem XML gerado, altera status para pendente antes de gerar novamente
+        await updateMDFeDocumento(id, { status: 'pendente' })
+        console.log('📝 Status alterado para pendente - regenerando arquivos para documento:', id)
+      }
+
+      // Chama a função para gerar os arquivos
+      await generateMDFeFiles(id)
+      // Invalida a query para atualizar a lista de documentos com os novos status
       queryClient.invalidateQueries({ queryKey: ['mdfe-documentos'] })
-      
-      toast.success('Arquivos gerados com sucesso!')
-    } catch (error: any) {
-      console.error('Error generating files:', error)
-      toast.error('Erro ao gerar arquivos')
+      toast.success('Arquivos XML e PDF gerados com sucesso!')
+    } catch (error) {
+      console.error('❌ Erro ao gerar arquivos MDF-e:', error)
+      console.error('❌ Detalhes do erro:', {
+        tipo: typeof error,
+        mensagem: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : 'Sem stack'
+      })
+      // Exibe mensagem de erro específica
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : `Erro ao gerar arquivos MDF-e: ${String(error)}`;
+      toast.error(errorMessage)
+    } finally {
+      setIsGeneratingFiles(false) // Finaliza o estado de carregamento
     }
   }
 
@@ -369,9 +385,10 @@ export default function MDFe() {
                             </button>
                           )}
                           <button
-                            onClick={() => handleGenerateFiles(documento)}
+                            onClick={() => handleGenerateFiles(documento.id)}
                             className="text-green-600 hover:text-green-900 mr-4"
                             title="Gerar arquivos"
+                            disabled={isGeneratingFiles}
                           >
                             <DocumentArrowDownIcon className="h-5 w-5" />
                           </button>
