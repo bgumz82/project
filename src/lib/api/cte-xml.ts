@@ -39,7 +39,6 @@ export async function generateCTeXML(
   empresa: EmpresaInfo,
   remetente: ClienteInfo | null,
   destinatario: ClienteInfo | null,
-  recebedor: ClienteInfo | null,
 ): Promise<string> {
 
   const dataEmissao = new Date(documento.data_emissao)
