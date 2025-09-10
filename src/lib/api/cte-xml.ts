@@ -33,10 +33,6 @@ interface EmpresaInfo {
   rntrc: string
 }
 
-interface ProdutoInfo {
-  cod_ncm: string
-  descricao: string
-}
 
 export async function generateCTeXML(
   documento: CTeDocumento,

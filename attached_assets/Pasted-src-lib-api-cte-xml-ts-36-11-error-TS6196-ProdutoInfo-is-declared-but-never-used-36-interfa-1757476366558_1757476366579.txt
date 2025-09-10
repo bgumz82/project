@@ -1,0 +1,527 @@
+src/lib/api/cte-xml.ts:36:11 - error TS6196: 'ProdutoInfo' is declared but never used.
+
+36 interface ProdutoInfo {
+             ~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:46:3 - error TS6133: 'recebedor' is declared but its value is never read.
+
+46   recebedor: ClienteInfo | null,
+     ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:108:9 - error TS18047: 'remetente' is possibly 'null'.
+
+108 <CNPJ>${remetente.cnpj?.replace(/\D/g, '') || '00000000000000'}</CNPJ>
+            ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:109:3 - error TS18047: 'remetente' is possibly 'null'.
+
+109 ${remetente.ie ? `<IE>${remetente.ie}</IE>` : '<IE>ISENTO</IE>'}
+      ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:109:25 - error TS18047: 'remetente' is possibly 'null'.
+
+109 ${remetente.ie ? `<IE>${remetente.ie}</IE>` : '<IE>ISENTO</IE>'}
+                            ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:110:10 - error TS18047: 'remetente' is possibly 'null'.
+
+110 <xNome>${remetente.razao_social || 'NAO INFORMADO'}</xNome>
+             ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:112:37 - error TS18047: 'remetente' is possibly 'null'.
+
+112 <xLgr>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).logradouro).toUpperCase()}</xLgr>
+                                        ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:112:68 - error TS18047: 'remetente' is possibly 'null'.
+
+112 <xLgr>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).logradouro).toUpperCase()}</xLgr>
+                                                                       ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:112:88 - error TS18047: 'remetente' is possibly 'null'.
+
+112 <xLgr>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).logradouro).toUpperCase()}</xLgr>
+                                                                                           ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:112:106 - error TS18047: 'remetente' is possibly 'null'.
+
+112 <xLgr>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).logradouro).toUpperCase()}</xLgr>
+                                                                                                             ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:112:124 - error TS18047: 'remetente' is possibly 'null'.
+
+112 <xLgr>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).logradouro).toUpperCase()}</xLgr>
+                                                                                                                               ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:113:22 - error TS18047: 'remetente' is possibly 'null'.
+
+113 <nro>${parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).numero}</nro>
+                         ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:113:53 - error TS18047: 'remetente' is possibly 'null'.
+
+113 <nro>${parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).numero}</nro>
+                                                        ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:113:73 - error TS18047: 'remetente' is possibly 'null'.
+
+113 <nro>${parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).numero}</nro>
+                                                                            ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:113:91 - error TS18047: 'remetente' is possibly 'null'.
+
+113 <nro>${parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).numero}</nro>
+                                                                                              ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:113:109 - error TS18047: 'remetente' is possibly 'null'.
+
+113 <nro>${parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).numero}</nro>
+                                                                                                                ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:114:40 - error TS18047: 'remetente' is possibly 'null'.
+
+114 <xBairro>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).bairro).toUpperCase()}</xBairro>
+                                           ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:114:71 - error TS18047: 'remetente' is possibly 'null'.
+
+114 <xBairro>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).bairro).toUpperCase()}</xBairro>
+                                                                          ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:114:91 - error TS18047: 'remetente' is possibly 'null'.
+
+114 <xBairro>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).bairro).toUpperCase()}</xBairro>
+                                                                                              ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:114:109 - error TS18047: 'remetente' is possibly 'null'.
+
+114 <xBairro>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).bairro).toUpperCase()}</xBairro>
+                                                                                                                ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:114:127 - error TS18047: 'remetente' is possibly 'null'.
+
+114 <xBairro>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).bairro).toUpperCase()}</xBairro>
+                                                                                                                                  ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:115:9 - error TS18047: 'remetente' is possibly 'null'.
+
+115 <cMun>${remetente.codigo_ibge || await getCityCode(remetente.cidade || 'NAO INFORMADO', remetente.estado || 'SP')}</cMun>
+            ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:115:52 - error TS18047: 'remetente' is possibly 'null'.
+
+115 <cMun>${remetente.codigo_ibge || await getCityCode(remetente.cidade || 'NAO INFORMADO', remetente.estado || 'SP')}</cMun>
+                                                       ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:115:89 - error TS18047: 'remetente' is possibly 'null'.
+
+115 <cMun>${remetente.codigo_ibge || await getCityCode(remetente.cidade || 'NAO INFORMADO', remetente.estado || 'SP')}</cMun>
+                                                                                            ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:116:23 - error TS18047: 'remetente' is possibly 'null'.
+
+116 <xMun>${removeAccents(remetente.cidade || 'NAO INFORMADO').toUpperCase()}</xMun>
+                          ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:117:9 - error TS18047: 'remetente' is possibly 'null'.
+
+117 <CEP>${(remetente.cep || '00000000').replace(/\D/g, '')}</CEP>
+            ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:118:8 - error TS18047: 'remetente' is possibly 'null'.
+
+118 <UF>${(remetente.estado || 'SP').toUpperCase()}</UF>
+           ~~~~~~~~~
+
+src/lib/api/cte-xml.ts:124:9 - error TS18047: 'destinatario' is possibly 'null'.
+
+124 <CNPJ>${destinatario.cnpj?.replace(/\D/g, '') || '00000000000000'}</CNPJ>
+            ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:125:3 - error TS18047: 'destinatario' is possibly 'null'.
+
+125 ${destinatario.ie ? `<IE>${destinatario.ie}</IE>` : '<IE>ISENTO</IE>'}
+      ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:125:28 - error TS18047: 'destinatario' is possibly 'null'.
+
+125 ${destinatario.ie ? `<IE>${destinatario.ie}</IE>` : '<IE>ISENTO</IE>'}
+                               ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:126:10 - error TS18047: 'destinatario' is possibly 'null'.
+
+126 <xNome>${destinatario.razao_social || 'NAO INFORMADO'}</xNome>
+             ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:128:37 - error TS18047: 'destinatario' is possibly 'null'.
+
+128 <xLgr>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).logradouro).toUpperCase()}</xLgr>
+                                        ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:128:71 - error TS18047: 'destinatario' is possibly 'null'.
+
+128 <xLgr>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).logradouro).toUpperCase()}</xLgr>
+                                                                          ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:128:94 - error TS18047: 'destinatario' is possibly 'null'.
+
+128 <xLgr>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).logradouro).toUpperCase()}</xLgr>
+                                                                                                 ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:128:115 - error TS18047: 'destinatario' is possibly 'null'.
+
+128 <xLgr>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).logradouro).toUpperCase()}</xLgr>
+                                                                                                                      ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:128:136 - error TS18047: 'destinatario' is possibly 'null'.
+
+128 <xLgr>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).logradouro).toUpperCase()}</xLgr>
+                                                                                                                                           ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:129:22 - error TS18047: 'destinatario' is possibly 'null'.
+
+129 <nro>${parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).numero}</nro>
+                         ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:129:56 - error TS18047: 'destinatario' is possibly 'null'.
+
+129 <nro>${parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).numero}</nro>
+                                                           ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:129:79 - error TS18047: 'destinatario' is possibly 'null'.
+
+129 <nro>${parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).numero}</nro>
+                                                                                  ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:129:100 - error TS18047: 'destinatario' is possibly 'null'.
+
+129 <nro>${parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).numero}</nro>
+                                                                                                       ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:129:121 - error TS18047: 'destinatario' is possibly 'null'.
+
+129 <nro>${parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).numero}</nro>
+                                                                                                                            ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:130:40 - error TS18047: 'destinatario' is possibly 'null'.
+
+130 <xBairro>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).bairro).toUpperCase()}</xBairro>
+                                           ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:130:74 - error TS18047: 'destinatario' is possibly 'null'.
+
+130 <xBairro>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).bairro).toUpperCase()}</xBairro>
+                                                                             ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:130:97 - error TS18047: 'destinatario' is possibly 'null'.
+
+130 <xBairro>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).bairro).toUpperCase()}</xBairro>
+                                                                                                    ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:130:118 - error TS18047: 'destinatario' is possibly 'null'.
+
+130 <xBairro>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).bairro).toUpperCase()}</xBairro>
+                                                                                                                         ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:130:139 - error TS18047: 'destinatario' is possibly 'null'.
+
+130 <xBairro>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).bairro).toUpperCase()}</xBairro>
+                                                                                                                                              ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:131:9 - error TS18047: 'destinatario' is possibly 'null'.
+
+131 <cMun>${destinatario.codigo_ibge || await getCityCode(destinatario.cidade || 'NAO INFORMADO', destinatario.estado || 'SP')}</cMun>
+            ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:131:55 - error TS18047: 'destinatario' is possibly 'null'.
+
+131 <cMun>${destinatario.codigo_ibge || await getCityCode(destinatario.cidade || 'NAO INFORMADO', destinatario.estado || 'SP')}</cMun>
+                                                          ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:131:95 - error TS18047: 'destinatario' is possibly 'null'.
+
+131 <cMun>${destinatario.codigo_ibge || await getCityCode(destinatario.cidade || 'NAO INFORMADO', destinatario.estado || 'SP')}</cMun>
+                                                                                                  ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:132:23 - error TS18047: 'destinatario' is possibly 'null'.
+
+132 <xMun>${removeAccents(destinatario.cidade || 'NAO INFORMADO').toUpperCase()}</xMun>
+                          ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:133:9 - error TS18047: 'destinatario' is possibly 'null'.
+
+133 <CEP>${(destinatario.cep || '00000000').replace(/\D/g, '')}</CEP>
+            ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:134:8 - error TS18047: 'destinatario' is possibly 'null'.
+
+134 <UF>${(destinatario.estado || 'SP').toUpperCase()}</UF>
+           ~~~~~~~~~~~~
+
+src/lib/api/cte-xml.ts:212:12 - error TS2304: Cannot find name 'produto'.
+
+212 <proPred>${produto.descricao}</proPred>
+               ~~~~~~~
+
+src/lib/api/fiscal.ts:2165:7 - error TS2554: Expected 5 arguments, but got 7.
+
+2165       recebedor,
+           ~~~~~~~~~~
+2166       produto
+     ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:28:3 - error TS6133: 'getUFFromCode' is declared but its value is never read.
+
+28   getUFFromCode,
+     ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:35:8 - error TS6133: 'AssociacaoFrota' is declared but its value is never read.
+
+35   type AssociacaoFrota
+          ~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:111:10 - error TS6133: 'inicioSearchTerm' is declared but its value is never read.
+
+111   const [inicioSearchTerm, setInicioSearchTerm] = useState('')
+             ~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:112:10 - error TS6133: 'terminoSearchTerm' is declared but its value is never read.
+
+112   const [terminoSearchTerm, setTerminoSearchTerm] = useState('')
+             ~~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:113:10 - error TS6133: 'inicioResults' is declared but its value is never read.
+
+113   const [inicioResults, setInicioResults] = useState<Cidade[]>([])
+             ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:114:10 - error TS6133: 'terminoResults' is declared but its value is never read.
+
+114   const [terminoResults, setTerminoResults] = useState<Cidade[]>([])
+             ~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:543:15 - error TS6133: 'estadoInicio' is declared but its value is never read.
+
+543         const estadoInicio = estados.find(e => e.uf === selectedDocumento.uf_inicio);
+                  ~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:552:15 - error TS6133: 'estadoTermino' is declared but its value is never read.
+
+552         const estadoTermino = estados.find(e => e.uf === selectedDocumento.uf_termino);
+                  ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1140:9 - error TS6133: 'determinarCFOP' is declared but its value is never read.
+
+1140   const determinarCFOP = (ufOrigem: string, ufDestino: string) => {
+             ~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1717:7 - error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+
+1717       numero_cte: formDataElement.get('numero_cte') === 'AUTO' || !formDataElement.get('numero_cte') ? null : formDataElement.get('numero_cte') as string,
+           ~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:110:3
+    110   numero_cte?: string;
+          ~~~~~~~~~~
+    The expected type comes from property 'numero_cte' which is declared here on type 'CTeDocumentoCreate'
+
+src/pages/fiscal/CTe.tsx:1718:7 - error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+
+1718       serie: formDataElement.get('serie') as string || null,
+           ~~~~~
+
+  src/lib/api/fiscal.ts:111:3
+    111   serie?: string;
+          ~~~~~
+    The expected type comes from property 'serie' which is declared here on type 'CTeDocumentoCreate'
+
+src/pages/fiscal/CTe.tsx:1804:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1804       valor_prestacao: documento.valor_prestacao || '',
+           ~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1805:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1805       valor_receber: documento.valor_receber || '',
+           ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1806:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1806       valor_tributos: documento.valor_tributos || '',
+           ~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1807:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1807       valor_pedagio: documento.valor_pedagio || '',
+           ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1808:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1808       valor_seguro: documento.valor_seguro || '',
+           ~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1810:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1810       icms_bc_valor: documento.icms_bc_valor || '',
+           ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1811:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1811       icms_aliquota: documento.icms_aliquota || '',
+           ~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1812:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1812       icms_valor: documento.icms_valor || '',
+           ~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1818:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1818       valor_carga: documento.valor_carga || '',
+           ~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1819:7 - error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+1819       quantidade_carga: documento.quantidade_carga || '',
+           ~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:1829:19 - error TS2551: Property 'cidade_inicio_codigo' does not exist on type 'CTeDocumento'. Did you mean 'cidade_inicio_ibge'?
+
+1829     if (documento.cidade_inicio_codigo) {
+                       ~~~~~~~~~~~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:91:3
+    91   cidade_inicio_ibge?: string | null;
+         ~~~~~~~~~~~~~~~~~~
+    'cidade_inicio_ibge' is declared here.
+
+src/pages/fiscal/CTe.tsx:1831:27 - error TS2551: Property 'cidade_inicio_codigo' does not exist on type 'CTeDocumento'. Did you mean 'cidade_inicio_ibge'?
+
+1831         codigo: documento.cidade_inicio_codigo,
+                               ~~~~~~~~~~~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:91:3
+    91   cidade_inicio_ibge?: string | null;
+         ~~~~~~~~~~~~~~~~~~
+    'cidade_inicio_ibge' is declared here.
+
+src/pages/fiscal/CTe.tsx:1833:23 - error TS2551: Property 'cidade_inicio_uf' does not exist on type 'CTeDocumento'. Did you mean 'cidade_inicio_ibge'?
+
+1833         uf: documento.cidade_inicio_uf || ''
+                           ~~~~~~~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:91:3
+    91   cidade_inicio_ibge?: string | null;
+         ~~~~~~~~~~~~~~~~~~
+    'cidade_inicio_ibge' is declared here.
+
+src/pages/fiscal/CTe.tsx:1837:19 - error TS2551: Property 'cidade_termino_codigo' does not exist on type 'CTeDocumento'. Did you mean 'cidade_termino_ibge'?
+
+1837     if (documento.cidade_termino_codigo) {
+                       ~~~~~~~~~~~~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:92:3
+    92   cidade_termino_ibge?: string | null;
+         ~~~~~~~~~~~~~~~~~~~
+    'cidade_termino_ibge' is declared here.
+
+src/pages/fiscal/CTe.tsx:1839:27 - error TS2551: Property 'cidade_termino_codigo' does not exist on type 'CTeDocumento'. Did you mean 'cidade_termino_ibge'?
+
+1839         codigo: documento.cidade_termino_codigo,
+                               ~~~~~~~~~~~~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:92:3
+    92   cidade_termino_ibge?: string | null;
+         ~~~~~~~~~~~~~~~~~~~
+    'cidade_termino_ibge' is declared here.
+
+src/pages/fiscal/CTe.tsx:1841:23 - error TS2551: Property 'cidade_termino_uf' does not exist on type 'CTeDocumento'. Did you mean 'cidade_termino_ibge'?
+
+1841         uf: documento.cidade_termino_uf || ''
+                           ~~~~~~~~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:92:3
+    92   cidade_termino_ibge?: string | null;
+         ~~~~~~~~~~~~~~~~~~~
+    'cidade_termino_ibge' is declared here.
+
+src/pages/fiscal/CTe.tsx:2418:58 - error TS2551: Property 'hora_emissao' does not exist on type 'CTeDocumento'. Did you mean 'forma_emissao'?
+
+2418                         defaultValue={selectedDocumento?.hora_emissao || format(new Date(), 'HH:mm')}
+                                                              ~~~~~~~~~~~~
+
+  src/lib/api/fiscal.ts:46:3
+    46   forma_emissao: number;
+         ~~~~~~~~~~~~~
+    'forma_emissao' is declared here.
+
+src/pages/fiscal/CTe.tsx:2527:45 - error TS2345: Argument of type '(prev: { [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }) => { ...; }' is not assignable to parameter of type 'SetStateAction<{ [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }>'.
+  Type '(prev: { [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }) => { ...; }' is not assignable to type '(prevState: { [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }) => { ...; }'.
+    Call signature return types '{ cidade_inicio_ibge: string; cidade_inicio_nome: string; uf_inicio: string | undefined; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; ... 19 more ...; cidade_termino_nome: string; }' and '{ [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }' are incompatible.
+      The types of 'uf_inicio' are incompatible between these types.
+        Type 'string | undefined' is not assignable to type 'string'.
+          Type 'undefined' is not assignable to type 'string'.
+
+2527                                 setFormData(prev => ({
+                                                 ~~~~~~~~~~
+2528                                   ...prev,
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ ...
+2531                                   uf_inicio: cidade.uf
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2532                                 }))
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:2598:45 - error TS2345: Argument of type '(prev: { [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }) => { ...; }' is not assignable to parameter of type 'SetStateAction<{ [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }>'.
+  Type '(prev: { [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }) => { ...; }' is not assignable to type '(prevState: { [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }) => { ...; }'.
+    Call signature return types '{ cidade_termino_ibge: string; cidade_termino_nome: string; uf_termino: string | undefined; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; ... 19 more ...; cidade_inicio_nome: string; }' and '{ [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }' are incompatible.
+      The types of 'uf_termino' are incompatible between these types.
+        Type 'string | undefined' is not assignable to type 'string'.
+          Type 'undefined' is not assignable to type 'string'.
+
+2598                                 setFormData(prev => ({
+                                                 ~~~~~~~~~~
+2599                                   ...prev,
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ ...
+2602                                   uf_termino: cidade.uf
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2603                                 }))
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/Frete.tsx:29:7 - error TS6133: 'STATUS_LABELS' is declared but its value is never read.
+
+29 const STATUS_LABELS = {
+         ~~~~~~~~~~~~~
+
+src/pages/fiscal/Frete.tsx:35:7 - error TS6133: 'STATUS_COLORS' is declared but its value is never read.
+
+35 const STATUS_COLORS = {
+         ~~~~~~~~~~~~~
+
+src/pages/fiscal/Frete.tsx:78:9 - error TS6133: 'origemInputRef' is declared but its value is never read.
+
+78   const origemInputRef = useRef<HTMLInputElement>(null);
+           ~~~~~~~~~~~~~~
+
+src/pages/fiscal/Frete.tsx:79:9 - error TS6133: 'destinoInputRef' is declared but its value is never read.
+
+79   const destinoInputRef = useRef<HTMLInputElement>(null);
+           ~~~~~~~~~~~~~~~
+
+src/pages/fiscal/MDFe.tsx:602:59 - error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+
+602                                 Chave: {formatChaveAcesso(cte.chave_acesso)}
