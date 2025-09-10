@@ -106,8 +106,6 @@ export default function CTe() {
   const [isModalRapidoOpen, setIsModalRapidoOpen] = useState(false)
 
   // Estados para pesquisa de cidades
-  const [inicioSearchTerm, setInicioSearchTerm] = useState('')
-  const [terminoSearchTerm, setTerminoSearchTerm] = useState('')
   const [selectedInicio, setSelectedInicio] = useState<{codigo: string, nome: string, uf: string} | null>(null)
   const [selectedTermino, setSelectedTermino] = useState<{codigo: string, nome: string, uf: string} | null>(null)
   const [showInicioResults, setShowInicioResults] = useState(false)
@@ -370,10 +368,8 @@ export default function CTe() {
   const resetForm = () => {
     setSelectedDocumento(null)
     setActiveTab('dados-cte')
-    setInicioSearchTerm('')
-    setTerminoSearchTerm('')
-    setInicioResults([])
-    setTerminoResults([])
+    setShowInicioResults(false)
+    setShowTerminoResults(false)
     setSelectedInicio(null)
     setSelectedTermino(null)
     setShowInicioResults(false)
@@ -2408,7 +2404,6 @@ export default function CTe() {
                         onChange={(e) => {
                           const value = e.target.value
                           setCidadeInicioNome(value)
-                          setInicioSearchTerm(value)
                           setSelectedInicio(null)
                           handleCidadeInicioSearch(value)
                           setShowInicioResults(true)
@@ -2449,7 +2444,6 @@ export default function CTe() {
                                   uf_inicio: cidade.uf || ''
                                 }))
                                 setCidadeInicioNome(cidade.name)
-                                setInicioSearchTerm(cidade.name)
                                 setShowInicioResults(false)
                                 setCidadeInicioResults([])
                               }}
@@ -2479,7 +2473,6 @@ export default function CTe() {
                         onChange={(e) => {
                           const value = e.target.value
                           setCidadeTerminoNome(value)
-                          setTerminoSearchTerm(value)
                           setSelectedTermino(null)
                           handleCidadeTerminoSearch(value)
                           setShowTerminoResults(true)
@@ -2520,7 +2513,6 @@ export default function CTe() {
                                   uf_termino: cidade.uf || ''
                                 }))
                                 setCidadeTerminoNome(cidade.name)
-                                setTerminoSearchTerm(cidade.name)
                                 setShowTerminoResults(false)
                                 setCidadeTerminoResults([])
                               }}

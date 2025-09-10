@@ -1,0 +1,41 @@
+src/pages/fiscal/CTe.tsx:109:10 - error TS6133: 'inicioSearchTerm' is declared but its value is never read.
+
+109   const [inicioSearchTerm, setInicioSearchTerm] = useState('')
+             ~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:110:10 - error TS6133: 'terminoSearchTerm' is declared but its value is never read.
+
+110   const [terminoSearchTerm, setTerminoSearchTerm] = useState('')
+             ~~~~~~~~~~~~~~~~~
+
+src/pages/fiscal/CTe.tsx:375:5 - error TS2552: Cannot find name 'setInicioResults'. Did you mean 'setShowInicioResults'?
+
+375     setInicioResults([])
+        ~~~~~~~~~~~~~~~~
+
+  src/pages/fiscal/CTe.tsx:113:29
+    113   const [showInicioResults, setShowInicioResults] = useState(false)
+                                    ~~~~~~~~~~~~~~~~~~~~
+    'setShowInicioResults' is declared here.
+
+src/pages/fiscal/CTe.tsx:376:5 - error TS2552: Cannot find name 'setTerminoResults'. Did you mean 'setShowTerminoResults'?
+
+376     setTerminoResults([])
+        ~~~~~~~~~~~~~~~~~
+
+  src/pages/fiscal/CTe.tsx:114:30
+    114   const [showTerminoResults, setShowTerminoResults] = useState(false)
+                                     ~~~~~~~~~~~~~~~~~~~~~
+    'setShowTerminoResults' is declared here.
+
+src/pages/fiscal/CTe.tsx:1708:17 - error TS2345: Argument of type '{ empresa_id: string; numero_cte: string; serie: string; data_emissao: string; codigo_uf: string; status: "pendente" | "cancelado" | "emitido"; observacoes: string; tomador_id: string; remetente_id: string; ... 20 more ...; chave_acesso_4: string; }' is not assignable to parameter of type 'SetStateAction<{ [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }>'.
+  Type '{ empresa_id: string; numero_cte: string; serie: string; data_emissao: string; codigo_uf: string; status: "pendente" | "cancelado" | "emitido"; observacoes: string; tomador_id: string; remetente_id: string; ... 20 more ...; chave_acesso_4: string; }' is missing the following properties from type '{ [key: string]: any; tomador_id: string; remetente_id: string; recebedor_id: string; destinatario_id: string; produto_predominante_id: string; data_emissao: string; valor_prestacao: string; ... 20 more ...; cidade_termino_nome: string; }': cidade_inicio_ibge, cidade_termino_ibge, uf_inicio, uf_termino, and 2 more.
+
+1708     setFormData({
+                     ~
+1709       empresa_id: documento.empresa_id || '',
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ ...
+1743       chave_acesso_4: documento.chave_acesso_4 || '',
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1744     });
