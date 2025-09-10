@@ -100,33 +100,33 @@ ${documento.observacoes ? `<compl>
 <CRT>3</CRT>
 </emit>
 <rem>
-<CNPJ>${remetente.cnpj?.replace(/\D/g, '') || '00000000000000'}</CNPJ>
-${remetente.ie ? `<IE>${remetente.ie}</IE>` : '<IE>ISENTO</IE>'}
-<xNome>${remetente.razao_social || 'NAO INFORMADO'}</xNome>
+<CNPJ>${remetente?.cnpj?.replace(/\D/g, '') || '00000000000000'}</CNPJ>
+${remetente?.ie ? `<IE>${remetente.ie}</IE>` : '<IE>ISENTO</IE>'}
+<xNome>${remetente?.razao_social || 'NAO INFORMADO'}</xNome>
 <enderReme>
-<xLgr>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).logradouro).toUpperCase()}</xLgr>
-<nro>${parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).numero}</nro>
-<xBairro>${removeAccents(parseEndereco(remetente.endereco_completo || remetente.endereco, remetente.cidade, remetente.estado, remetente.cep).bairro).toUpperCase()}</xBairro>
-<cMun>${remetente.codigo_ibge || await getCityCode(remetente.cidade || 'NAO INFORMADO', remetente.estado || 'SP')}</cMun>
-<xMun>${removeAccents(remetente.cidade || 'NAO INFORMADO').toUpperCase()}</xMun>
-<CEP>${(remetente.cep || '00000000').replace(/\D/g, '')}</CEP>
-<UF>${(remetente.estado || 'SP').toUpperCase()}</UF>
+<xLgr>${removeAccents(parseEndereco(remetente?.endereco_completo || remetente?.endereco || '', remetente?.cidade || '', remetente?.estado || '', remetente?.cep || '').logradouro).toUpperCase()}</xLgr>
+<nro>${parseEndereco(remetente?.endereco_completo || remetente?.endereco || '', remetente?.cidade || '', remetente?.estado || '', remetente?.cep || '').numero}</nro>
+<xBairro>${removeAccents(parseEndereco(remetente?.endereco_completo || remetente?.endereco || '', remetente?.cidade || '', remetente?.estado || '', remetente?.cep || '').bairro).toUpperCase()}</xBairro>
+<cMun>${remetente?.codigo_ibge || await getCityCode(remetente?.cidade || 'NAO INFORMADO', remetente?.estado || 'SP')}</cMun>
+<xMun>${removeAccents(remetente?.cidade || 'NAO INFORMADO').toUpperCase()}</xMun>
+<CEP>${(remetente?.cep || '00000000').replace(/\D/g, '')}</CEP>
+<UF>${(remetente?.estado || 'SP').toUpperCase()}</UF>
 <cPais>1058</cPais>
 <xPais>BRASIL</xPais>
 </enderReme>
 </rem>
 <dest>
-<CNPJ>${destinatario.cnpj?.replace(/\D/g, '') || '00000000000000'}</CNPJ>
-${destinatario.ie ? `<IE>${destinatario.ie}</IE>` : '<IE>ISENTO</IE>'}
-<xNome>${destinatario.razao_social || 'NAO INFORMADO'}</xNome>
+<CNPJ>${destinatario?.cnpj?.replace(/\D/g, '') || '00000000000000'}</CNPJ>
+${destinatario?.ie ? `<IE>${destinatario.ie}</IE>` : '<IE>ISENTO</IE>'}
+<xNome>${destinatario?.razao_social || 'NAO INFORMADO'}</xNome>
 <enderDest>
-<xLgr>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).logradouro).toUpperCase()}</xLgr>
-<nro>${parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).numero}</nro>
-<xBairro>${removeAccents(parseEndereco(destinatario.endereco_completo || destinatario.endereco, destinatario.cidade, destinatario.estado, destinatario.cep).bairro).toUpperCase()}</xBairro>
-<cMun>${destinatario.codigo_ibge || await getCityCode(destinatario.cidade || 'NAO INFORMADO', destinatario.estado || 'SP')}</cMun>
-<xMun>${removeAccents(destinatario.cidade || 'NAO INFORMADO').toUpperCase()}</xMun>
-<CEP>${(destinatario.cep || '00000000').replace(/\D/g, '')}</CEP>
-<UF>${(destinatario.estado || 'SP').toUpperCase()}</UF>
+<xLgr>${removeAccents(parseEndereco(destinatario?.endereco_completo || destinatario?.endereco || '', destinatario?.cidade || '', destinatario?.estado || '', destinatario?.cep || '').logradouro).toUpperCase()}</xLgr>
+<nro>${parseEndereco(destinatario?.endereco_completo || destinatario?.endereco || '', destinatario?.cidade || '', destinatario?.estado || '', destinatario?.cep || '').numero}</nro>
+<xBairro>${removeAccents(parseEndereco(destinatario?.endereco_completo || destinatario?.endereco || '', destinatario?.cidade || '', destinatario?.estado || '', destinatario?.cep || '').bairro).toUpperCase()}</xBairro>
+<cMun>${destinatario?.codigo_ibge || await getCityCode(destinatario?.cidade || 'NAO INFORMADO', destinatario?.estado || 'SP')}</cMun>
+<xMun>${removeAccents(destinatario?.cidade || 'NAO INFORMADO').toUpperCase()}</xMun>
+<CEP>${(destinatario?.cep || '00000000').replace(/\D/g, '')}</CEP>
+<UF>${(destinatario?.estado || 'SP').toUpperCase()}</UF>
 <cPais>1058</cPais>
 <xPais>BRASIL</xPais>
 </enderDest>
