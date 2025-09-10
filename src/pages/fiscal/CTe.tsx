@@ -1826,19 +1826,19 @@ export default function CTe() {
     });
 
     // Preenche os campos de endereço se existirem
-    if (documento.cidade_inicio_codigo) {
+    if (documento.cidade_inicio_ibge) {
       setSelectedInicio({
-        codigo: documento.cidade_inicio_codigo,
+        codigo: documento.cidade_inicio_ibge,
         nome: documento.cidade_inicio_nome || '',
-        uf: documento.cidade_inicio_uf || ''
+        uf: documento.uf_inicio || ''
       });
     }
 
-    if (documento.cidade_termino_codigo) {
+    if (documento.cidade_termino_ibge) {
       setSelectedTermino({
-        codigo: documento.cidade_termino_codigo,
+        codigo: documento.cidade_termino_ibge,
         nome: documento.cidade_termino_nome || '',
-        uf: documento.cidade_termino_uf || ''
+        uf: documento.uf_termino || ''
       });
     }
 
