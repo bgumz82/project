@@ -1737,6 +1737,13 @@ export default function CTe() {
       chave_acesso_2: documento.chave_acesso_2 || '',
       chave_acesso_3: documento.chave_acesso_3 || '',
       chave_acesso_4: documento.chave_acesso_4 || '',
+      // DADOS DE ENDEREÇO - PROPRIEDADES FALTANTES
+      cidade_inicio_ibge: documento.cidade_inicio_ibge || '',
+      cidade_termino_ibge: documento.cidade_termino_ibge || '',
+      uf_inicio: documento.uf_inicio || '',
+      uf_termino: documento.uf_termino || '',
+      cidade_inicio_nome: documento.cidade_inicio_nome || '',
+      cidade_termino_nome: documento.cidade_termino_nome || ''
     });
 
     // Preenche os campos de endereço se existirem
