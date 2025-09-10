@@ -1630,8 +1630,8 @@ export default function CTe() {
 
     const documentoData: CTeDocumentoCreate = {
       empresa_id: empresaIdValue,
-      numero_cte: formDataElement.get('numero_cte') === 'AUTO' || !formDataElement.get('numero_cte') ? null : formDataElement.get('numero_cte') as string,
-      serie: formDataElement.get('serie') as string || null,
+      numero_cte: formDataElement.get('numero_cte') === 'AUTO' || !formDataElement.get('numero_cte') ? undefined : formDataElement.get('numero_cte') as string,
+      serie: formDataElement.get('serie') as string || undefined,
       data_emissao: formData.data_emissao,
       cidade_inicio_ibge: selectedInicio?.codigo || formData.cidade_inicio_ibge || null,
       cidade_termino_ibge: selectedTermino?.codigo || formData.cidade_termino_ibge || null,
