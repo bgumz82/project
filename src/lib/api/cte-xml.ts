@@ -204,7 +204,7 @@ ${documento.valor_tributos && parseFloat(documento.valor_tributos as any) > 0 ? 
 <infCTeNorm>
 <infCarga>
 <vCarga>${(parseFloat(documento.valor_carga as any) || 0).toFixed(2)}</vCarga>
-<proPred>${produto.descricao}</proPred>
+<proPred>MERCADORIA GERAL</proPred>
 <xOutCat>LIQUIDO</xOutCat>
 <infQ>
 <cUnid>04</cUnid>
