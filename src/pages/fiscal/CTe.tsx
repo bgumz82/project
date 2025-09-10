@@ -106,6 +106,8 @@ export default function CTe() {
   const [isModalRapidoOpen, setIsModalRapidoOpen] = useState(false)
 
   // Estados para pesquisa de cidades
+  const [inicioSearchTerm, setInicioSearchTerm] = useState('')
+  const [terminoSearchTerm, setTerminoSearchTerm] = useState('')
   const [selectedInicio, setSelectedInicio] = useState<{codigo: string, nome: string, uf: string} | null>(null)
   const [selectedTermino, setSelectedTermino] = useState<{codigo: string, nome: string, uf: string} | null>(null)
   const [showInicioResults, setShowInicioResults] = useState(false)
