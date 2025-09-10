@@ -465,14 +465,16 @@ export default function Vehicles() {
                       <select
                         name="tipo_combustivel"
                         id="tipo_combustivel"
-                        defaultValue={selectedVehicle?.tipo_combustivel || 'gasolina'}
+                        defaultValue={selectedVehicle?.tipo_combustivel || 'diesel'}
                         required
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       >
                         <option value="diesel">Diesel</option>
+                        <option value="diesel_s10">Diesel S10</option>
+                        <option value="diesel_s500">Diesel S500</option>
                         <option value="gasolina">Gasolina</option>
                         <option value="etanol">Etanol</option>
-                        <option value="gnv">GNV</option>
+                        <option value="flex">Flex</option>
                       </select>
                     </div>
                   </div>
