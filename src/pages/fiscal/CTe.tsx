@@ -25,14 +25,12 @@ import {
   validarChaveAcesso,
   formatCNPJ,
   formatChaveAcesso,
-  getUFFromCode,
   type CTeDocumento,
   type CTeDocumentoCreate,
   type Cidade,
 } from '@/lib/api/fiscal'
 import {
-  getAssociacoesAtivasParaCTe,
-  type AssociacaoFrota
+  getAssociacoesAtivasParaCTe
 } from '@/lib/api/fleet-associations'
 
 const STATUS_LABELS = {
@@ -108,10 +106,6 @@ export default function CTe() {
   const [isModalRapidoOpen, setIsModalRapidoOpen] = useState(false)
 
   // Estados para pesquisa de cidades
-  const [inicioSearchTerm, setInicioSearchTerm] = useState('')
-  const [terminoSearchTerm, setTerminoSearchTerm] = useState('')
-  const [inicioResults, setInicioResults] = useState<Cidade[]>([])
-  const [terminoResults, setTerminoResults] = useState<Cidade[]>([])
   const [selectedInicio, setSelectedInicio] = useState<{codigo: string, nome: string, uf: string} | null>(null)
   const [selectedTermino, setSelectedTermino] = useState<{codigo: string, nome: string, uf: string} | null>(null)
   const [showInicioResults, setShowInicioResults] = useState(false)
@@ -540,7 +534,6 @@ export default function CTe() {
 
       // Definir o local de início e término se existirem
       if (selectedDocumento.cidade_inicio_ibge && estados) {
-        const estadoInicio = estados.find(e => e.uf === selectedDocumento.uf_inicio);
         setSelectedInicio({
           codigo: selectedDocumento.cidade_inicio_ibge,
           nome: selectedDocumento.cidade_inicio_nome || '',
@@ -549,7 +542,6 @@ export default function CTe() {
         setCidadeInicioNome(selectedDocumento.cidade_inicio_nome || '');
       }
       if (selectedDocumento.cidade_termino_ibge && estados) {
-        const estadoTermino = estados.find(e => e.uf === selectedDocumento.uf_termino);
         setSelectedTermino({
           codigo: selectedDocumento.cidade_termino_ibge,
           nome: selectedDocumento.cidade_termino_nome || '',
@@ -1136,82 +1128,6 @@ export default function CTe() {
     }
   }
 
-  // Função para determinar CFOP baseado nas UFs
-  const determinarCFOP = (ufOrigem: string, ufDestino: string) => {
-    console.log('📋 Determinando CFOP')
-    console.log('- UF Origem:', ufOrigem)
-    console.log('- UF Destino:', ufDestino)
-
-    // Normalizar nomes dos estados para comparação
-    const normalizeUF = (uf: string) => {
-      const ufMap: { [key: string]: string } = {
-        'Minas Gerais': 'MG',
-        'Goiás': 'GO',
-        'São Paulo': 'SP',
-        'Rio de Janeiro': 'RJ',
-        'Bahia': 'BA',
-        'Paraná': 'PR',
-        'Rio Grande do Sul': 'RS',
-        'Pernambuco': 'PE',
-        'Ceará': 'CE',
-        'Pará': 'PA',
-        'Santa Catarina': 'SC',
-        'Maranhão': 'MA',
-        'Paraíba': 'PB',
-        'Espírito Santo': 'ES',
-        'Piauí': 'PI',
-        'Alagoas': 'AL',
-        'Distrito Federal': 'DF',
-        'Mato Grosso do Sul': 'MS',
-        'Mato Grosso': 'MT',
-        'Rio Grande do Norte': 'RN',
-        'Sergipe': 'SE',
-        'Rondônia': 'RO',
-        'Acre': 'AC',
-        'Amazonas': 'AM',
-        'Roraima': 'RR',
-        'Amapá': 'AP',
-        'Tocantins': 'TO'
-      }
-      return ufMap[uf] || uf
-    }
-
-    const ufOrigemNorm = normalizeUF(ufOrigem)
-    const ufDestinoNorm = normalizeUF(ufDestino)
-
-    console.log('- UF Origem normalizada:', ufOrigemNorm)
-    console.log('- UF Destino normalizada:', ufDestinoNorm)
-
-    // Regras específicas implementadas
-    if (ufOrigemNorm === 'MG' && ufDestinoNorm === 'GO') {
-      console.log('✅ Regra MG → GO: CFOP 6352')
-      return '6352'
-    }
-
-    if (ufOrigemNorm === 'GO' && ufDestinoNorm === 'MG') {
-      console.log('✅ Regra GO → MG: CFOP 6932')
-      return '6932'
-    }
-
-    if (ufOrigemNorm === 'MG' && ufDestinoNorm === 'MG') {
-      console.log('✅ Regra MG → MG: CFOP 5352')
-      return '5352'
-    }
-
-    if (ufOrigemNorm === 'GO' && ufDestinoNorm === 'GO') {
-      console.log('✅ Regra GO → GO: CFOP 5932')
-      return '5932'
-    }
-
-    // Para outras UFs, usar regra padrão (dentro do estado = 5352, fora do estado = 6352)
-    if (ufOrigemNorm === ufDestinoNorm) {
-      console.log('📋 Regra padrão dentro do estado: CFOP 5352')
-      return '5352'
-    } else {
-      console.log('📋 Regra padrão fora do estado: CFOP 6352')
-      return '6352'
-    }
-  }
 
   const handleSubmitRapido = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
