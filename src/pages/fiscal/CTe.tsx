@@ -3735,6 +3735,11 @@ export default function CTe() {
                       <p className="mt-1 text-xs text-blue-600">
                         🏢 CNPJ do remetente (extraído): {extrairCNPJDaChave(formRapido.chave_nfe)}
                       </p>
+                    )}
+                    {formRapido.chave_nfe.length === 44 && (
+                      <p className="mt-1 text-xs text-blue-600">
+                        🏢 CNPJ do remetente (extraído): {extrairCNPJDaChave(formRapido.chave_nfe)}
+                      </p>
                     )}</old_str>
             {formRapido.chave_nfe.length === 44 && (
               <p className="mt-1 text-xs text-blue-600">
