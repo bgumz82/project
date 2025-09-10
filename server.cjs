@@ -756,7 +756,21 @@ async function createEnums(client) {
         await client.query(`CREATE TYPE ${enumDef.name} AS ENUM (${enumValues})`);
         console.log(`✅ Enum ${enumDef.name} criado`);
       } else {
-        console.log(`✅ Enum ${enumDef.name} já existe`);
+        // Para o enum tipo_combustivel_veiculo, verificar se 'diesel' existe e adicionar se necessário
+        if (enumDef.name === 'tipo_combustivel_veiculo') {
+          try {
+            await client.query(`ALTER TYPE ${enumDef.name} ADD VALUE 'diesel'`);
+            console.log(`✅ Valor 'diesel' adicionado ao enum ${enumDef.name}`);
+          } catch (addError) {
+            if (addError.message.includes('already exists')) {
+              console.log(`ℹ️ Valor 'diesel' já existe no enum ${enumDef.name}`);
+            } else {
+              console.log(`⚠️ Erro ao adicionar 'diesel' ao enum:`, addError.message);
+            }
+          }
+        } else {
+          console.log(`✅ Enum ${enumDef.name} já existe`);
+        }
       }
     } catch (error) {
       console.log(`⚠️ Erro ao criar enum ${enumDef.name}:`, error.message);
