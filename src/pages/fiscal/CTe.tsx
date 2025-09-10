@@ -3916,36 +3916,28 @@ export default function CTe() {
               </div>
             )}
           </div>
-        </div>
-            {formRapido.chave_nfe.length === 44 && (
-              <p className="mt-1 text-xs text-blue-600">
-                🏢 CNPJ do remetente (extraído): {extrairCNPJDaChave(formRapido.chave_nfe)}
-              </p>
-            )}
-          </div>
-
-          {/* CNPJ Destinatário */}
-          <div>
-            <label htmlFor="rapido_cnpj_destinatario" className="block text-sm font-medium text-gray-700">
-              CNPJ do Destinatário *
-            </label>
-            <input
-              type="text"
-              name="rapido_cnpj_destinatario"
-              id="rapido_cnpj_destinatario"
-              value={formRapido.cnpj_destinatario}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, '')
-                setFormRapido(prev => ({ ...prev, cnpj_destinatario: value }))
-              }}
-              placeholder="Apenas números"
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              Cliente deve estar cadastrado no sistema
-            </p>
-          </div>
+        
+        {/* CNPJ Destinatário */}
+        <div>
+          <label htmlFor="rapido_cnpj_destinatario" className="block text-sm font-medium text-gray-700">
+            CNPJ do Destinatário *
+          </label>
+          <input
+            type="text"
+            name="rapido_cnpj_destinatario"
+            id="rapido_cnpj_destinatario"
+            value={formRapido.cnpj_destinatario}
+            onChange={(e) => {
+              const value = e.target.value.replace(/\D/g, '')
+              setFormRapido(prev => ({ ...prev, cnpj_destinatario: value }))
+            }}
+            placeholder="Apenas números"
+            required
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Cliente deve estar cadastrado no sistema
+          </p>
         </div>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -4132,6 +4124,7 @@ export default function CTe() {
             '🚀 Criar CT-e Rápido'
           )}
         </button>
+      </div>
       </div>
     </form>
   </div>
