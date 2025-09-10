@@ -739,7 +739,7 @@ async function createEnums(client) {
     },
     {
       name: 'tipo_combustivel_veiculo',
-      values: ['diesel_s10', 'diesel_s500', 'gasolina', 'etanol', 'flex']
+      values: ['diesel', 'diesel_s10', 'diesel_s500', 'gasolina', 'etanol', 'flex']
     }
   ];
 
