@@ -2075,7 +2075,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
       // Validar empresa no banco correto do usuário
       const empresaResult = await client.query(
         'SELECT * FROM empresas_fiscais WHERE id = $1',
-        [data.      data.empresa_id]);
+        [data.empresa_id]);
 
       console.log(`📋 [${requestId}] Resultado da query empresa:`, empresaResult.rows.length, 'registros');
 
