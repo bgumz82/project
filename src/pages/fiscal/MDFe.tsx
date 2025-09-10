@@ -599,7 +599,7 @@ export default function MDFe() {
                                 </span>
                               </div>
                               <div className="text-xs text-gray-500 mt-1">
-                                Chave: {formatChaveAcesso(cte.chave_acesso)}
+                                Chave: {cte.chave_acesso ? formatChaveAcesso(cte.chave_acesso) : 'N/A'}
                               </div>
                             </div>
                           </label>
