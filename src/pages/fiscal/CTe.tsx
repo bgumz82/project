@@ -2444,7 +2444,7 @@ export default function CTe() {
                                   ...prev,
                                   cidade_inicio_ibge: cidade.cod_city,
                                   cidade_inicio_nome: cidade.name,
-                                  uf_inicio: cidade.uf
+                                  uf_inicio: cidade.uf || ''
                                 }))
                                 setCidadeInicioNome(cidade.name)
                                 setInicioSearchTerm(cidade.name)
@@ -2515,7 +2515,7 @@ export default function CTe() {
                                   ...prev,
                                   cidade_termino_ibge: cidade.cod_city,
                                   cidade_termino_nome: cidade.name,
-                                  uf_termino: cidade.uf
+                                  uf_termino: cidade.uf || ''
                                 }))
                                 setCidadeTerminoNome(cidade.name)
                                 setTerminoSearchTerm(cidade.name)
