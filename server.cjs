@@ -3119,6 +3119,95 @@ app.get('/uploads/*', (req, res) => {
   res.sendFile(filePath);
 });
 
+// Função para melhorar mensagens de erro do banco de dados
+function improveErrorMessage(error) {
+  const message = error.message || '';
+  
+  // Erro de enum inválido - tipo_combustivel_veiculo
+  if (message.includes('invalid input value for enum tipo_combustivel_veiculo')) {
+    const invalidValue = message.match(/"([^"]+)"/)?.[1] || 'valor fornecido';
+    return {
+      error: 'Tipo de combustível inválido',
+      details: `O tipo de combustível "${invalidValue}" não é válido. Tipos aceitos: diesel, diesel_s10, diesel_s500, gasolina, etanol, flex`,
+      userMessage: `Tipo de combustível "${invalidValue}" inválido. Selecione entre: Diesel, Diesel S10, Diesel S500, Gasolina, Etanol ou Flex.`
+    };
+  }
+  
+  // Erro de chassis duplicado
+  if (message.includes('duplicate key value violates unique constraint "veiculos_chassis_unique"')) {
+    return {
+      error: 'Chassi já cadastrado',
+      details: 'Já existe um veículo cadastrado com este número de chassi',
+      userMessage: 'Este número de chassi já está cadastrado no sistema. Verifique se o veículo já existe ou corrija o número do chassi.'
+    };
+  }
+  
+  // Erro de placa duplicada
+  if (message.includes('duplicate key value violates unique constraint') && message.includes('placa')) {
+    return {
+      error: 'Placa já cadastrada',
+      details: 'Já existe um veículo cadastrado com esta placa',
+      userMessage: 'Esta placa já está cadastrada no sistema. Verifique se o veículo já existe ou corrija a placa.'
+    };
+  }
+  
+  // Erro de CNPJ duplicado
+  if (message.includes('duplicate key value violates unique constraint') && message.includes('cnpj')) {
+    return {
+      error: 'CNPJ já cadastrado',
+      details: 'Já existe um registro com este CNPJ',
+      userMessage: 'Este CNPJ já está cadastrado no sistema. Verifique se o registro já existe ou corrija o CNPJ.'
+    };
+  }
+  
+  // Erro de chave estrangeira
+  if (message.includes('violates foreign key constraint')) {
+    return {
+      error: 'Referência inválida',
+      details: 'O registro referenciado não existe ou foi removido',
+      userMessage: 'Existe uma referência a um registro que não existe mais. Verifique os dados selecionados.'
+    };
+  }
+  
+  // Erro de campo obrigatório
+  if (message.includes('null value in column') && message.includes('violates not-null constraint')) {
+    const column = message.match(/column "([^"]+)"/)?.[1] || 'campo obrigatório';
+    return {
+      error: 'Campo obrigatório não preenchido',
+      details: `O campo "${column}" é obrigatório`,
+      userMessage: `O campo "${column}" é obrigatório e deve ser preenchido.`
+    };
+  }
+  
+  // Retorna erro original se não houver melhoria específica
+  return {
+    error: 'Erro no banco de dados',
+    details: message,
+    userMessage: 'Ocorreu um erro ao processar os dados. Verifique as informações e tente novamente.'
+  };
+}
+
+// Middleware para interceptar erros de banco de dados
+app.use((error, req, res, next) => {
+  if (error && (error.code || (error.message && (
+    error.message.includes('duplicate key') || 
+    error.message.includes('invalid input value for enum') ||
+    error.message.includes('violates') ||
+    error.message.includes('constraint')
+  )))) {
+    const improvedError = improveErrorMessage(error);
+    console.error('❌ Erro de banco melhorado:', improvedError);
+    
+    return res.status(400).json({
+      error: improvedError.error,
+      message: improvedError.userMessage,
+      details: process.env.NODE_ENV === 'development' ? improvedError.details : undefined
+    });
+  }
+  
+  next(error);
+});
+
 // Tratamento de erros global
 app.use((err, req, res, next) => {
   console.error('Erro não tratado:', err);
