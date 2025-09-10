@@ -26,17 +26,6 @@ import {
 } from "@/lib/api/fiscal";
 import toast from "react-hot-toast";
 
-const STATUS_LABELS = {
-  pendente: "Pendente",
-  emitido: "Emitido",
-  cancelado: "Cancelado",
-};
-
-const STATUS_COLORS = {
-  pendente: "bg-yellow-100 text-yellow-800",
-  emitido: "bg-green-100 text-green-800",
-  cancelado: "bg-red-100 text-red-800",
-};
 
 const TIPO_REBOQUE_LABELS = {
   vanderleia: "Vanderléia",
@@ -75,8 +64,6 @@ export default function Frete() {
   const [selectedCidadeDestinoIbge, setSelectedCidadeDestinoIbge] = useState("");
 
   const queryClient = useQueryClient();
-  const origemInputRef = useRef<HTMLInputElement>(null);
-  const destinoInputRef = useRef<HTMLInputElement>(null);
 
   const { data: documentos, isLoading } = useQuery({
     queryKey: ["frete-documentos"],
