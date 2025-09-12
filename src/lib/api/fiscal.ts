@@ -2837,6 +2837,9 @@ export async function getProdutosCTe(): Promise<ProdutoCTe[]> {
   }
 }
 
+// Alias para compatibilidade
+export const getCTeProdutos = getProdutosCTe;
+
 // Função para validar chave de acesso
 export function validarChaveAcesso(chave: string): boolean {
   try {
