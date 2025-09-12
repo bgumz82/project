@@ -104,6 +104,15 @@ export default function CTe() {
   const [filterStatus, setFilterStatus] = useState<'todos' | 'pendente' | 'emitido' | 'cancelado'>('todos')
   const [activeTab, setActiveTab] = useState('dados-cte')
   const [isModalRapidoOpen, setIsModalRapidoOpen] = useState(false)
+  
+  // Estados para paginação
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  
+  // Estados para filtros
+  const [filterMonth, setFilterMonth] = useState('')
+  const [filterYear, setFilterYear] = useState('')
+  const [searchNumber, setSearchNumber] = useState('')
 
   // Estados para pesquisa de cidades
   const [selectedInicio, setSelectedInicio] = useState<{codigo: string, nome: string, uf: string} | null>(null)
@@ -1920,9 +1929,51 @@ export default function CTe() {
     { id: 'observacoes', label: 'Observações' }
   ]
 
-  const filteredDocumentos = filterStatus === 'todos'
-    ? documentos
-    : documentos?.filter(d => d.status === filterStatus)
+  // Aplicar filtros
+  const filteredDocumentos = documentos?.filter(documento => {
+    // Filtro por status
+    if (filterStatus !== 'todos' && documento.status !== filterStatus) {
+      return false
+    }
+    
+    // Filtro por mês e ano
+    if (filterMonth || filterYear) {
+      const dataEmissao = new Date(documento.data_emissao)
+      const mes = (dataEmissao.getMonth() + 1).toString().padStart(2, '0')
+      const ano = dataEmissao.getFullYear().toString()
+      
+      if (filterMonth && mes !== filterMonth) {
+        return false
+      }
+      
+      if (filterYear && ano !== filterYear) {
+        return false
+      }
+    }
+    
+    // Filtro por número do CT-e
+    if (searchNumber) {
+      const numeroLimpo = searchNumber.replace(/\D/g, '')
+      const numeroDocLimpo = documento.numero_cte.replace(/\D/g, '')
+      if (!numeroDocLimpo.includes(numeroLimpo)) {
+        return false
+      }
+    }
+    
+    return true
+  }) || []
+
+  // Aplicar paginação
+  const totalItems = filteredDocumentos.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedDocumentos = filteredDocumentos.slice(startIndex, endIndex)
+
+  // Reset página quando filtros mudam
+  React.useEffect(() => {
+    setCurrentPage(1)
+  }, [filterStatus, filterMonth, filterYear, searchNumber, itemsPerPage])
 
   if (isLoading) {
     return (
@@ -1994,18 +2045,104 @@ export default function CTe() {
 
         {/* Filtros */}
         <div className="mt-6 bg-white shadow rounded-lg p-4">
-          <div className="flex items-center space-x-4">
-            <label className="text-sm font-medium text-gray-700">Filtrar por status:</label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
-              className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            >
-              <option value="todos">Todos</option>
-              <option value="pendente">Pendes</option>
-              <option value="emitido">Emitidos</option>
-              <option value="cancelado">Cancelados</option>
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status:</label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as any)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="todos">Todos</option>
+                <option value="pendente">Pendentes</option>
+                <option value="emitido">Emitidos</option>
+                <option value="cancelado">Cancelados</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mês:</label>
+              <select
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="">Todos</option>
+                <option value="01">Janeiro</option>
+                <option value="02">Fevereiro</option>
+                <option value="03">Março</option>
+                <option value="04">Abril</option>
+                <option value="05">Maio</option>
+                <option value="06">Junho</option>
+                <option value="07">Julho</option>
+                <option value="08">Agosto</option>
+                <option value="09">Setembro</option>
+                <option value="10">Outubro</option>
+                <option value="11">Novembro</option>
+                <option value="12">Dezembro</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ano:</label>
+              <select
+                value={filterYear}
+                onChange={(e) => setFilterYear(e.target.value)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="">Todos</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+                <option value="2022">2022</option>
+                <option value="2021">2021</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Número CT-e:</label>
+              <input
+                type="text"
+                value={searchNumber}
+                onChange={(e) => setSearchNumber(e.target.value)}
+                placeholder="Digite o número..."
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Registros por página:</label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Informações dos filtros aplicados */}
+          <div className="mt-3 flex items-center justify-between text-sm text-gray-600">
+            <div>
+              Mostrando {startIndex + 1} a {Math.min(endIndex, totalItems)} de {totalItems} registros
+            </div>
+            {(filterStatus !== 'todos' || filterMonth || filterYear || searchNumber) && (
+              <button
+                onClick={() => {
+                  setFilterStatus('todos')
+                  setFilterMonth('')
+                  setFilterYear('')
+                  setSearchNumber('')
+                }}
+                className="text-indigo-600 hover:text-indigo-900 font-medium"
+              >
+                Limpar filtros
+              </button>
+            )}
           </div>
         </div>
 
@@ -2040,7 +2177,7 @@ export default function CTe() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {filteredDocumentos?.map((documento) => (
+                    {paginatedDocumentos?.map((documento) => (
                       <tr key={documento.id}>
                         <td className="px-2 py-4 text-sm">
                           <div className="font-mono font-medium text-gray-900">
@@ -2198,6 +2335,75 @@ export default function CTe() {
             </div>
           </div>
         </div>
+
+        {/* Paginação */}
+        {totalPages > 1 && (
+          <div className="mt-6 bg-white shadow rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                Página {currentPage} de {totalPages}
+              </div>
+              
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Primeira
+                </button>
+                
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Anterior
+                </button>
+
+                {/* Números das páginas */}
+                <div className="flex space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const startPage = Math.max(1, currentPage - 2)
+                    const pageNumber = startPage + i
+                    
+                    if (pageNumber > totalPages) return null
+                    
+                    return (
+                      <button
+                        key={pageNumber}
+                        onClick={() => setCurrentPage(pageNumber)}
+                        className={`px-3 py-1 text-sm border rounded ${
+                          currentPage === pageNumber
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Próxima
+                </button>
+                
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Última
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal de Cadastro/Edição */}
