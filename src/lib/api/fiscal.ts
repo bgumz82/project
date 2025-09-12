@@ -2840,6 +2840,26 @@ export async function getProdutosCTe(): Promise<ProdutoCTe[]> {
 // Alias para compatibilidade
 export const getCTeProdutos = getProdutosCTe;
 
+// Função para obter clientes (cadastros tipo cliente)
+export async function getCadastrosClientes() {
+  try {
+    console.log("🔍 Buscando clientes cadastrados");
+
+    const result = await query(`
+      SELECT id, razao_social, cidade, estado, cep
+      FROM cadastros 
+      WHERE tipo = 'cliente' AND ativo = true
+      ORDER BY razao_social
+    `);
+
+    console.log("✅ Clientes encontrados:", result.length);
+    return result;
+  } catch (error) {
+    console.error("❌ Erro ao buscar clientes:", error);
+    throw error;
+  }
+}
+
 // Função para validar chave de acesso
 export function validarChaveAcesso(chave: string): boolean {
   try {
