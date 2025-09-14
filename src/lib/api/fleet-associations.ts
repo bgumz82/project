@@ -220,7 +220,7 @@ export async function getMotoristasPorVeiculo(): Promise<any[]> {
         f.validade_cnh,
         f.status
       FROM funcionarios f
-      WHERE f.funcao = 'motorista' 
+      WHERE f.funcao IN ('motorista', 'motorista_carreta', 'motorista_julieta') 
       AND f.status = 'ativo'
       AND f.cnh IS NOT NULL
       ORDER BY f.nome

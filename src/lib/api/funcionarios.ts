@@ -10,10 +10,10 @@ export interface Funcionario {
   data_nascimento: string
   telefone: string | null
   foto_url: string | null
-  funcao: 'administrativo' | 'motorista' | 'gerente'
+  funcao: 'administrativo' | 'motorista' | 'gerente' | 'motorista_carreta' | 'motorista_julieta'
   cnh: string | null
   validade_cnh: string | null
-  status: 'ativo' | 'inativo' | 'ferias'
+  status: 'ativo' | 'inativo' | 'ferias' | 'aguardando'
   ativo: boolean
   created_at: string
   updated_at: string
@@ -27,10 +27,10 @@ export interface FuncionarioCreate {
   data_admissao: string
   data_nascimento: string
   telefone?: string | null
-  funcao: 'administrativo' | 'motorista' | 'gerente'
+  funcao: 'administrativo' | 'motorista' | 'gerente' | 'motorista_carreta' | 'motorista_julieta'
   cnh?: string | null
   validade_cnh?: string | null
-  status?: 'ativo' | 'inativo' | 'ferias'
+  status?: 'ativo' | 'inativo' | 'ferias' | 'aguardando'
   ativo?: boolean
 }
 

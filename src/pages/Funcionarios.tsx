@@ -255,6 +255,8 @@ export default function Funcionarios() {
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           {funcionario.funcao === 'administrativo' && 'Administrativo'}
                           {funcionario.funcao === 'motorista' && 'Motorista'}
+                          {funcionario.funcao === 'motorista_carreta' && 'Motorista Carreta'}
+                          {funcionario.funcao === 'motorista_julieta' && 'Motorista Julieta'}
                           {funcionario.funcao === 'gerente' && 'Gerente'}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
@@ -274,11 +276,14 @@ export default function Funcionarios() {
                               ? 'bg-green-100 text-green-800'
                               : funcionario.status === 'ferias'
                               ? 'bg-yellow-100 text-yellow-800'
+                              : funcionario.status === 'aguardando'
+                              ? 'bg-blue-100 text-blue-800'
                               : 'bg-red-100 text-red-800'
                           }`}>
                             {funcionario.status === 'ativo' && 'Ativo'}
                             {funcionario.status === 'inativo' && 'Inativo'}
                             {funcionario.status === 'ferias' && 'Férias'}
+                            {funcionario.status === 'aguardando' && 'Aguardando'}
                           </span>
                         </td>
                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
@@ -475,6 +480,8 @@ export default function Funcionarios() {
                       >
                         <option value="administrativo">Administrativo</option>
                         <option value="motorista">Motorista</option>
+                        <option value="motorista_carreta">Motorista Carreta</option>
+                        <option value="motorista_julieta">Motorista Julieta</option>
                         <option value="gerente">Gerente</option>
                       </select>
                     </div>
@@ -507,6 +514,7 @@ export default function Funcionarios() {
                         <option value="ativo">Ativo</option>
                         <option value="inativo">Inativo</option>
                         <option value="ferias">Férias</option>
+                        <option value="aguardando">Aguardando</option>
                       </select>
                     </div>
                   </div>
