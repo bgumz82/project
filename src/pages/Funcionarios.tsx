@@ -12,6 +12,7 @@ import {
 import { QRCodeSVG } from 'qrcode.react'
 import { getFuncionarios, createFuncionario, updateFuncionario, deleteFuncionario } from '@/lib/api/funcionarios'
 import type { Funcionario, CreateFuncionarioParams, UpdateFuncionarioParams } from '@/lib/api/funcionarios'
+import { useAuth } from '@/contexts/AuthContext'
 import fundocracha from '@/pages/images/fundo_cracha.jpg'
 
 // Dimensões originais do crachá
@@ -22,6 +23,7 @@ const CRACHA_ORIGINAL_HEIGHT = 1016
 const CRACHA_DISPLAY_WIDTH = 383 // Metade do tamanho original
 
 export default function Funcionarios() {
+  const { user } = useAuth()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCrachaModalOpen, setIsCrachaModalOpen] = useState(false)
   const [selectedFuncionario, setSelectedFuncionario] = useState<Funcionario | null>(null)
@@ -222,6 +224,9 @@ export default function Funcionarios() {
   // Calcular escala para o crachá
   const scale = CRACHA_DISPLAY_WIDTH / CRACHA_ORIGINAL_WIDTH
   const displayHeight = CRACHA_ORIGINAL_HEIGHT * scale
+
+  // Usar imagem do crachá do usuário logado ou fallback para imagem padrão
+  const crachaBackgroundImage = user?.cracha_image_url || fundocracha
 
   return (
     <div className="py-6">
@@ -788,7 +793,7 @@ export default function Funcionarios() {
               >
                 {/* Imagem de fundo */}
                 <img 
-                  src={fundocracha}
+                  src={crachaBackgroundImage}
                   alt="Background"
                   className="absolute inset-0 w-full h-full object-cover"
                 />
