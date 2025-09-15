@@ -1,0 +1,59 @@
+Warning: React has detected a change in the order of Hooks called by Funcionarios. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://reactjs.org/link/rules-of-hooks
+
+   Previous render            Next render
+   ------------------------------------------------------
+1. useState                   useState
+2. useState                   useState
+3. useState                   useState
+4. useState                   useState
+5. useState                   useState
+6. useState                   useState
+7. useState                   useState
+8. useState                   useState
+9. useContext                 useContext
+10. useContext                useContext
+11. useContext                useContext
+12. useContext                useContext
+13. useEffect                 useEffect
+14. useState                  useState
+15. useCallback               useCallback
+16. useSyncExternalStore      useSyncExternalStore
+17. useEffect                 useEffect
+18. useContext                useContext
+19. useState                  useState
+20. useEffect                 useEffect
+21. useCallback               useCallback
+22. useSyncExternalStore      useSyncExternalStore
+23. useCallback               useCallback
+24. useContext                useContext
+25. useState                  useState
+26. useEffect                 useEffect
+27. useCallback               useCallback
+28. useSyncExternalStore      useSyncExternalStore
+29. useCallback               useCallback
+30. useContext                useContext
+31. useState                  useState
+32. useEffect                 useEffect
+33. useCallback               useCallback
+34. useSyncExternalStore      useSyncExternalStore
+35. useCallback               useCallback
+36. undefined                 useEffect
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    at Funcionarios (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/src/pages/Funcionarios.tsx:36:41)
+    at ProtectedRoute (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/src/routes.tsx:52:3)
+    at RenderedRoute (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=1e37af71:4103:5)
+    at Outlet (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=1e37af71:4510:26)
+    at main
+    at div
+    at div
+    at Layout
+    at RenderedRoute (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=1e37af71:4103:5)
+    at Routes (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=1e37af71:4574:5)
+    at AppRoutes (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/src/routes.tsx:139:32)
+    at Router (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=1e37af71:4517:15)
+    at BrowserRouter (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=1e37af71:5266:5)
+    at PermissionsProvider (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/src/contexts/PermissionsContext.tsx:40:39)
+    at AuthProvider (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/src/contexts/AuthContext.tsx:24:32)
+    at QueryClientProvider (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=1e37af71:2951:3)
+    at App
