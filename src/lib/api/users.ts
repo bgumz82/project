@@ -18,51 +18,58 @@ export interface User {
 
 export async function getUsers() {
   try {
-    console.log('🔍 Buscando usuários...')
+    console.log('🔍 Buscando usuários via endpoint dedicado...')
     
-    // Query mais simples e robusta
-    const result = await query(`
-      SELECT 
-        id,
-        email,
-        nome,
-        tipo,
-        database_config_id,
-        cracha_image_url,
-        ativo,
-        created_at,
-        updated_at
-      FROM usuarios
-      WHERE ativo = true
-      ORDER BY created_at DESC
-    `, [], true) // Usar banco principal
+    const response = await fetch('/api/users', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+      throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
+    }
+
+    const users = await response.json();
+    console.log('✅ Usuários carregados via endpoint dedicado:', users.length);
     
-    console.log('✅ Usuários encontrados:', result.length)
-    
-    // Mapear resultado para incluir database_config_nome como null
-    const usersWithConfig = result.map(user => ({
-      ...user,
-      database_config_nome: null // Por enquanto, deixar como null
-    }))
-    
-    return usersWithConfig
+    return users;
     
   } catch (error: any) {
-    console.error('❌ Erro ao buscar usuários:', error)
-    console.error('❌ Stack trace:', error.stack)
-    console.error('❌ Response data:', error.response?.data)
+    console.error('❌ Erro ao buscar usuários via endpoint dedicado:', error);
     
-    // Tentar uma query ainda mais simples como fallback
+    // Fallback para método antigo
     try {
-      console.log('🔄 Tentando query simplificada...')
-      const fallbackResult = await query(`SELECT COUNT(*) as total FROM usuarios`, [], true)
-      console.log('✅ Conexão com banco OK, total usuários:', fallbackResult[0]?.total)
+      console.log('🔄 Tentando método de fallback...');
       
-      // Se chegou aqui, o problema é na query específica
-      throw new Error(`Query específica falhou: ${error.message}`)
+      const result = await query(`
+        SELECT 
+          id,
+          email,
+          nome,
+          tipo,
+          database_config_id,
+          cracha_image_url,
+          ativo,
+          created_at,
+          updated_at
+        FROM usuarios
+        ORDER BY created_at DESC
+      `, [], true);
+      
+      console.log('✅ Fallback funcionou, usuários encontrados:', result.length);
+      
+      return result.map(user => ({
+        ...user,
+        database_config_nome: null // Simplificado para evitar erros
+      }));
+      
     } catch (fallbackError: any) {
-      console.error('❌ Erro na query de fallback:', fallbackError)
-      throw new Error(`Erro de conexão com banco de dados: ${fallbackError.message}`)
+      console.error('❌ Erro no fallback:', fallbackError);
+      throw new Error(`Erro ao buscar usuários: ${fallbackError.message}`);
     }
   }
 }

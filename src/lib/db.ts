@@ -1,13 +1,12 @@
 import axios from 'axios'
 
 // Helper function for queries
-export async function query<T = any>(text: string, params?: any[], useMainDatabase?: boolean): Promise<T[]> {
+export async function query<T = any>(text: string, params: any[] = [], useMainDb: boolean = false): Promise<any[]> {
   try {
+    const endpoint = useMainDb ? '/api/db/query-main' : '/api/db/query'
     console.log('🔍 Executando query:', text)
     console.log('📋 Parâmetros:', params)
-    
-    const endpoint = useMainDatabase ? '/api/db/query-main' : '/api/db/query';
-    
+
     const response = await axios.post(endpoint, {
       query: text,
       params
@@ -17,27 +16,42 @@ export async function query<T = any>(text: string, params?: any[], useMainDataba
         'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
       }
     })
-    
+
     console.log('✅ Query response:', response.data)
-    console.log('📊 Query rows:', response.data.rows || response.data)
-    
-    // Verificar se a resposta tem o formato correto
-    if (response.data && Array.isArray(response.data)) {
-      return response.data
-    } else if (response.data && response.data.rows && Array.isArray(response.data.rows)) {
-      return response.data.rows
-    } else {
-      console.warn('⚠️ Formato de resposta inesperado:', response.data)
-      return []
+
+    // Verificar se a resposta tem a estrutura esperada
+    if (!response.data || typeof response.data.rows === 'undefined') {
+      console.error('❌ Resposta do servidor não tem estrutura esperada:', response.data)
+      throw new Error('Resposta inválida do servidor')
     }
+
+    console.log('📊 Query rows:', response.data.rows)
+
+    return response.data.rows || []
   } catch (error: any) {
-    console.error('❌ Erro na consulta ao banco de dados:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      url: error.config?.url
-    })
-    throw error
+    console.error('❌ Erro na consulta ao banco de dados:', error)
+
+    // Log mais detalhado do erro
+    if (error.response) {
+      console.error('❌ Status:', error.response.status)
+      console.error('❌ Response data:', error.response.data)
+      console.error('❌ Response headers:', error.response.headers)
+    } else if (error.request) {
+      console.error('❌ Request error:', error.request)
+    } else {
+      console.error('❌ Error message:', error.message)
+    }
+
+    // Re-throw com mensagem mais clara
+    if (error.response?.status === 500) {
+      throw new Error(`Erro interno do servidor: ${error.response.data?.details || error.message}`)
+    } else if (error.response?.status === 404) {
+      throw new Error('Endpoint não encontrado')
+    } else if (error.response?.status >= 400) {
+      throw new Error(`Erro do cliente (${error.response.status}): ${error.response.data?.error || error.message}`)
+    } else {
+      throw new Error(`Erro de conexão: ${error.message}`)
+    }
   }
 }
 

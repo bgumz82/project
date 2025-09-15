@@ -2083,6 +2083,75 @@ app.post('/api/db/query', authenticateToken, async (req, res) => {
   }
 });
 
+// Rota específica para buscar usuários
+app.get('/api/users', authenticateToken, async (req, res) => {
+  console.log('📡 Recebida requisição para buscar usuários do usuário:', req.user.email);
+
+  let client;
+
+  try {
+    // SEMPRE usar o pool principal para usuários e permissões
+    client = await mainPool.connect();
+
+    console.log('🔍 Buscando usuários no banco principal');
+
+    const result = await client.query(`
+      SELECT 
+        id,
+        email,
+        nome,
+        tipo,
+        database_config_id,
+        cracha_image_url,
+        ativo,
+        created_at,
+        updated_at
+      FROM usuarios
+      ORDER BY created_at DESC
+    `);
+
+    console.log('✅ Usuários encontrados:', result.rows.length);
+
+    // Buscar configurações de banco separadamente
+    let databaseConfigs = [];
+    try {
+      const configResult = await client.query(`
+        SELECT id, nome_empresa
+        FROM database_configurations
+        WHERE ativo = true
+      `);
+      databaseConfigs = configResult.rows;
+      console.log('✅ Configurações de banco encontradas:', databaseConfigs.length);
+    } catch (configError) {
+      console.warn('⚠️ Erro ao buscar configurações de banco:', configError.message);
+    }
+
+    // Mapear resultado incluindo nome da configuração quando disponível
+    const usersWithConfig = result.rows.map(user => {
+      const config = databaseConfigs.find(c => c.id === user.database_config_id);
+      return {
+        ...user,
+        database_config_nome: config?.nome_empresa || null
+      };
+    });
+
+    res.json(usersWithConfig);
+
+  } catch (error) {
+    console.error('❌ Erro ao buscar usuários:', error.message);
+    console.error('❌ Stack trace:', error.stack);
+    
+    res.status(500).json({
+      error: 'Erro ao buscar usuários',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
 // Rota específica para queries no banco principal (usuários e permissões)
 app.post('/api/db/query-main', authenticateToken, async (req, res) => {
   console.log('📡 Recebida requisição de query para banco PRINCIPAL do usuário:', req.user.email);
@@ -2112,6 +2181,7 @@ app.post('/api/db/query-main', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Erro na query do banco principal:', error.message);
+    console.error('❌ Stack trace completo:', error.stack);
     res.status(500).json({
       error: 'Erro ao executar query no banco principal',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
