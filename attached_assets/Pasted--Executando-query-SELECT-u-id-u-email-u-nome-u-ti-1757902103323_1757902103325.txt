@@ -1,0 +1,43 @@
+🔍 Executando query: 
+      SELECT 
+        u.id,
+        u.email,
+        u.nome,
+        u.tipo,
+        u.database_config_id,
+        u.cracha_image_url,
+        u.ativo,
+        u.created_at,
+        u.updated_at,
+        dc.nome_empresa as database_config_nome
+      FROM usuarios u
+      LEFT JOIN database_configurations dc ON u.database_config_id = dc.id
+      ORDER BY u.created_at DESC
+    
+📋 Parâmetros: 
+Array []
+❌ Erro na consulta ao banco de dados: 
+Object {message: "Request failed with status code 500", status: 500, data: {…}, url: "/api/db/query-main"}
+data: Object
+message: "Request failed with status code 500"
+status: 500
+url: "/api/db/query-main"
+[[Prototype]]: Object
+
+at t.value (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+❌ Erro ao buscar usuários: 
+AxiosError {message: "Request failed with status code 500", name: "AxiosError", code: "ERR_BAD_RESPONSE", config: {…}, request: XMLHttpRequest, …}
+code: "ERR_BAD_RESPONSE"
+config: Object
+message: "Request failed with status code 500"
+name: "AxiosError"
+request: XMLHttpRequest
+response: Object
+status: 500
+stack: "AxiosError: Request failed with status code 500↵ at settle (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/node_modules/.vite/deps/axios.js?v=1e37af71:1264:12)↵ at XMLHttpRequest.onloadend (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/node_modules/.vite/deps/axios.js?v=1e37af71:1596:7)↵ at Axios.request (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/node_modules/.vite/deps/axios.js?v=1e37af71:2154:41)↵ at async query (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/src/lib/db.ts:7:22)↵ at async getUsers (https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/src/lib/api/users.ts:8:20)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
