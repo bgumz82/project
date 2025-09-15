@@ -85,6 +85,39 @@ export default defineConfig({
           });
         },
       },
+      "/api/users": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        secure: false,
+        timeout: 30000,
+        configure: (proxy, options) => {
+          proxy.on("proxyReq", (proxyReq, req, res) => {
+            console.log("🔥 Redirecionando Users para localhost:", req.url);
+          });
+        },
+      },
+      "/api/auth": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        secure: false,
+        timeout: 30000,
+        configure: (proxy, options) => {
+          proxy.on("proxyReq", (proxyReq, req, res) => {
+            console.log("🔥 Redirecionando Auth para localhost:", req.url);
+          });
+        },
+      },
+      "/api/db": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        secure: false,
+        timeout: 30000,
+        configure: (proxy, options) => {
+          proxy.on("proxyReq", (proxyReq, req, res) => {
+            console.log("🔥 Redirecionando DB para localhost:", req.url);
+          });
+        },
+      },
       "/api": {
         target: "https://sistema.systemtruck.com.br",
         changeOrigin: true,
