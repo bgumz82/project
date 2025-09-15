@@ -95,12 +95,38 @@ export async function createUser(userData: {
     // Create user through the backend API - this handles both auth and usuarios table
     const user = await signUp(userData.email, userData.password, userData.nome, userData.tipo)
     
-    // TODO: Implementar upload de imagem futuramente
+    let updatedUser = user;
+    
+    // Se há imagem do crachá, fazer upload separadamente
     if (crachaImage && user.id) {
-      console.warn('⚠️ Upload de imagem temporariamente desabilitado');
+      console.log('🖼️ Fazendo upload da imagem do crachá para novo usuário...');
+      
+      const formData = new FormData();
+      formData.append('crachaImage', crachaImage);
+      
+      const uploadResponse = await fetch(`/api/users/${user.id}/upload-cracha`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: formData
+      });
+
+      if (!uploadResponse.ok) {
+        const uploadError = await uploadResponse.json().catch(() => ({ error: 'Erro no upload' }));
+        console.error('❌ Erro no upload da imagem:', uploadError);
+        // Não vamos falhar a criação do usuário por causa do upload
+        console.warn('⚠️ Usuário criado, mas erro no upload da imagem');
+      } else {
+        const uploadResult = await uploadResponse.json();
+        console.log('✅ Imagem do crachá enviada com sucesso:', uploadResult.cracha_image_url);
+        
+        // Atualizar o objeto do usuário com a nova URL da imagem
+        updatedUser.cracha_image_url = uploadResult.cracha_image_url;
+      }
     }
     
-    return user
+    return updatedUser;
   } catch (error) {
     console.error('Error in createUser:', error)
     throw error
@@ -112,12 +138,7 @@ export async function updateUser(id: string, userData: Partial<User>, crachaImag
     console.log('🔄 Atualizando usuário via API:', id);
     console.log('📝 Dados para atualização:', userData);
     
-    // TODO: Implementar upload de imagem futuramente
-    if (crachaImage) {
-      console.warn('⚠️ Upload de imagem temporariamente desabilitado');
-    }
-    
-    // Use dedicated endpoint for user updates
+    // Primeiro, atualizar os dados do usuário
     const response = await fetch(`/api/users/${id}`, {
       method: 'PUT',
       headers: {
@@ -136,7 +157,37 @@ export async function updateUser(id: string, userData: Partial<User>, crachaImag
     const result = await response.json();
     console.log('✅ Usuário atualizado com sucesso via API:', result.user);
     
-    return result.user;
+    let updatedUser = result.user;
+    
+    // Se há imagem do crachá, fazer upload separadamente
+    if (crachaImage) {
+      console.log('🖼️ Fazendo upload da imagem do crachá...');
+      
+      const formData = new FormData();
+      formData.append('crachaImage', crachaImage);
+      
+      const uploadResponse = await fetch(`/api/users/${id}/upload-cracha`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: formData
+      });
+
+      if (!uploadResponse.ok) {
+        const uploadError = await uploadResponse.json().catch(() => ({ error: 'Erro no upload' }));
+        console.error('❌ Erro no upload da imagem:', uploadError);
+        throw new Error(uploadError.error || 'Erro ao fazer upload da imagem');
+      }
+
+      const uploadResult = await uploadResponse.json();
+      console.log('✅ Imagem do crachá enviada com sucesso:', uploadResult.cracha_image_url);
+      
+      // Atualizar o objeto do usuário com a nova URL da imagem
+      updatedUser.cracha_image_url = uploadResult.cracha_image_url;
+    }
+    
+    return updatedUser;
   } catch (error: any) {
     console.error('❌ Error in updateUser:', error);
     

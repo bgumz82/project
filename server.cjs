@@ -11,6 +11,8 @@ const xml2js = require('xml2js');
 const { Client } = require('pg');
 const fs = require('fs').promises;
 const pathLib = require('path');
+const multer = require('multer');
+const fsSync = require('fs');
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -81,6 +83,38 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
 // Middleware específico para imagens de crachá
 app.use('/uploads/cracha', express.static(path.join(__dirname, 'uploads', 'cracha')))
+
+// Configuração do multer para upload de imagens
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadPath = path.join(__dirname, 'uploads', 'cracha');
+    if (!fsSync.existsSync(uploadPath)) {
+      fsSync.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    // Gerar nome único baseado no timestamp e nome original
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const fileExtension = path.extname(file.originalname) || '.jpg';
+    cb(null, 'cracha-' + uniqueSuffix + fileExtension);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB máximo
+  },
+  fileFilter: function (req, file, cb) {
+    // Aceitar apenas imagens
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos de imagem são permitidos'));
+    }
+  }
+});
 
 // Middleware para verificar JWT
 const authenticateToken = (req, res, next) => {
@@ -587,6 +621,111 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
 
     res.status(500).json({
       error: 'Erro ao atualizar usuário',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
+// Rota para upload de imagem do crachá
+app.post('/api/users/:id/upload-cracha', authenticateToken, upload.single('crachaImage'), async (req, res) => {
+  const { id } = req.params;
+  let client;
+
+  try {
+    console.log('🖼️ Upload de imagem do crachá para usuário:', id);
+    console.log('👤 Upload solicitado por:', req.user.email);
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'Nenhuma imagem foi enviada' });
+    }
+
+    console.log('📁 Arquivo recebido:', req.file.filename);
+
+    // SEMPRE usar o pool principal para usuários
+    client = await mainPool.connect();
+
+    // Verificar se o usuário existe e obter dados atuais
+    const userExists = await client.query('SELECT id, nome, cracha_image_url FROM usuarios WHERE id = $1', [id]);
+    
+    if (userExists.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    const targetUser = userExists.rows[0];
+
+    // VERIFICAÇÃO DE AUTORIZAÇÃO: Apenas admin ou o próprio usuário pode fazer upload
+    const isAdmin = req.user.tipo === 'admin';
+    const isOwnUser = req.user.id === id;
+    
+    if (!isAdmin && !isOwnUser) {
+      console.log('❌ Tentativa de upload não autorizada:', {
+        solicitante: req.user.email,
+        alvo: targetUser.nome,
+        tipoSolicitante: req.user.tipo
+      });
+      
+      // Deletar arquivo enviado já que não será usado
+      try {
+        await fs.unlink(req.file.path);
+      } catch (unlinkError) {
+        console.error('Erro ao remover arquivo não autorizado:', unlinkError);
+      }
+      
+      return res.status(403).json({ error: 'Acesso negado: Você só pode atualizar sua própria imagem ou precisa ser administrador' });
+    }
+
+    // URL da imagem para armazenar no banco
+    const imageUrl = `/uploads/cracha/${req.file.filename}`;
+    
+    // Se existe uma imagem anterior, deletar o arquivo físico
+    if (targetUser.cracha_image_url) {
+      const oldImagePath = path.join(__dirname, targetUser.cracha_image_url);
+      try {
+        await fs.unlink(oldImagePath);
+        console.log('🗑️ Imagem anterior removida:', targetUser.cracha_image_url);
+      } catch (unlinkError) {
+        console.warn('⚠️ Não foi possível remover imagem anterior:', unlinkError.message);
+        // Não falha a operação por isso
+      }
+    }
+
+    // Atualizar o campo cracha_image_url no banco de dados
+    const result = await client.query(
+      'UPDATE usuarios SET cracha_image_url = $1, updated_at = NOW() WHERE id = $2 RETURNING cracha_image_url',
+      [imageUrl, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(500).json({ error: 'Erro ao atualizar URL da imagem no banco' });
+    }
+
+    console.log('✅ Imagem do crachá salva:', imageUrl);
+    console.log('📝 Operação autorizada por:', req.user.email, `(${req.user.tipo})`);
+
+    res.json({
+      message: 'Imagem do crachá atualizada com sucesso',
+      cracha_image_url: imageUrl
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao fazer upload da imagem:', error);
+    
+    // Se houve erro, tentar deletar o arquivo para não deixar "lixo"
+    if (req.file && req.file.path) {
+      try {
+        await fs.unlink(req.file.path);
+        console.log('🗑️ Arquivo temporário removido após erro');
+      } catch (unlinkError) {
+        console.error('Erro ao remover arquivo temporário:', unlinkError);
+      }
+    }
+
+    res.status(500).json({
+      error: 'Erro ao fazer upload da imagem',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   } finally {
