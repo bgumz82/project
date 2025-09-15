@@ -1309,6 +1309,7 @@ async function createTables(client) {
         CREATE TABLE IF NOT EXISTS database_configurations (
           id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
           nome_empresa varchar(255) NOT NULL,
+          codigo_empresa varchar(10),
           host varchar(255) NOT NULL,
           port integer NOT NULL DEFAULT 5432,
           database_name varchar(255) NOT NULL,

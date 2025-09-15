@@ -20,22 +20,44 @@ export async function getUsers() {
   try {
     console.log('🔍 Buscando usuários...')
     
-    const result = await query(`
-      SELECT 
-        u.id,
-        u.email,
-        u.nome,
-        u.tipo,
-        u.database_config_id,
-        u.cracha_image_url,
-        u.ativo,
-        u.created_at,
-        u.updated_at,
-        dc.nome_empresa as database_config_nome
-      FROM usuarios u
-      LEFT JOIN database_configurations dc ON u.database_config_id = dc.id
-      ORDER BY u.created_at DESC
-    `, [], true) // Usar banco principal
+    // Primeiro tentar com JOIN, se falhar, buscar só os usuários
+    let result;
+    try {
+      result = await query(`
+        SELECT 
+          u.id,
+          u.email,
+          u.nome,
+          u.tipo,
+          u.database_config_id,
+          u.cracha_image_url,
+          u.ativo,
+          u.created_at,
+          u.updated_at,
+          dc.nome_empresa as database_config_nome
+        FROM usuarios u
+        LEFT JOIN database_configurations dc ON u.database_config_id = dc.id
+        ORDER BY u.created_at DESC
+      `, [], true) // Usar banco principal
+    } catch (joinError) {
+      console.log('⚠️ Erro no JOIN, buscando apenas usuários:', joinError.message)
+      // Fallback: buscar apenas usuários sem o JOIN
+      result = await query(`
+        SELECT 
+          u.id,
+          u.email,
+          u.nome,
+          u.tipo,
+          u.database_config_id,
+          u.cracha_image_url,
+          u.ativo,
+          u.created_at,
+          u.updated_at,
+          NULL as database_config_nome
+        FROM usuarios u
+        ORDER BY u.created_at DESC
+      `, [], true) // Usar banco principal
+    }
     
     console.log('✅ Usuários encontrados:', result.length)
     return result
