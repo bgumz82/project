@@ -1634,7 +1634,7 @@ async function createFunctionsAndTriggers(client) {
   try {
     // Função para permissões
     await client.query(`
-      CREATE OR REPLACE FUNCTION create_user_permissions_complete(user_id_param uuid, user_type_param text)
+      CREATE OR REPLACE FUNCTION create_default_permissions(user_id_param uuid, user_type_param text)
       RETURNS INTEGER AS $$
       DECLARE
         permission_count INTEGER := 0;
@@ -1700,7 +1700,7 @@ async function createFunctionsAndTriggers(client) {
       DECLARE
         result INTEGER;
       BEGIN
-        SELECT create_user_permissions_complete(NEW.id, NEW.tipo) INTO result;
+        SELECT create_default_permissions(NEW.id, NEW.tipo) INTO result;
         RETURN NEW;
       END;
       $$ LANGUAGE plpgsql SECURITY DEFINER;
