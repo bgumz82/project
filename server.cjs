@@ -483,7 +483,7 @@ app.post('/api/auth/signup', async (req, res) => {
     // Criar usuário - deixar os triggers do banco gerenciarem as permissões
     const result = await pool.query(`
       INSERT INTO usuarios (email, nome, tipo, senha, ativo, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, true, NOW(), NOW())
+      VALUES ($1, $2, $3::tipo_usuario, $4, true, NOW(), NOW())
       RETURNING id, email, nome, tipo, created_at
     `, [email, nome, tipo, hashedPassword]);
 
@@ -1693,14 +1693,14 @@ async function createFunctionsAndTriggers(client) {
     `);
     console.log('✅ Função de permissões criada');
 
-    // Função para trigger
+    // Função para trigger - usando tipo text em vez do enum
     await client.query(`
       CREATE OR REPLACE FUNCTION trigger_setup_user_permissions()
       RETURNS TRIGGER AS $$
       DECLARE
         result INTEGER;
       BEGIN
-        SELECT create_default_permissions(NEW.id, NEW.tipo) INTO result;
+        SELECT create_default_permissions(NEW.id, NEW.tipo::text) INTO result;
         RETURN NEW;
       END;
       $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -1725,12 +1725,22 @@ async function insertInitialData(client) {
   const validHash = '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
 
   try {
-    await client.query(`
+    const adminResult = await client.query(`
       INSERT INTO usuarios (id, email, nome, tipo, senha, ativo, created_at, updated_at)
-      VALUES (gen_random_uuid(), 'admin@empresa.com', 'Administrador', 'admin', $1, true, NOW(), NOW())
+      VALUES (gen_random_uuid(), 'admin@empresa.com', 'Administrador', 'admin'::tipo_usuario, $1, true, NOW(), NOW())
       ON CONFLICT (email) DO NOTHING
+      RETURNING id, tipo
     `, [validHash]);
-    console.log('✅ Usuário admin criado');
+    
+    if (adminResult.rows.length > 0) {
+      // Criar permissões para o admin
+      await client.query(`
+        SELECT create_default_permissions($1, $2)
+      `, [adminResult.rows[0].id, adminResult.rows[0].tipo]);
+      console.log('✅ Usuário admin criado com permissões');
+    } else {
+      console.log('✅ Usuário admin já existe');
+    }
   } catch (error) {
     console.log('⚠️ Erro ao criar usuário admin:', error.message);
   }
