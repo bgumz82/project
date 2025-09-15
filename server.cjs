@@ -455,6 +455,147 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// Rota para atualizar usuário - NOVA IMPLEMENTAÇÃO
+app.put('/api/users/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const userData = req.body;
+
+  let client;
+
+  try {
+    console.log('🔄 Atualizando usuário:', id);
+    console.log('📝 Dados recebidos:', JSON.stringify(userData, null, 2));
+
+    // SEMPRE usar o pool principal para usuários
+    client = await mainPool.connect();
+
+    // Verificar se o usuário existe
+    const userExists = await client.query('SELECT id, email FROM usuarios WHERE id = $1', [id]);
+    
+    if (userExists.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    console.log('✅ Usuário encontrado:', userExists.rows[0].email);
+
+    // Verificar se email já está em uso por outro usuário
+    if (userData.email) {
+      const emailCheck = await client.query(
+        'SELECT id FROM usuarios WHERE email = $1 AND id != $2',
+        [userData.email, id]
+      );
+
+      if (emailCheck.rows.length > 0) {
+        console.log('❌ Email já em uso por outro usuário');
+        return res.status(409).json({ error: 'Email já cadastrado' });
+      }
+    }
+
+    // Preparar campos para atualização
+    const updateFields = [];
+    const updateValues = [];
+    let paramCount = 1;
+
+    if (userData.nome) {
+      updateFields.push(`nome = $${paramCount}`);
+      updateValues.push(userData.nome);
+      paramCount++;
+    }
+
+    if (userData.email) {
+      updateFields.push(`email = $${paramCount}`);
+      updateValues.push(userData.email);
+      paramCount++;
+    }
+
+    if (userData.tipo) {
+      updateFields.push(`tipo = $${paramCount}::tipo_usuario`);
+      updateValues.push(userData.tipo);
+      paramCount++;
+    }
+
+    if (userData.database_config_id !== undefined) {
+      updateFields.push(`database_config_id = $${paramCount}`);
+      updateValues.push(userData.database_config_id || null);
+      paramCount++;
+    }
+
+    if (userData.cracha_image_url !== undefined) {
+      updateFields.push(`cracha_image_url = $${paramCount}`);
+      updateValues.push(userData.cracha_image_url || null);
+      paramCount++;
+    }
+
+    if (typeof userData.ativo === 'boolean') {
+      updateFields.push(`ativo = $${paramCount}`);
+      updateValues.push(userData.ativo);
+      paramCount++;
+    }
+
+    // Sempre atualizar updated_at
+    updateFields.push('updated_at = NOW()');
+
+    if (updateFields.length === 1) { // Só tem o updated_at
+      return res.status(400).json({ error: 'Nenhum campo válido para atualizar' });
+    }
+
+    // Adicionar ID como último parâmetro
+    updateValues.push(id);
+
+    const updateQuery = `
+      UPDATE usuarios 
+      SET ${updateFields.join(', ')}
+      WHERE id = $${paramCount}
+      RETURNING id, email, nome, tipo, database_config_id, cracha_image_url, ativo, created_at, updated_at
+    `;
+
+    console.log('🔍 Query de atualização:', updateQuery);
+    console.log('📋 Valores:', updateValues);
+
+    const result = await client.query(updateQuery, updateValues);
+
+    if (result.rows.length === 0) {
+      throw new Error('Falha ao atualizar usuário');
+    }
+
+    const updatedUser = result.rows[0];
+    console.log('✅ Usuário atualizado com sucesso:', updatedUser.email);
+
+    res.json({
+      user: updatedUser,
+      message: 'Usuário atualizado com sucesso'
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao atualizar usuário:', error);
+    console.error('❌ Stack trace:', error.stack);
+
+    // Tratamento de erros específicos
+    if (error.code === '23505') {
+      if (error.constraint && error.constraint.includes('email')) {
+        return res.status(409).json({ error: 'Email já cadastrado' });
+      }
+    }
+
+    if (error.code === '23503') {
+      return res.status(400).json({ error: 'Referência inválida (configuração de banco não existe)' });
+    }
+
+    if (error.code === '22P02') {
+      return res.status(400).json({ error: 'Tipo de usuário inválido' });
+    }
+
+    res.status(500).json({
+      error: 'Erro ao atualizar usuário',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
 // Rota para criar usuários (signup) - VERSÃO CORRIGIDA
 app.post('/api/auth/signup', async (req, res) => {
   const { email, password, nome, tipo } = req.body;

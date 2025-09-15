@@ -50,22 +50,38 @@ export default function Users() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data, crachaImage }: { id: string; data: Partial<User>; crachaImage?: File }) =>
-      updateUser(id, data, crachaImage),
-    onSuccess: () => {
+    mutationFn: ({ id, data, crachaImage }: { id: string; data: Partial<User>; crachaImage?: File }) => {
+      console.log('🔄 Iniciando mutação de atualização de usuário:', { id, data, crachaImage: !!crachaImage });
+      return updateUser(id, data, crachaImage);
+    },
+    onSuccess: (result) => {
+      console.log('✅ Mutação de atualização bem-sucedida:', result);
       queryClient.invalidateQueries({ queryKey: ['users'] })
       toast.success('Usuário atualizado com sucesso!')
       setIsModalOpen(false)
       setFormErrors({})
     },
     onError: (error: any) => {
-      console.error('Error updating user:', error)
+      console.error('❌ Erro na mutação de atualização:', error)
+      console.error('❌ Tipo do erro:', typeof error);
+      console.error('❌ Mensagem do erro:', error.message);
+      console.error('❌ Stack do erro:', error.stack);
       
       // Handle specific error cases for updates
       if (error.message === 'Email já cadastrado') {
+        console.log('📧 Erro específico: Email já cadastrado');
         setFormErrors({ email: 'Este email já está sendo usado por outro usuário.' })
         toast.error('Email já está em uso por outro usuário.')
+      } else if (error.message.includes('Referência inválida')) {
+        console.log('🔗 Erro específico: Referência inválida');
+        setFormErrors({ database_config_id: 'Configuração de banco selecionada não existe.' })
+        toast.error('Configuração de banco inválida.')
+      } else if (error.message.includes('Tipo de usuário inválido')) {
+        console.log('👤 Erro específico: Tipo de usuário inválido');
+        setFormErrors({ tipo: 'Tipo de usuário inválido.' })
+        toast.error('Tipo de usuário inválido.')
       } else {
+        console.log('❓ Erro genérico:', error.message);
         toast.error(error.message || 'Erro ao atualizar usuário')
         setFormErrors({})
       }

@@ -99,32 +99,49 @@ export async function createUser(userData: {
 
 export async function updateUser(id: string, userData: Partial<User>, crachaImage?: File) {
   try {
+    console.log('🔄 Atualizando usuário via API:', id);
+    console.log('📝 Dados para atualização:', userData);
+    
     // If there's a badge image, upload it first
     if (crachaImage) {
+      console.log('📷 Fazendo upload da imagem do crachá...');
       const user = await queryOne('SELECT nome FROM usuarios WHERE id = $1', [id], true)
       if (user) {
-        await uploadCrachaImage(id, user.nome, crachaImage)
+        const imageUrl = await uploadCrachaImage(id, user.nome, crachaImage)
+        userData.cracha_image_url = imageUrl;
+        console.log('✅ Imagem do crachá enviada:', imageUrl);
       }
     }
     
-    const fields = Object.keys(userData)
-    const values = Object.values(userData)
-    
-    const setClause = fields.map((field, index) => `${field} = $${index + 2}`).join(', ')
-    
-    const result = await queryOne(
-      `UPDATE usuarios 
-       SET ${setClause}, updated_at = NOW()
-       WHERE id = $1
-       RETURNING *`,
-      [id, ...values],
-      true // Usar banco principal
-    )
+    // Use dedicated endpoint for user updates
+    const response = await fetch(`/api/users/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+      },
+      body: JSON.stringify(userData)
+    });
 
-    return result
-  } catch (error) {
-    console.error('Error in updateUser:', error)
-    throw error
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+      console.error('❌ Erro na resposta da API:', errorData);
+      throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ Usuário atualizado com sucesso via API:', result.user);
+    
+    return result.user;
+  } catch (error: any) {
+    console.error('❌ Error in updateUser:', error);
+    
+    // Re-throw com mensagem mais clara
+    if (error.message.includes('Email já cadastrado')) {
+      throw new Error('Email já cadastrado');
+    }
+    
+    throw new Error(error.message || 'Erro ao atualizar usuário');
   }
 }
 
