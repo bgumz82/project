@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -43,6 +44,11 @@ export default function Funcionarios() {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     staleTime: 1000 * 60 * 5 // 5 minutes
   })
+
+  // Reset página quando filtros mudam - SEMPRE deve ser chamado na mesma posição
+  React.useEffect(() => {
+    setCurrentPage(1)
+  }, [filterStatus, searchName, itemsPerPage])
 
   const createMutation = useMutation({
     mutationFn: (params: CreateFuncionarioParams) => createFuncionario(params),
@@ -187,11 +193,6 @@ export default function Funcionarios() {
       </div>
     )
   }
-
-  // Reset página quando filtros mudam - movido para cima para manter ordem dos hooks
-  React.useEffect(() => {
-    setCurrentPage(1)
-  }, [filterStatus, searchName, itemsPerPage])
 
   // Aplicar filtros
   const filteredFuncionarios = funcionarios?.filter(funcionario => {
