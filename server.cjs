@@ -1958,6 +1958,7 @@ app.post('/api/db/query', authenticateToken, async (req, res) => {
   console.log('📡 Recebida requisição de query do usuário:', req.user.email);
 
   let client;
+  const queryText = req.body.query; // Store query text for error reporting
 
   try {
     // Obter pool correto para o usuário
@@ -1982,10 +1983,12 @@ app.post('/api/db/query', authenticateToken, async (req, res) => {
       rowCount: result.rowCount
     });
   } catch (error) {
-    console.error('❌ Erro na query:', error.message);
+    console.error('❌ Erro na consulta ao banco de dados:', error.message);
+    console.error('❌ Stack trace:', error.stack);
     res.status(500).json({
-      error: 'Erro ao executar query',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: 'Erro na consulta ao banco de dados',
+      details: error.message,
+      query: queryText
     });
   } finally {
     if (client) {
@@ -2460,8 +2463,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
           associacao_frota_id,
           created_at,
           updated_at
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
           $12, $13, $14, $15, $16, $17, $18, $19, $20, $21,
           $22, $23, $24, $25, $26, $27, $28, $29, $30, $31,
           $32, $33, $34, $35, $36, $37, $38, $39, $40, $41,
@@ -3128,7 +3130,7 @@ function improveErrorMessage(error) {
     };
   }
 
-  // Erro de chassis duplicado
+  // Erro de chassi duplicado
   if (message.includes('duplicate key value violates unique constraint "veiculos_chassis_unique"')) {
     return {
       error: 'Chassi já cadastrado',

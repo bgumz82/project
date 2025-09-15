@@ -40,9 +40,13 @@ export async function getUsers() {
     console.log('✅ Usuários encontrados:', result.length)
     return result
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Erro ao buscar usuários:', error)
-    throw error
+    console.error('❌ Detalhes do erro:', error.response?.data || error.message)
+    
+    // Re-throw with more context
+    const errorMessage = error.response?.data?.details || error.message || 'Erro desconhecido'
+    throw new Error(`Erro ao buscar usuários: ${errorMessage}`)
   }
 }
 
