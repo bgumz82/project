@@ -21,7 +21,7 @@ export async function getUsers() {
     const response = await fetch('/api/users', {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
         'Content-Type': 'application/json'
       }
     });
@@ -107,7 +107,7 @@ export async function createUser(userData: {
       const uploadResponse = await fetch(`/api/users/${user.id}/upload-cracha`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
         },
         body: formData
       });
@@ -143,7 +143,7 @@ export async function updateUser(id: string, userData: Partial<User>, crachaImag
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
       },
       body: JSON.stringify(userData)
     });
@@ -169,7 +169,7 @@ export async function updateUser(id: string, userData: Partial<User>, crachaImag
       const uploadResponse = await fetch(`/api/users/${id}/upload-cracha`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
         },
         body: formData
       });
