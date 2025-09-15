@@ -76,12 +76,11 @@ if (!require('fs').existsSync(uploadsDir)) {
   require('fs').mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Servir uploads com cache
-app.use('/uploads', express.static(uploadsDir, {
-  maxAge: '1d',
-  etag: true,
-  lastModified: true
-}));
+// Middleware para servir arquivos estáticos
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
+
+// Middleware específico para imagens de crachá
+app.use('/uploads/cracha', express.static(path.join(__dirname, 'uploads', 'cracha')))
 
 // Middleware para verificar JWT
 const authenticateToken = (req, res, next) => {
@@ -791,6 +790,7 @@ async function createTables(client) {
           tipo tipo_usuario NOT NULL,
           senha varchar(255),
           database_config_id uuid,
+          cracha_image_url text,
           ativo boolean DEFAULT true,
           created_at timestamptz DEFAULT now(),
           updated_at timestamptz DEFAULT now()
@@ -2350,17 +2350,6 @@ app.post('/api/cte-documentos', (req, res, next) => {
         }
       }
 
-      // LÓGICA ESPECIAL PARA CT-e RÁPIDO: Aplicar configuração do frete
-      if (data.tomador_id && ['remetente', 'destinatario'].includes(data.tomador_id)) {
-        // Se o tomador foi selecionado manualmente no CT-e Rápido, usar o valor selecionado
-        tomadorIdFinal = data.tomador_id;
-        console.log('✅ Tomador definido manualmente no CT-e Rápido:', tomadorIdFinal);
-      } else if (data.tomador_id && data.tomador_id !== 'AUTO') {
-        // Se foi selecionado um cliente específico como tomador
-        tomadorIdFinal = data.tomador_id;
-        console.log('✅ Cliente específico selecionado como tomador:', tomadorIdFinal);
-      }
-
       // 4. MAPEAR/CRIAR PRODUTO PREDOMINANTE PELO NCM DA NF-E - TEMPORARIAMENTE DESABILITADO
       // COMENTADO PARA RESOLVER PROBLEMA DE CONEXÃO DE BANCO
       console.log('⚠️ Busca de produto temporariamente desabilitada devido a problema de conexão');
@@ -2397,15 +2386,6 @@ app.post('/api/cte-documentos', (req, res, next) => {
       console.log('  tomadorParaInserir:', tomadorParaInserir, 'tipo:', typeof tomadorParaInserir);
       console.log('  remetenteParaInserir:', remetenteParaInserir, 'tipo:', typeof remetenteParaInserir);
       console.log('  destinatarioParaInserir:', destinatarioParaInserir, 'tipo:', typeof destinatarioParaInserir);
-
-      // VALIDAÇÃO FINAL - Verificar se algum participante foi criado/encontrado
-      if (!tomadorIdFinal && !remetenteIdFinal && !destinatarioIdFinal) {
-        console.log('⚠️ NENHUM PARTICIPANTE FOI MAPEADO - Isso pode ser um problema!');
-        console.log('Dados NFe recebidos:', {
-          remetente_cnpj: data.nfe_remetente_cnpj,
-          destinatario_cnpj: data.nfe_destinatario_cnpj
-        });
-      }
 
       // Validar se client ainda está conectado antes de executar query
       if (!client) {
@@ -3136,7 +3116,7 @@ app.get('/uploads/*', (req, res) => {
 // Função para melhorar mensagens de erro do banco de dados
 function improveErrorMessage(error) {
   const message = error.message || '';
-  
+
   // Erro de enum inválido - tipo_combustivel_veiculo
   if (message.includes('invalid input value for enum tipo_combustivel_veiculo')) {
     const invalidValue = message.match(/"([^"]+)"/)?.[1] || 'valor fornecido';
@@ -3146,7 +3126,7 @@ function improveErrorMessage(error) {
       userMessage: `Tipo de combustível "${invalidValue}" inválido. Selecione entre: Diesel, Diesel S10, Diesel S500, Gasolina, Etanol ou Flex.`
     };
   }
-  
+
   // Erro de chassis duplicado
   if (message.includes('duplicate key value violates unique constraint "veiculos_chassis_unique"')) {
     return {
@@ -3155,7 +3135,7 @@ function improveErrorMessage(error) {
       userMessage: 'Este número de chassi já está cadastrado no sistema. Verifique se o veículo já existe ou corrija o número do chassi.'
     };
   }
-  
+
   // Erro de placa duplicada
   if (message.includes('duplicate key value violates unique constraint') && message.includes('placa')) {
     return {
@@ -3164,7 +3144,7 @@ function improveErrorMessage(error) {
       userMessage: 'Esta placa já está cadastrada no sistema. Verifique se o veículo já existe ou corrija a placa.'
     };
   }
-  
+
   // Erro de CNPJ duplicado
   if (message.includes('duplicate key value violates unique constraint') && message.includes('cnpj')) {
     return {
@@ -3173,7 +3153,7 @@ function improveErrorMessage(error) {
       userMessage: 'Este CNPJ já está cadastrado no sistema. Verifique se o registro já existe ou corrija o CNPJ.'
     };
   }
-  
+
   // Erro de chave estrangeira
   if (message.includes('violates foreign key constraint')) {
     return {
@@ -3182,7 +3162,7 @@ function improveErrorMessage(error) {
       userMessage: 'Existe uma referência a um registro que não existe mais. Verifique os dados selecionados.'
     };
   }
-  
+
   // Erro de campo obrigatório
   if (message.includes('null value in column') && message.includes('violates not-null constraint')) {
     const column = message.match(/column "([^"]+)"/)?.[1] || 'campo obrigatório';
@@ -3192,7 +3172,7 @@ function improveErrorMessage(error) {
       userMessage: `O campo "${column}" é obrigatório e deve ser preenchido.`
     };
   }
-  
+
   // Retorna erro original se não houver melhoria específica
   return {
     error: 'Erro no banco de dados',
@@ -3204,21 +3184,21 @@ function improveErrorMessage(error) {
 // Middleware para interceptar erros de banco de dados
 app.use((error, req, res, next) => {
   if (error && (error.code || (error.message && (
-    error.message.includes('duplicate key') || 
+    error.message.includes('duplicate key') ||
     error.message.includes('invalid input value for enum') ||
     error.message.includes('violates') ||
     error.message.includes('constraint')
   )))) {
     const improvedError = improveErrorMessage(error);
     console.error('❌ Erro de banco melhorado:', improvedError);
-    
+
     return res.status(400).json({
       error: improvedError.error,
       message: improvedError.userMessage,
       details: process.env.NODE_ENV === 'development' ? improvedError.details : undefined
     });
   }
-  
+
   next(error);
 });
 

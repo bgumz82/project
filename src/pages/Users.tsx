@@ -27,7 +27,8 @@ export default function Users() {
     queryFn: getDatabaseConfigurations
   })
   const createMutation = useMutation({
-    mutationFn: createUser,
+    mutationFn: ({ userData, crachaImage }: { userData: any; crachaImage?: File }) => 
+      createUser(userData, crachaImage),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       toast.success('Usuário criado com sucesso!')
@@ -49,8 +50,8 @@ export default function Users() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<User> }) =>
-      updateUser(id, data),
+    mutationFn: ({ id, data, crachaImage }: { id: string; data: Partial<User>; crachaImage?: File }) =>
+      updateUser(id, data, crachaImage),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       toast.success('Usuário atualizado com sucesso!')
@@ -97,6 +98,8 @@ export default function Users() {
       database_config_id: formData.get('database_config_id') as string || null,
     }
 
+    const crachaImage = formData.get('cracha_image') as File
+
     // Basic client-side validation
     if (!userData.email.trim()) {
       setFormErrors({ email: 'Email é obrigatório' })
@@ -113,12 +116,48 @@ export default function Users() {
       return
     }
 
+    // Validate image dimensions if provided
+    if (crachaImage && crachaImage.size > 0) {
+      const isValidImage = await validateImageDimensions(crachaImage, 600, 1000)
+      if (!isValidImage) {
+        setFormErrors({ cracha_image: 'A imagem deve ter no mínimo 600x1000 pixels' })
+        return
+      }
+    }
+
     if (selectedUser) {
       const { password, ...updateData } = userData
-      updateMutation.mutate({ id: selectedUser.id, data: updateData })
+      updateMutation.mutate({ 
+        id: selectedUser.id, 
+        data: updateData,
+        crachaImage: crachaImage?.size > 0 ? crachaImage : undefined
+      })
     } else {
-      createMutation.mutate(userData)
+      createMutation.mutate({
+        userData,
+        crachaImage: crachaImage?.size > 0 ? crachaImage : undefined
+      })
     }
+  }
+
+  const validateImageDimensions = (file: File, minWidth: number, minHeight: number): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        const isValid = img.width >= minWidth && img.height >= minHeight
+        resolve(isValid)
+      }
+      
+      img.onerror = () => {
+        URL.revokeObjectURL(url)
+        resolve(false)
+      }
+      
+      img.src = url
+    })
   }
 
   const handleEdit = (user: User) => {
@@ -357,6 +396,42 @@ export default function Users() {
                   <p className="mt-1 text-xs text-gray-500">
                     Define qual banco de dados este usuário irá acessar
                   </p>
+                </div>
+
+                <div>
+                  <label htmlFor="cracha_image" className="block text-sm font-medium text-gray-700">
+                    Imagem do Crachá
+                  </label>
+                  <input
+                    type="file"
+                    name="cracha_image"
+                    id="cracha_image"
+                    accept="image/*"
+                    className={`mt-1 block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-full file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-indigo-50 file:text-indigo-700
+                      hover:file:bg-indigo-100 ${
+                      formErrors.cracha_image ? 'border-red-300' : ''
+                    }`}
+                  />
+                  {formErrors.cracha_image && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.cracha_image}</p>
+                  )}
+                  <p className="mt-1 text-xs text-gray-500">
+                    Formatos aceitos: JPG, PNG. Tamanho mínimo: 600x1000 pixels (máx. 5MB)
+                  </p>
+                  {selectedUser?.cracha_image_url && (
+                    <div className="mt-2">
+                      <img 
+                        src={selectedUser.cracha_image_url} 
+                        alt="Crachá atual" 
+                        className="h-20 w-12 object-cover rounded border"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Imagem atual do crachá</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
