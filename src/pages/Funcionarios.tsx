@@ -227,13 +227,6 @@ export default function Funcionarios() {
 
   // Usar imagem do crachá do usuário logado ou fallback para imagem padrão
   const crachaBackgroundImage = user?.cracha_image_url || fundocracha
-  
-  // Debug: verificar dados do usuário
-  console.log('🔍 Dados do usuário para crachá:', {
-    user: user,
-    cracha_image_url: user?.cracha_image_url,
-    crachaBackgroundImage: crachaBackgroundImage
-  })
 
   return (
     <div className="py-6">

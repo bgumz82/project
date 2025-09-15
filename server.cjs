@@ -421,7 +421,7 @@ app.post('/api/auth/login', async (req, res) => {
     // Buscar usuário
     const userResult = await pool.query(`
       SELECT id, email, nome, tipo, ativo,
-             senha
+             senha, database_config_id, cracha_image_url
       FROM usuarios
       WHERE email = $1
     `, [email]);
@@ -505,7 +505,7 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
 
     // Verificar se o usuário existe
     const userExists = await client.query('SELECT id, email FROM usuarios WHERE id = $1', [id]);
-    
+
     if (userExists.rows.length === 0) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
@@ -638,7 +638,7 @@ app.post('/api/users/:id/upload-cracha', authenticateToken, upload.single('crach
   try {
     console.log('🖼️ Upload de imagem do crachá para usuário:', id);
     console.log('👤 Upload solicitado por:', req.user.email);
-    
+
     if (!req.file) {
       return res.status(400).json({ error: 'Nenhuma imagem foi enviada' });
     }
@@ -650,7 +650,7 @@ app.post('/api/users/:id/upload-cracha', authenticateToken, upload.single('crach
 
     // Verificar se o usuário existe e obter dados atuais
     const userExists = await client.query('SELECT id, nome, cracha_image_url FROM usuarios WHERE id = $1', [id]);
-    
+
     if (userExists.rows.length === 0) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
@@ -660,27 +660,27 @@ app.post('/api/users/:id/upload-cracha', authenticateToken, upload.single('crach
     // VERIFICAÇÃO DE AUTORIZAÇÃO: Apenas admin ou o próprio usuário pode fazer upload
     const isAdmin = req.user.tipo === 'admin';
     const isOwnUser = req.user.id === id;
-    
+
     if (!isAdmin && !isOwnUser) {
       console.log('❌ Tentativa de upload não autorizada:', {
         solicitante: req.user.email,
         alvo: targetUser.nome,
         tipoSolicitante: req.user.tipo
       });
-      
+
       // Deletar arquivo enviado já que não será usado
       try {
         await fs.unlink(req.file.path);
       } catch (unlinkError) {
         console.error('Erro ao remover arquivo não autorizado:', unlinkError);
       }
-      
+
       return res.status(403).json({ error: 'Acesso negado: Você só pode atualizar sua própria imagem ou precisa ser administrador' });
     }
 
     // URL da imagem para armazenar no banco
     const imageUrl = `/uploads/cracha/${req.file.filename}`;
-    
+
     // Se existe uma imagem anterior, deletar o arquivo físico
     if (targetUser.cracha_image_url) {
       const oldImagePath = path.join(__dirname, targetUser.cracha_image_url);
@@ -713,7 +713,7 @@ app.post('/api/users/:id/upload-cracha', authenticateToken, upload.single('crach
 
   } catch (error) {
     console.error('❌ Erro ao fazer upload da imagem:', error);
-    
+
     // Se houve erro, tentar deletar o arquivo para não deixar "lixo"
     if (req.file && req.file.path) {
       try {
@@ -807,7 +807,7 @@ app.post('/api/auth/verify', async (req, res) => {
 
     const decoded = jwt.verify(token, JWT_SECRET);
     const result = await pool.query(`
-      SELECT id, email, nome, tipo, ativo
+      SELECT id, email, nome, tipo, ativo, database_config_id, cracha_image_url
       FROM usuarios
       WHERE id = $1
     `, [decoded.id]);
@@ -826,7 +826,10 @@ app.post('/api/auth/verify', async (req, res) => {
       id: user.id,
       email: user.email,
       nome: user.nome,
-      tipo: user.tipo
+      tipo: user.tipo,
+      database_config_id: user.database_config_id,
+      cracha_image_url: user.cracha_image_url,
+      ativo: user.ativo
     });
   } catch (error) {
     console.error('Erro na verificação do token:', error);
@@ -1999,18 +2002,18 @@ async function createFunctionsAndTriggers(client) {
       BEGIN
         -- Converter enum para text de forma segura
         tipo_text := NEW.tipo::text;
-        
+
         -- Log para debug
         RAISE NOTICE 'Trigger executado para usuário: % tipo: %', NEW.id, tipo_text;
-        
+
         -- Chamar função de criação de permissões
         SELECT create_default_permissions(NEW.id, tipo_text) INTO result;
-        
+
         -- Log do resultado
         RAISE NOTICE 'Resultado da criação de permissões: %', result;
-        
+
         RETURN NEW;
-        
+
       EXCEPTION 
         WHEN OTHERS THEN
           RAISE NOTICE 'Erro no trigger para %: %', NEW.id, SQLERRM;
@@ -2053,22 +2056,22 @@ async function insertInitialData(client) {
 
       if (adminResult.rows.length > 0) {
         console.log('✅ Usuário admin criado:', adminResult.rows[0].id);
-        
+
         // Criar permissões manualmente para garantir
         const permissionsResult = await client.query(`
           SELECT create_default_permissions($1, $2)
         `, [adminResult.rows[0].id, 'admin']);
-        
+
         console.log('✅ Permissões criadas para admin:', permissionsResult.rows[0]?.create_default_permissions || 0);
       }
     } else {
       console.log('✅ Usuário admin já existe:', existingAdmin.rows[0].email);
-      
+
       // Verificar se tem permissões
       const permsCheck = await client.query(`
         SELECT COUNT(*) as count FROM user_permissions WHERE user_id = $1
       `, [existingAdmin.rows[0].id]);
-      
+
       if (parseInt(permsCheck.rows[0].count) === 0) {
         console.log('🔧 Criando permissões para admin existente...');
         await client.query(`
@@ -2099,7 +2102,7 @@ async function insertInitialData(client) {
     const postosExistem = await client.query(`
       SELECT COUNT(*) as total FROM cadastros WHERE tipo = 'abastecimento'
     `);
-    
+
     if (postosExistem.rows[0].total === '0') {
       await client.query(`
         INSERT INTO cadastros (tipo, razao_social, endereco, cidade, estado, cep, telefone, emails, ativo) VALUES
@@ -2201,7 +2204,7 @@ async function insertInitialData(client) {
     const empresasExistem = await client.query(`
       SELECT COUNT(*) as total FROM empresas_fiscais
     `);
-    
+
     if (empresasExistem.rows[0].total === '0') {
       await client.query(`
         INSERT INTO empresas_fiscais (
@@ -2420,7 +2423,7 @@ app.get('/api/users', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('❌ Erro ao buscar usuários:', error.message);
     console.error('❌ Stack trace:', error.stack);
-    
+
     res.status(500).json({
       error: 'Erro ao buscar usuários',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -3345,7 +3348,7 @@ app.get('/api/mdfe-documentos', authenticateToken, async (req, res) => {
   }
 });
 
-// Rotas específicas para CT-e
+// Rotas para CT-e
 app.get('/api/cte-documentos', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(`

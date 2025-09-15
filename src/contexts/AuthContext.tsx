@@ -54,8 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('✅ Estado do usuário atualizado:', {
         id: authData.user.id,
         email: authData.user.email,
-        tipo: authData.user.tipo,
-        cracha_image_url: authData.user.cracha_image_url
+        tipo: authData.user.tipo
       })
 
       // Salvar no cache com timestamp
