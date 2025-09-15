@@ -1632,7 +1632,7 @@ async function createIndexes(client) {
 // Função para criar funções e triggers
 async function createFunctionsAndTriggers(client) {
   try {
-    // Função para permissões
+    // Função para permissões - versão robusta
     await client.query(`
       CREATE OR REPLACE FUNCTION create_default_permissions(user_id_param uuid, user_type_param text)
       RETURNS INTEGER AS $$
@@ -1641,15 +1641,22 @@ async function createFunctionsAndTriggers(client) {
         user_exists BOOLEAN := false;
         user_email TEXT;
       BEGIN
+        -- Log para debug
+        RAISE NOTICE 'Criando permissões para usuário: % tipo: %', user_id_param, user_type_param;
+
+        -- Verificar se usuário existe
         SELECT email INTO user_email FROM usuarios WHERE id = user_id_param;
         user_exists := FOUND;
 
         IF NOT user_exists THEN
+          RAISE NOTICE 'Usuário não encontrado: %', user_id_param;
           RETURN 0;
         END IF;
 
+        -- Limpar permissões existentes
         DELETE FROM user_permissions WHERE user_id = user_id_param;
 
+        -- Criar permissões baseadas no tipo
         IF user_type_param = 'admin' THEN
           INSERT INTO user_permissions (user_id, module, can_access, can_create, can_edit, can_delete) VALUES
           (user_id_param, 'dashboard', true, false, false, false),
@@ -1667,7 +1674,6 @@ async function createFunctionsAndTriggers(client) {
           (user_id_param, 'relatorios', true, true, false, false),
           (user_id_param, 'cte', true, true, true, true),
           (user_id_param, 'mdfe', true, true, true, true);
-
           permission_count := 15;
 
         ELSIF user_type_param = 'operador_checklist' THEN
@@ -1675,7 +1681,6 @@ async function createFunctionsAndTriggers(client) {
           (user_id_param, 'dashboard', true, false, false, false),
           (user_id_param, 'checklists', true, true, false, false),
           (user_id_param, 'relatorios', true, false, false, false);
-
           permission_count := 3;
 
         ELSIF user_type_param = 'operador_abastecimento' THEN
@@ -1683,25 +1688,53 @@ async function createFunctionsAndTriggers(client) {
           (user_id_param, 'dashboard', true, false, false, false),
           (user_id_param, 'abastecimentos', true, true, false, false),
           (user_id_param, 'relatorios', true, false, false, false);
-
           permission_count := 3;
+
+        ELSE
+          -- Tipo desconhecido, dar permissões básicas
+          INSERT INTO user_permissions (user_id, module, can_access, can_create, can_edit, can_delete) VALUES
+          (user_id_param, 'dashboard', true, false, false, false);
+          permission_count := 1;
         END IF;
 
+        RAISE NOTICE 'Permissões criadas: % para usuário: %', permission_count, user_email;
         RETURN permission_count;
+
+      EXCEPTION 
+        WHEN OTHERS THEN
+          RAISE NOTICE 'Erro ao criar permissões para %: %', user_id_param, SQLERRM;
+          RETURN 0;
       END;
       $$ LANGUAGE plpgsql SECURITY DEFINER;
     `);
     console.log('✅ Função de permissões criada');
 
-    // Função para trigger - usando tipo text em vez do enum
+    // Função para trigger - versão robusta
     await client.query(`
       CREATE OR REPLACE FUNCTION trigger_setup_user_permissions()
       RETURNS TRIGGER AS $$
       DECLARE
         result INTEGER;
+        tipo_text TEXT;
       BEGIN
-        SELECT create_default_permissions(NEW.id, NEW.tipo::text) INTO result;
+        -- Converter enum para text de forma segura
+        tipo_text := NEW.tipo::text;
+        
+        -- Log para debug
+        RAISE NOTICE 'Trigger executado para usuário: % tipo: %', NEW.id, tipo_text;
+        
+        -- Chamar função de criação de permissões
+        SELECT create_default_permissions(NEW.id, tipo_text) INTO result;
+        
+        -- Log do resultado
+        RAISE NOTICE 'Resultado da criação de permissões: %', result;
+        
         RETURN NEW;
+        
+      EXCEPTION 
+        WHEN OTHERS THEN
+          RAISE NOTICE 'Erro no trigger para %: %', NEW.id, SQLERRM;
+          RETURN NEW;
       END;
       $$ LANGUAGE plpgsql SECURITY DEFINER;
     `);
@@ -1725,24 +1758,47 @@ async function insertInitialData(client) {
   const validHash = '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
 
   try {
-    const adminResult = await client.query(`
-      INSERT INTO usuarios (id, email, nome, tipo, senha, ativo, created_at, updated_at)
-      VALUES (gen_random_uuid(), 'admin@empresa.com', 'Administrador', 'admin'::tipo_usuario, $1, true, NOW(), NOW())
-      ON CONFLICT (email) DO NOTHING
-      RETURNING id, tipo
-    `, [validHash]);
-    
-    if (adminResult.rows.length > 0) {
-      // Criar permissões para o admin
-      await client.query(`
-        SELECT create_default_permissions($1, $2)
-      `, [adminResult.rows[0].id, adminResult.rows[0].tipo]);
-      console.log('✅ Usuário admin criado com permissões');
+    // Verificar se admin existe
+    const existingAdmin = await client.query(`
+      SELECT id, email, tipo FROM usuarios WHERE email = 'admin@empresa.com'
+    `);
+
+    if (existingAdmin.rows.length === 0) {
+      // Criar usuário admin
+      const adminResult = await client.query(`
+        INSERT INTO usuarios (id, email, nome, tipo, senha, ativo, created_at, updated_at)
+        VALUES (gen_random_uuid(), 'admin@empresa.com', 'Administrador', 'admin'::tipo_usuario, $1, true, NOW(), NOW())
+        RETURNING id, tipo
+      `, [validHash]);
+
+      if (adminResult.rows.length > 0) {
+        console.log('✅ Usuário admin criado:', adminResult.rows[0].id);
+        
+        // Criar permissões manualmente para garantir
+        const permissionsResult = await client.query(`
+          SELECT create_default_permissions($1, $2)
+        `, [adminResult.rows[0].id, 'admin']);
+        
+        console.log('✅ Permissões criadas para admin:', permissionsResult.rows[0]?.create_default_permissions || 0);
+      }
     } else {
-      console.log('✅ Usuário admin já existe');
+      console.log('✅ Usuário admin já existe:', existingAdmin.rows[0].email);
+      
+      // Verificar se tem permissões
+      const permsCheck = await client.query(`
+        SELECT COUNT(*) as count FROM user_permissions WHERE user_id = $1
+      `, [existingAdmin.rows[0].id]);
+      
+      if (parseInt(permsCheck.rows[0].count) === 0) {
+        console.log('🔧 Criando permissões para admin existente...');
+        await client.query(`
+          SELECT create_default_permissions($1, $2)
+        `, [existingAdmin.rows[0].id, 'admin']);
+        console.log('✅ Permissões criadas para admin existente');
+      }
     }
   } catch (error) {
-    console.log('⚠️ Erro ao criar usuário admin:', error.message);
+    console.log('⚠️ Erro ao configurar usuário admin:', error.message);
   }
 
   try {
