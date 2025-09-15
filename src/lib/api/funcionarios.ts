@@ -10,7 +10,7 @@ export interface Funcionario {
   data_nascimento: string
   telefone: string | null
   foto_url: string | null
-  funcao: 'administrativo' | 'motorista' | 'gerente' | 'motorista_carreta' | 'motorista_julieta'
+  funcao: 'administrativo' | 'motorista' | 'motorista_carreta' | 'motorista_julieta' | 'gerente'
   cnh: string | null
   validade_cnh: string | null
   status: 'ativo' | 'inativo' | 'ferias' | 'aguardando'
@@ -27,7 +27,7 @@ export interface FuncionarioCreate {
   data_admissao: string
   data_nascimento: string
   telefone?: string | null
-  funcao: 'administrativo' | 'motorista' | 'gerente' | 'motorista_carreta' | 'motorista_julieta'
+  funcao: 'administrativo' | 'motorista' | 'motorista_carreta' | 'motorista_julieta' | 'gerente'
   cnh?: string | null
   validade_cnh?: string | null
   status?: 'ativo' | 'inativo' | 'ferias' | 'aguardando'
@@ -63,7 +63,7 @@ export async function getFuncionario(id: string): Promise<Funcionario | null> {
 
 export async function createFuncionario(params: CreateFuncionarioParams): Promise<Funcionario> {
   const { funcionario } = params
-  
+
   const result = await queryOne(`
     INSERT INTO funcionarios (
       nome,

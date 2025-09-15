@@ -96,7 +96,7 @@ export default function Funcionarios() {
       data_admissao: formData.get('data_admissao') as string,
       data_nascimento: formData.get('data_nascimento') as string,
       telefone: formData.get('telefone') as string || null,
-      funcao: formData.get('funcao') as 'administrativo' | 'motorista' | 'gerente',
+      funcao: formData.get('funcao') as 'administrativo' | 'motorista' | 'gerente' | 'motorista_carreta' | 'motorista_julieta',
       cnh: formData.get('cnh') as string || null,
       validade_cnh: formData.get('validade_cnh') as string || null,
       status: formData.get('status') as 'ativo' | 'inativo' | 'ferias',
