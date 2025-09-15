@@ -1,7 +1,5 @@
-import { query, queryOne } from '@/lib/db'
+import { query } from '@/lib/db'
 import { signUp } from '@/lib/auth'
-import fs from 'fs'
-import path from 'path'
 
 export interface User {
   id: string
@@ -45,27 +43,39 @@ export async function getUsers() {
     try {
       console.log('🔄 Tentando método de fallback...');
       
-      const result = await query(`
-        SELECT 
-          id,
-          email,
-          nome,
-          tipo,
-          database_config_id,
-          cracha_image_url,
-          ativo,
-          created_at,
-          updated_at
-        FROM usuarios
-        ORDER BY created_at DESC
-      `, [], true);
+      // Buscar usuários e configurações de banco separadamente
+      const [users, configs] = await Promise.all([
+        query(`
+          SELECT 
+            id,
+            email,
+            nome,
+            tipo,
+            database_config_id,
+            cracha_image_url,
+            ativo,
+            created_at,
+            updated_at
+          FROM usuarios
+          ORDER BY created_at DESC
+        `, [], true),
+        query(`
+          SELECT id, nome_empresa
+          FROM database_configurations
+          WHERE ativo = true
+        `, [], true)
+      ]);
       
-      console.log('✅ Fallback funcionou, usuários encontrados:', result.length);
+      console.log('✅ Fallback funcionou, usuários encontrados:', users.length);
       
-      return result.map(user => ({
-        ...user,
-        database_config_nome: null // Simplificado para evitar erros
-      }));
+      // Mapear usuários com nomes das configurações
+      return users.map(user => {
+        const config = configs.find(c => c.id === user.database_config_id);
+        return {
+          ...user,
+          database_config_nome: config?.nome_empresa || null
+        };
+      });
       
     } catch (fallbackError: any) {
       console.error('❌ Erro no fallback:', fallbackError);
@@ -85,9 +95,9 @@ export async function createUser(userData: {
     // Create user through the backend API - this handles both auth and usuarios table
     const user = await signUp(userData.email, userData.password, userData.nome, userData.tipo)
     
-    // If there's a badge image, upload it
+    // TODO: Implementar upload de imagem futuramente
     if (crachaImage && user.id) {
-      await uploadCrachaImage(user.id, userData.nome, crachaImage)
+      console.warn('⚠️ Upload de imagem temporariamente desabilitado');
     }
     
     return user
@@ -102,15 +112,9 @@ export async function updateUser(id: string, userData: Partial<User>, crachaImag
     console.log('🔄 Atualizando usuário via API:', id);
     console.log('📝 Dados para atualização:', userData);
     
-    // If there's a badge image, upload it first
+    // TODO: Implementar upload de imagem futuramente
     if (crachaImage) {
-      console.log('📷 Fazendo upload da imagem do crachá...');
-      const user = await queryOne('SELECT nome FROM usuarios WHERE id = $1', [id], true)
-      if (user) {
-        const imageUrl = await uploadCrachaImage(id, user.nome, crachaImage)
-        userData.cracha_image_url = imageUrl;
-        console.log('✅ Imagem do crachá enviada:', imageUrl);
-      }
+      console.warn('⚠️ Upload de imagem temporariamente desabilitado');
     }
     
     // Use dedicated endpoint for user updates
@@ -156,40 +160,5 @@ export async function deleteUser(id: string) {
   }
 }
 
-async function uploadCrachaImage(userId: string, userName: string, image: File) {
-  try {
-    // Create uploads/cracha directory if it doesn't exist
-    const uploadDir = path.join(process.cwd(), 'uploads', 'cracha')
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true })
-    }
-
-    // Generate filename based on user name (sanitized)
-    const sanitizedName = userName.toLowerCase()
-      .replace(/[^a-z0-9]/g, '_')
-      .replace(/_+/g, '_')
-      .replace(/^_|_$/g, '')
-    
-    const fileExtension = path.extname(image.name) || '.jpg'
-    const fileName = `${sanitizedName}_${Date.now()}${fileExtension}`
-    const filePath = path.join(uploadDir, fileName)
-    
-    // Save file to disk
-    const buffer = Buffer.from(await image.arrayBuffer())
-    fs.writeFileSync(filePath, buffer)
-    
-    // Update user record with image URL
-    const imageUrl = `/uploads/cracha/${fileName}`
-    await queryOne(
-      'UPDATE usuarios SET cracha_image_url = $1, updated_at = NOW() WHERE id = $2',
-      [imageUrl, userId],
-      true
-    )
-    
-    console.log(`✅ Badge image uploaded for user ${userName}: ${imageUrl}`)
-    return imageUrl
-  } catch (error) {
-    console.error('Error uploading badge image:', error)
-    throw new Error('Erro ao fazer upload da imagem do crachá')
-  }
-}
+// TODO: Implementar upload de imagem futuramente quando necessário
+// async function uploadCrachaImage(userId: string, userName: string, image: File) { ... }

@@ -248,7 +248,7 @@ export default function Users() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {users?.map((user) => (
+                    {users?.map((user: User) => (
                       <tr key={user.id}>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
                           {user.nome}
