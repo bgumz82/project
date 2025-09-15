@@ -1759,14 +1759,22 @@ async function insertInitialData(client) {
   }
 
   try {
-    await client.query(`
-      INSERT INTO cadastros (tipo, razao_social, endereco, cidade, estado, cep, telefone, emails, ativo) VALUES
-      ('abastecimento', 'Posto Shell Centro', 'Rua Principal, 123', 'São Paulo', 'SP', '01000-000', '(11) 1234-5678', '["contato@shell.com"]', true),
-      ('abastecimento', 'Posto Ipiranga Norte', 'Av. Paulista, 456', 'São Paulo', 'SP', '01310-000', '(11) 8765-4321', '["info@ipiranga.com"]', true),
-      ('abastecimento', 'Posto BR Sul', 'Rua das Flores, 789', 'São Paulo', 'SP', '04000-000', '(11) 5555-0000', '["atendimento@br.com"]', true)
-      ON CONFLICT DO NOTHING
+    // Verificar se já existem postos antes de inserir
+    const postosExistem = await client.query(`
+      SELECT COUNT(*) as total FROM cadastros WHERE tipo = 'abastecimento'
     `);
-    console.log('✅ Postos de exemplo criados');
+    
+    if (postosExistem.rows[0].total === '0') {
+      await client.query(`
+        INSERT INTO cadastros (tipo, razao_social, endereco, cidade, estado, cep, telefone, emails, ativo) VALUES
+        ('abastecimento', 'Posto Shell Centro', 'Rua Principal, 123', 'São Paulo', 'SP', '01000-000', '(11) 1234-5678', '["contato@shell.com"]', true),
+        ('abastecimento', 'Posto Ipiranga Norte', 'Av. Paulista, 456', 'São Paulo', 'SP', '01310-000', '(11) 8765-4321', '["info@ipiranga.com"]', true),
+        ('abastecimento', 'Posto BR Sul', 'Rua das Flores, 789', 'São Paulo', 'SP', '04000-000', '(11) 5555-0000', '["atendimento@br.com"]', true)
+      `);
+      console.log('✅ Postos de exemplo criados');
+    } else {
+      console.log('✅ Postos já existem no banco');
+    }
   } catch (error) {
     console.log('⚠️ Erro ao criar postos:', error.message);
   }
@@ -1784,40 +1792,44 @@ async function insertInitialData(client) {
     console.log('⚠️ Erro ao criar centros de custo:', error.message);
   }
 
-  // Inserir estados brasileiros
+  // Inserir estados brasileiros - corrigido sem cod_uf
   try {
-    await client.query(`
-      INSERT INTO states (id, uf, name, created_at) VALUES
-      (gen_random_uuid(), 'AC', 'Acre', NOW()),
-      (gen_random_uuid(), 'AL', 'Alagoas', NOW()),
-      (gen_random_uuid(), 'AP', 'Amapá', NOW()),
-      (gen_random_uuid(), 'AM', 'Amazonas', NOW()),
-      (gen_random_uuid(), 'BA', 'Bahia', NOW()),
-      (gen_random_uuid(), 'CE', 'Ceará', NOW()),
-      (gen_random_uuid(), 'DF', 'Distrito Federal', NOW()),
-      (gen_random_uuid(), 'ES', 'Espírito Santo', NOW()),
-      (gen_random_uuid(), 'GO', 'Goiás', NOW()),
-      (gen_random_uuid(), 'MA', 'Maranhão', NOW()),
-      (gen_random_uuid(), 'MT', 'Mato Grosso', NOW()),
-      (gen_random_uuid(), 'MS', 'Mato Grosso do Sul', NOW()),
-      (gen_random_uuid(), 'MG', 'Minas Gerais', NOW()),
-      (gen_random_uuid(), 'PA', 'Pará', NOW()),
-      (gen_random_uuid(), 'PB', 'Paraíba', NOW()),
-      (gen_random_uuid(), 'PR', 'Paraná', NOW()),
-      (gen_random_uuid(), 'PE', 'Pernambuco', NOW()),
-      (gen_random_uuid(), 'PI', 'Piauí', NOW()),
-      (gen_random_uuid(), 'RJ', 'Rio de Janeiro', NOW()),
-      (gen_random_uuid(), 'RN', 'Rio Grande do Norte', NOW()),
-      (gen_random_uuid(), 'RS', 'Rio Grande do Sul', NOW()),
-      (gen_random_uuid(), 'RO', 'Rondônia', NOW()),
-      (gen_random_uuid(), 'RR', 'Roraima', NOW()),
-      (gen_random_uuid(), 'SC', 'Santa Catarina', NOW()),
-      (gen_random_uuid(), 'SP', 'São Paulo', NOW()),
-      (gen_random_uuid(), 'SE', 'Sergipe', NOW()),
-      (gen_random_uuid(), 'TO', 'Tocantins', NOW())
-      ON CONFLICT (uf) DO NOTHING
-    `);
-    console.log('✅ Estados brasileiros criados');
+    const estadosExistem = await client.query(`SELECT COUNT(*) as total FROM states`);
+    if (estadosExistem.rows[0].total === '0') {
+      await client.query(`
+        INSERT INTO states (id, uf, name, created_at) VALUES
+        (gen_random_uuid(), 'AC', 'Acre', NOW()),
+        (gen_random_uuid(), 'AL', 'Alagoas', NOW()),
+        (gen_random_uuid(), 'AP', 'Amapá', NOW()),
+        (gen_random_uuid(), 'AM', 'Amazonas', NOW()),
+        (gen_random_uuid(), 'BA', 'Bahia', NOW()),
+        (gen_random_uuid(), 'CE', 'Ceará', NOW()),
+        (gen_random_uuid(), 'DF', 'Distrito Federal', NOW()),
+        (gen_random_uuid(), 'ES', 'Espírito Santo', NOW()),
+        (gen_random_uuid(), 'GO', 'Goiás', NOW()),
+        (gen_random_uuid(), 'MA', 'Maranhão', NOW()),
+        (gen_random_uuid(), 'MT', 'Mato Grosso', NOW()),
+        (gen_random_uuid(), 'MS', 'Mato Grosso do Sul', NOW()),
+        (gen_random_uuid(), 'MG', 'Minas Gerais', NOW()),
+        (gen_random_uuid(), 'PA', 'Pará', NOW()),
+        (gen_random_uuid(), 'PB', 'Paraíba', NOW()),
+        (gen_random_uuid(), 'PR', 'Paraná', NOW()),
+        (gen_random_uuid(), 'PE', 'Pernambuco', NOW()),
+        (gen_random_uuid(), 'PI', 'Piauí', NOW()),
+        (gen_random_uuid(), 'RJ', 'Rio de Janeiro', NOW()),
+        (gen_random_uuid(), 'RN', 'Rio Grande do Norte', NOW()),
+        (gen_random_uuid(), 'RS', 'Rio Grande do Sul', NOW()),
+        (gen_random_uuid(), 'RO', 'Rondônia', NOW()),
+        (gen_random_uuid(), 'RR', 'Roraima', NOW()),
+        (gen_random_uuid(), 'SC', 'Santa Catarina', NOW()),
+        (gen_random_uuid(), 'SP', 'São Paulo', NOW()),
+        (gen_random_uuid(), 'SE', 'Sergipe', NOW()),
+        (gen_random_uuid(), 'TO', 'Tocantins', NOW())
+      `);
+      console.log('✅ Estados brasileiros criados');
+    } else {
+      console.log('✅ Estados já existem no banco');
+    }
   } catch (error) {
     console.log('⚠️ Erro ao criar estados:', error.message);
   }
@@ -1849,20 +1861,28 @@ async function insertInitialData(client) {
 
   // Inserir dados de exemplo para empresas fiscais
   try {
-    await client.query(`
-      INSERT INTO empresas_fiscais (
-        razao_social, cnpj, inscricao_estadual, endereco, cidade, estado,
-        uf_emissao_nfe, ambiente_nfce, ambiente_cte, serie_padrao_cte, serie_padrao_mdfe, status,
-        codigo_uf, created_at, updated_at
-      ) VALUES (
-        'EMPRESA DE EXEMPLO LTDA', '00.000.000/0001-00', '123.456.789.012',
-        'Rua das Amostras, 100', 'São Paulo', 'SP',
-        'SP', '1', '1', '001', '001', 'ativo',
-        '35', NOW(), NOW()
-      )
-      ON CONFLICT (cnpj) DO NOTHING
+    // Verificar se já existe empresa
+    const empresasExistem = await client.query(`
+      SELECT COUNT(*) as total FROM empresas_fiscais
     `);
-    console.log('✅ Empresa fiscal de exemplo criada');
+    
+    if (empresasExistem.rows[0].total === '0') {
+      await client.query(`
+        INSERT INTO empresas_fiscais (
+          razao_social, cnpj, endereco, cidade, estado,
+          uf_emissao_nfe, ambiente_nfce, ambiente_cte, serie_padrao_cte, serie_padrao_mdfe, status,
+          created_at, updated_at
+        ) VALUES (
+          'EMPRESA DE EXEMPLO LTDA', '00.000.000/0001-00',
+          'Rua das Amostras, 100', 'São Paulo', 'SP',
+          'SP', '1', '1', '001', '001', 'ativo',
+          NOW(), NOW()
+        )
+      `);
+      console.log('✅ Empresa fiscal de exemplo criada');
+    } else {
+      console.log('✅ Empresa fiscal já existe no banco');
+    }
   } catch (error) {
     console.log('⚠️ Erro ao criar empresa fiscal de exemplo:', error.message);
   }

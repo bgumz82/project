@@ -20,33 +20,50 @@ export async function getUsers() {
   try {
     console.log('🔍 Buscando usuários...')
     
-    // Buscar apenas usuários sem o JOIN para evitar problemas
+    // Query mais simples e robusta
     const result = await query(`
       SELECT 
-        u.id,
-        u.email,
-        u.nome,
-        u.tipo,
-        u.database_config_id,
-        u.cracha_image_url,
-        u.ativo,
-        u.created_at,
-        u.updated_at,
-        NULL as database_config_nome
-      FROM usuarios u
-      ORDER BY u.created_at DESC
+        id,
+        email,
+        nome,
+        tipo,
+        database_config_id,
+        cracha_image_url,
+        ativo,
+        created_at,
+        updated_at
+      FROM usuarios
+      WHERE ativo = true
+      ORDER BY created_at DESC
     `, [], true) // Usar banco principal
     
     console.log('✅ Usuários encontrados:', result.length)
-    return result
+    
+    // Mapear resultado para incluir database_config_nome como null
+    const usersWithConfig = result.map(user => ({
+      ...user,
+      database_config_nome: null // Por enquanto, deixar como null
+    }))
+    
+    return usersWithConfig
     
   } catch (error: any) {
     console.error('❌ Erro ao buscar usuários:', error)
-    console.error('❌ Detalhes do erro:', error.response?.data || error.message)
+    console.error('❌ Stack trace:', error.stack)
+    console.error('❌ Response data:', error.response?.data)
     
-    // Re-throw with more context
-    const errorMessage = error.response?.data?.details || error.message || 'Erro desconhecido'
-    throw new Error(`Erro ao buscar usuários: ${errorMessage}`)
+    // Tentar uma query ainda mais simples como fallback
+    try {
+      console.log('🔄 Tentando query simplificada...')
+      const fallbackResult = await query(`SELECT COUNT(*) as total FROM usuarios`, [], true)
+      console.log('✅ Conexão com banco OK, total usuários:', fallbackResult[0]?.total)
+      
+      // Se chegou aqui, o problema é na query específica
+      throw new Error(`Query específica falhou: ${error.message}`)
+    } catch (fallbackError: any) {
+      console.error('❌ Erro na query de fallback:', fallbackError)
+      throw new Error(`Erro de conexão com banco de dados: ${fallbackError.message}`)
+    }
   }
 }
 
