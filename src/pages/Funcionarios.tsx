@@ -188,6 +188,11 @@ export default function Funcionarios() {
     )
   }
 
+  // Reset página quando filtros mudam - movido para cima para manter ordem dos hooks
+  React.useEffect(() => {
+    setCurrentPage(1)
+  }, [filterStatus, searchName, itemsPerPage])
+
   // Aplicar filtros
   const filteredFuncionarios = funcionarios?.filter(funcionario => {
     // Filtro por status
@@ -212,11 +217,6 @@ export default function Funcionarios() {
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
   const paginatedFuncionarios = filteredFuncionarios.slice(startIndex, endIndex)
-
-  // Reset página quando filtros mudam
-  React.useEffect(() => {
-    setCurrentPage(1)
-  }, [filterStatus, searchName, itemsPerPage])
 
   // Calcular escala para o crachá
   const scale = CRACHA_DISPLAY_WIDTH / CRACHA_ORIGINAL_WIDTH
