@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
@@ -25,6 +25,15 @@ export default function Funcionarios() {
   const [isCrachaModalOpen, setIsCrachaModalOpen] = useState(false)
   const [selectedFuncionario, setSelectedFuncionario] = useState<Funcionario | null>(null)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
+  
+  // Estados para paginação
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  
+  // Estados para filtros
+  const [filterStatus, setFilterStatus] = useState<'todos' | 'ativo' | 'inativo' | 'ferias' | 'aguardando'>('todos')
+  const [searchName, setSearchName] = useState('')
+  
   const queryClient = useQueryClient()
 
   const { data: funcionarios, isLoading, error, refetch } = useQuery({
@@ -179,6 +188,36 @@ export default function Funcionarios() {
     )
   }
 
+  // Aplicar filtros
+  const filteredFuncionarios = funcionarios?.filter(funcionario => {
+    // Filtro por status
+    if (filterStatus !== 'todos' && funcionario.status !== filterStatus) {
+      return false
+    }
+    
+    // Filtro por nome
+    if (searchName) {
+      const searchTerm = searchName.toLowerCase()
+      if (!funcionario.nome.toLowerCase().includes(searchTerm)) {
+        return false
+      }
+    }
+    
+    return true
+  }) || []
+
+  // Aplicar paginação
+  const totalItems = filteredFuncionarios.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedFuncionarios = filteredFuncionarios.slice(startIndex, endIndex)
+
+  // Reset página quando filtros mudam
+  React.useEffect(() => {
+    setCurrentPage(1)
+  }, [filterStatus, searchName, itemsPerPage])
+
   // Calcular escala para o crachá
   const scale = CRACHA_DISPLAY_WIDTH / CRACHA_ORIGINAL_WIDTH
   const displayHeight = CRACHA_ORIGINAL_HEIGHT * scale
@@ -199,6 +238,67 @@ export default function Funcionarios() {
             <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
             Novo Funcionário
           </button>
+        </div>
+
+        {/* Filtros */}
+        <div className="mt-6 bg-white shadow rounded-lg p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status:</label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as any)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="todos">Todos</option>
+                <option value="ativo">Ativos</option>
+                <option value="inativo">Inativos</option>
+                <option value="ferias">Férias</option>
+                <option value="aguardando">Aguardando</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nome:</label>
+              <input
+                type="text"
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+                placeholder="Digite o nome..."
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Registros por página:</label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value={10}>10</option>
+                <option value={30}>30</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Mostrando {startIndex + 1} a {Math.min(endIndex, totalItems)} de {totalItems} registros
+              </div>
+              {(filterStatus !== 'todos' || searchName) && (
+                <button
+                  onClick={() => {
+                    setFilterStatus('todos')
+                    setSearchName('')
+                  }}
+                  className="text-indigo-600 hover:text-indigo-900 font-medium text-sm"
+                >
+                  Limpar filtros
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="mt-8 flex flex-col">
@@ -235,7 +335,7 @@ export default function Funcionarios() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {funcionarios?.map((funcionario) => (
+                    {paginatedFuncionarios?.map((funcionario) => (
                       <tr key={funcionario.id}>
                         <td className="whitespace-nowrap px-3 py-4 text-sm">
                           {funcionario.foto_url && (
@@ -317,6 +417,75 @@ export default function Funcionarios() {
             </div>
           </div>
         </div>
+
+        {/* Paginação */}
+        {totalPages > 1 && (
+          <div className="mt-6 bg-white shadow rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                Página {currentPage} de {totalPages}
+              </div>
+              
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Primeira
+                </button>
+                
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Anterior
+                </button>
+
+                {/* Números das páginas */}
+                <div className="flex space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const startPage = Math.max(1, currentPage - 2)
+                    const pageNumber = startPage + i
+                    
+                    if (pageNumber > totalPages) return null
+                    
+                    return (
+                      <button
+                        key={pageNumber}
+                        onClick={() => setCurrentPage(pageNumber)}
+                        className={`px-3 py-1 text-sm border rounded ${
+                          currentPage === pageNumber
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Próxima
+                </button>
+                
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Última
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal de Cadastro/Edição */}
