@@ -122,17 +122,16 @@ export async function createFuncionario(params: CreateFuncionarioParams): Promis
         const uploadResult = await uploadResponse.json()
         console.log('✅ Foto enviada com sucesso:', uploadResult.foto_url)
         
-        // Atualizar o funcionário com a URL da foto
+        // A API já atualizou o banco, então buscar os dados atualizados
         const updatedResult = await queryOne(`
-          UPDATE funcionarios 
-          SET foto_url = $1, updated_at = NOW()
-          WHERE id = $2
-          RETURNING *
-        `, [uploadResult.foto_url, result.id])
+          SELECT * FROM funcionarios WHERE id = $1
+        `, [result.id])
 
         return updatedResult || result
       } else {
-        console.warn('⚠️ Erro no upload da foto, funcionário criado sem foto')
+        const errorResult = await uploadResponse.text()
+        console.warn('⚠️ Erro no upload da foto:', errorResult)
+        console.warn('⚠️ Funcionário criado sem foto')
       }
     }
 
@@ -207,17 +206,15 @@ export async function updateFuncionario(params: UpdateFuncionarioParams): Promis
         const uploadResult = await uploadResponse.json()
         console.log('✅ Nova foto enviada com sucesso:', uploadResult.foto_url)
         
-        // Atualizar o funcionário com a nova URL da foto
+        // A API já atualizou o banco, então buscar os dados atualizados
         const updatedResult = await queryOne(`
-          UPDATE funcionarios 
-          SET foto_url = $1, updated_at = NOW()
-          WHERE id = $2
-          RETURNING *
-        `, [uploadResult.foto_url, id])
+          SELECT * FROM funcionarios WHERE id = $1
+        `, [id])
 
         return updatedResult || result
       } else {
-        console.warn('⚠️ Erro no upload da nova foto')
+        const errorResult = await uploadResponse.text()
+        console.warn('⚠️ Erro no upload da nova foto:', errorResult)
       }
     }
 

@@ -839,13 +839,29 @@ app.post('/api/funcionarios/upload-foto', authenticateToken, uploadFuncionario.s
 
     console.log('💾 Salvando URL da foto no banco:', fotoUrl);
 
+    // Atualizar o funcionário com a URL da foto no banco de dados
+    const updateResult = await client.query(`
+      UPDATE funcionarios 
+      SET foto_url = $1, updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `, [fotoUrl, req.body.funcionario_id]);
+
+    if (updateResult.rows.length === 0) {
+      console.error('❌ Erro ao atualizar funcionário com URL da foto');
+      return res.status(500).json({ error: 'Erro ao atualizar funcionário com a foto' });
+    }
+
+    console.log('✅ URL da foto salva no banco com sucesso:', updateResult.rows[0].foto_url);
+
     res.json({
       success: true,
       message: 'Foto do funcionário enviada com sucesso',
       foto_url: fotoUrl,
       funcionario: {
         id: funcionario.id,
-        nome: funcionario.nome
+        nome: funcionario.nome,
+        foto_url: fotoUrl
       }
     });
 
