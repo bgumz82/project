@@ -104,11 +104,20 @@ export async function createFuncionario(params: CreateFuncionarioParams): Promis
     // Se tem foto, fazer upload
     if (foto) {
       console.log('📸 Fazendo upload da foto do funcionário:', result.id)
+      console.log('📁 Tipo de arquivo:', foto.type)
+      console.log('📊 Tamanho do arquivo:', foto.size)
       
       const formData = new FormData()
       formData.append('foto', foto)
       formData.append('funcionario_id', result.id)
       formData.append('cpf', funcionario.cpf)
+
+      console.log('📤 Enviando dados:', {
+        funcionario_id: result.id,
+        cpf: funcionario.cpf,
+        foto_name: foto.name,
+        foto_size: foto.size
+      })
 
       const uploadResponse = await fetch('/api/funcionarios/upload-foto', {
         method: 'POST',
@@ -120,18 +129,24 @@ export async function createFuncionario(params: CreateFuncionarioParams): Promis
 
       if (uploadResponse.ok) {
         const uploadResult = await uploadResponse.json()
-        console.log('✅ Foto enviada com sucesso:', uploadResult.foto_url)
+        console.log('✅ Foto enviada com sucesso:', uploadResult)
+        console.log('🔗 URL da foto:', uploadResult.foto_url)
         
         // A API já atualizou o banco, então buscar os dados atualizados
         const updatedResult = await queryOne(`
           SELECT * FROM funcionarios WHERE id = $1
         `, [result.id])
 
+        console.log('✅ Dados atualizados do funcionário:', updatedResult)
         return updatedResult || result
       } else {
         const errorResult = await uploadResponse.text()
-        console.warn('⚠️ Erro no upload da foto:', errorResult)
+        console.error('❌ Erro no upload da foto:', errorResult)
+        console.error('❌ Status:', uploadResponse.status)
         console.warn('⚠️ Funcionário criado sem foto')
+        
+        // Mostrar erro específico
+        throw new Error(`Erro no upload da foto: ${errorResult}`)
       }
     }
 
@@ -188,11 +203,20 @@ export async function updateFuncionario(params: UpdateFuncionarioParams): Promis
     // Se tem nova foto, fazer upload
     if (foto) {
       console.log('📸 Fazendo upload da nova foto do funcionário:', id)
+      console.log('📁 Tipo de arquivo:', foto.type)
+      console.log('📊 Tamanho do arquivo:', foto.size)
       
       const formData = new FormData()
       formData.append('foto', foto)
       formData.append('funcionario_id', id)
       formData.append('cpf', result.cpf)
+
+      console.log('📤 Enviando dados para update:', {
+        funcionario_id: id,
+        cpf: result.cpf,
+        foto_name: foto.name,
+        foto_size: foto.size
+      })
 
       const uploadResponse = await fetch('/api/funcionarios/upload-foto', {
         method: 'POST',
@@ -204,17 +228,24 @@ export async function updateFuncionario(params: UpdateFuncionarioParams): Promis
 
       if (uploadResponse.ok) {
         const uploadResult = await uploadResponse.json()
-        console.log('✅ Nova foto enviada com sucesso:', uploadResult.foto_url)
+        console.log('✅ Nova foto enviada com sucesso:', uploadResult)
+        console.log('🔗 URL da nova foto:', uploadResult.foto_url)
         
         // A API já atualizou o banco, então buscar os dados atualizados
         const updatedResult = await queryOne(`
           SELECT * FROM funcionarios WHERE id = $1
         `, [id])
 
+        console.log('✅ Dados atualizados após upload:', updatedResult)
         return updatedResult || result
       } else {
         const errorResult = await uploadResponse.text()
-        console.warn('⚠️ Erro no upload da nova foto:', errorResult)
+        console.error('❌ Erro no upload da nova foto:', errorResult)
+        console.error('❌ Status:', uploadResponse.status)
+        
+        // Ainda retorna o resultado da atualização dos outros dados
+        console.warn('⚠️ Funcionário atualizado, mas erro no upload da foto')
+        throw new Error(`Erro no upload da foto: ${errorResult}`)
       }
     }
 
