@@ -84,8 +84,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 // Middleware específico para imagens de crachá
 app.use('/uploads/cracha', express.static(path.join(__dirname, 'uploads', 'cracha')))
 
-// Configuração do multer para upload de imagens
-const storage = multer.diskStorage({
+// Middleware específico para fotos de funcionários
+app.use('/uploads/funcionarios', express.static(path.join(__dirname, 'uploads', 'funcionarios')))
+
+// Configuração do multer para upload de imagens do crachá
+const crachaStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadPath = path.join(__dirname, 'uploads', 'cracha');
     if (!fsSync.existsSync(uploadPath)) {
@@ -101,8 +104,8 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({
-  storage: storage,
+const uploadCracha = multer({
+  storage: crachaStorage,
   limits: {
     fileSize: 5 * 1024 * 1024 // 5MB máximo
   },
@@ -115,6 +118,42 @@ const upload = multer({
     }
   }
 });
+
+// Configuração do multer para upload de fotos de funcionários
+const funcionarioStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadPath = path.join(__dirname, 'uploads', 'funcionarios');
+    if (!fsSync.existsSync(uploadPath)) {
+      fsSync.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    // Usar CPF + timestamp para o nome do arquivo
+    const cpf = req.body.cpf || req.body.funcionario_id || 'funcionario';
+    const timestamp = Date.now();
+    const fileExtension = path.extname(file.originalname) || '.jpg';
+    cb(null, `${cpf}_${timestamp}${fileExtension}`);
+  }
+});
+
+const uploadFuncionario = multer({
+  storage: funcionarioStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB máximo
+  },
+  fileFilter: function (req, file, cb) {
+    // Aceitar apenas imagens
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos de imagem são permitidos'));
+    }
+  }
+});
+
+// Manter compatibilidade com código existente
+const upload = uploadCracha;
 
 // Middleware para verificar JWT
 const authenticateToken = (req, res, next) => {
@@ -631,7 +670,7 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
 });
 
 // Rota para upload de imagem do crachá
-app.post('/api/users/:id/upload-cracha', authenticateToken, upload.single('crachaImage'), async (req, res) => {
+app.post('/api/users/:id/upload-cracha', authenticateToken, uploadCracha.single('crachaImage'), async (req, res) => {
   const { id } = req.params;
   let client;
 
@@ -726,6 +765,105 @@ app.post('/api/users/:id/upload-cracha', authenticateToken, upload.single('crach
 
     res.status(500).json({
       error: 'Erro ao fazer upload da imagem',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
+// Rota para upload de foto de funcionário
+app.post('/api/funcionarios/upload-foto', authenticateToken, uploadFuncionario.single('foto'), async (req, res) => {
+  let client;
+
+  try {
+    console.log('📸 Upload de foto de funcionário solicitado');
+    console.log('👤 Upload solicitado por:', req.user.email);
+    console.log('📁 Dados recebidos:', {
+      funcionario_id: req.body.funcionario_id,
+      cpf: req.body.cpf,
+      file: req.file ? {
+        filename: req.file.filename,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      } : 'Nenhum arquivo'
+    });
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Nenhuma foto foi enviada' });
+    }
+
+    if (!req.body.funcionario_id) {
+      return res.status(400).json({ error: 'ID do funcionário é obrigatório' });
+    }
+
+    // Obter pool correto para o usuário
+    const userPool = await getUserDatabasePool(req.user.id);
+    client = await userPool.connect();
+
+    // Verificar se o funcionário existe
+    const funcionarioExists = await client.query(
+      'SELECT id, nome, cpf FROM funcionarios WHERE id = $1', 
+      [req.body.funcionario_id]
+    );
+
+    if (funcionarioExists.rows.length === 0) {
+      // Deletar arquivo enviado já que não será usado
+      try {
+        await fs.unlink(req.file.path);
+      } catch (unlinkError) {
+        console.error('Erro ao remover arquivo:', unlinkError);
+      }
+      return res.status(404).json({ error: 'Funcionário não encontrado' });
+    }
+
+    const funcionario = funcionarioExists.rows[0];
+    console.log('✅ Funcionário encontrado:', funcionario.nome);
+
+    // URL da foto para armazenar no banco
+    const fotoUrl = `/uploads/funcionarios/${req.file.filename}`;
+
+    // Se existe uma foto anterior, deletar o arquivo físico
+    if (funcionario.foto_url) {
+      const oldPhotoPath = path.join(__dirname, funcionario.foto_url);
+      try {
+        await fs.unlink(oldPhotoPath);
+        console.log('🗑️ Foto anterior removida:', funcionario.foto_url);
+      } catch (unlinkError) {
+        console.warn('⚠️ Não foi possível remover foto anterior:', unlinkError.message);
+        // Não falha a operação por isso
+      }
+    }
+
+    console.log('💾 Salvando URL da foto no banco:', fotoUrl);
+
+    res.json({
+      success: true,
+      message: 'Foto do funcionário enviada com sucesso',
+      foto_url: fotoUrl,
+      funcionario: {
+        id: funcionario.id,
+        nome: funcionario.nome
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao fazer upload da foto do funcionário:', error);
+
+    // Se houve erro, tentar deletar o arquivo para não deixar "lixo"
+    if (req.file && req.file.path) {
+      try {
+        await fs.unlink(req.file.path);
+        console.log('🗑️ Arquivo temporário removido após erro');
+      } catch (unlinkError) {
+        console.error('Erro ao remover arquivo temporário:', unlinkError);
+      }
+    }
+
+    res.status(500).json({
+      error: 'Erro ao fazer upload da foto do funcionário',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   } finally {

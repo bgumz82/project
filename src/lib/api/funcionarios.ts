@@ -62,88 +62,170 @@ export async function getFuncionario(id: string): Promise<Funcionario | null> {
 }
 
 export async function createFuncionario(params: CreateFuncionarioParams): Promise<Funcionario> {
-  const { funcionario } = params
+  const { funcionario, foto } = params
 
-  const result = await queryOne(`
-    INSERT INTO funcionarios (
-      nome,
-      cpf,
-      rg,
-      matricula,
-      data_admissao,
-      data_nascimento,
-      telefone,
-      funcao,
-      cnh,
-      validade_cnh,
-      status,
-      ativo
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-    RETURNING *
-  `, [
-    funcionario.nome,
-    funcionario.cpf,
-    funcionario.rg,
-    funcionario.matricula,
-    funcionario.data_admissao,
-    funcionario.data_nascimento,
-    funcionario.telefone,
-    funcionario.funcao,
-    funcionario.cnh,
-    funcionario.validade_cnh,
-    funcionario.status || 'ativo',
-    funcionario.ativo || true
-  ])
+  try {
+    // Primeiro, criar o funcionário no banco
+    const result = await queryOne(`
+      INSERT INTO funcionarios (
+        nome,
+        cpf,
+        rg,
+        matricula,
+        data_admissao,
+        data_nascimento,
+        telefone,
+        funcao,
+        cnh,
+        validade_cnh,
+        status,
+        ativo
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING *
+    `, [
+      funcionario.nome,
+      funcionario.cpf,
+      funcionario.rg,
+      funcionario.matricula,
+      funcionario.data_admissao,
+      funcionario.data_nascimento,
+      funcionario.telefone,
+      funcionario.funcao,
+      funcionario.cnh,
+      funcionario.validade_cnh,
+      funcionario.status || 'ativo',
+      funcionario.ativo || true
+    ])
 
-  if (!result) {
-    throw new Error('Erro ao criar funcionário')
+    if (!result) {
+      throw new Error('Erro ao criar funcionário')
+    }
+
+    // Se tem foto, fazer upload
+    if (foto) {
+      console.log('📸 Fazendo upload da foto do funcionário:', result.id)
+      
+      const formData = new FormData()
+      formData.append('foto', foto)
+      formData.append('funcionario_id', result.id)
+      formData.append('cpf', funcionario.cpf)
+
+      const uploadResponse = await fetch('/api/funcionarios/upload-foto', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
+        },
+        body: formData
+      })
+
+      if (uploadResponse.ok) {
+        const uploadResult = await uploadResponse.json()
+        console.log('✅ Foto enviada com sucesso:', uploadResult.foto_url)
+        
+        // Atualizar o funcionário com a URL da foto
+        const updatedResult = await queryOne(`
+          UPDATE funcionarios 
+          SET foto_url = $1, updated_at = NOW()
+          WHERE id = $2
+          RETURNING *
+        `, [uploadResult.foto_url, result.id])
+
+        return updatedResult || result
+      } else {
+        console.warn('⚠️ Erro no upload da foto, funcionário criado sem foto')
+      }
+    }
+
+    return result
+  } catch (error) {
+    console.error('❌ Erro ao criar funcionário:', error)
+    throw error
   }
-
-  return result
 }
 
 export async function updateFuncionario(params: UpdateFuncionarioParams): Promise<Funcionario> {
-  const { id, funcionario } = params
+  const { id, funcionario, foto } = params
 
-  const result = await queryOne(`
-    UPDATE funcionarios
-    SET
-      nome = COALESCE($1, nome),
-      cpf = COALESCE($2, cpf),
-      rg = COALESCE($3, rg),
-      matricula = COALESCE($4, matricula),
-      data_admissao = COALESCE($5, data_admissao),
-      data_nascimento = COALESCE($6, data_nascimento),
-      telefone = COALESCE($7, telefone),
-      funcao = COALESCE($8, funcao),
-      cnh = COALESCE($9, cnh),
-      validade_cnh = COALESCE($10, validade_cnh),
-      status = COALESCE($11, status),
-      ativo = COALESCE($12, ativo),
-      updated_at = NOW()
-    WHERE id = $13
-    RETURNING *
-  `, [
-    funcionario.nome,
-    funcionario.cpf,
-    funcionario.rg,
-    funcionario.matricula,
-    funcionario.data_admissao,
-    funcionario.data_nascimento,
-    funcionario.telefone,
-    funcionario.funcao,
-    funcionario.cnh,
-    funcionario.validade_cnh,
-    funcionario.status,
-    funcionario.ativo,
-    id
-  ])
+  try {
+    // Atualizar dados do funcionário
+    const result = await queryOne(`
+      UPDATE funcionarios
+      SET
+        nome = COALESCE($1, nome),
+        cpf = COALESCE($2, cpf),
+        rg = COALESCE($3, rg),
+        matricula = COALESCE($4, matricula),
+        data_admissao = COALESCE($5, data_admissao),
+        data_nascimento = COALESCE($6, data_nascimento),
+        telefone = COALESCE($7, telefone),
+        funcao = COALESCE($8, funcao),
+        cnh = COALESCE($9, cnh),
+        validade_cnh = COALESCE($10, validade_cnh),
+        status = COALESCE($11, status),
+        ativo = COALESCE($12, ativo),
+        updated_at = NOW()
+      WHERE id = $13
+      RETURNING *
+    `, [
+      funcionario.nome,
+      funcionario.cpf,
+      funcionario.rg,
+      funcionario.matricula,
+      funcionario.data_admissao,
+      funcionario.data_nascimento,
+      funcionario.telefone,
+      funcionario.funcao,
+      funcionario.cnh,
+      funcionario.validade_cnh,
+      funcionario.status,
+      funcionario.ativo,
+      id
+    ])
 
-  if (!result) {
-    throw new Error('Funcionário não encontrado')
+    if (!result) {
+      throw new Error('Funcionário não encontrado')
+    }
+
+    // Se tem nova foto, fazer upload
+    if (foto) {
+      console.log('📸 Fazendo upload da nova foto do funcionário:', id)
+      
+      const formData = new FormData()
+      formData.append('foto', foto)
+      formData.append('funcionario_id', id)
+      formData.append('cpf', result.cpf)
+
+      const uploadResponse = await fetch('/api/funcionarios/upload-foto', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
+        },
+        body: formData
+      })
+
+      if (uploadResponse.ok) {
+        const uploadResult = await uploadResponse.json()
+        console.log('✅ Nova foto enviada com sucesso:', uploadResult.foto_url)
+        
+        // Atualizar o funcionário com a nova URL da foto
+        const updatedResult = await queryOne(`
+          UPDATE funcionarios 
+          SET foto_url = $1, updated_at = NOW()
+          WHERE id = $2
+          RETURNING *
+        `, [uploadResult.foto_url, id])
+
+        return updatedResult || result
+      } else {
+        console.warn('⚠️ Erro no upload da nova foto')
+      }
+    }
+
+    return result
+  } catch (error) {
+    console.error('❌ Erro ao atualizar funcionário:', error)
+    throw error
   }
-
-  return result
 }
 
 export async function deleteFuncionario(id: string): Promise<void> {
