@@ -3555,7 +3555,7 @@ app.get('/api/mdfe-documentos', authenticateToken, async (req, res) => {
   }
 });
 
-// Rotas para CT-e
+// Rota para buscar documentos CT-e
 app.get('/api/cte-documentos', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(`
