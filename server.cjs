@@ -200,7 +200,9 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Rota para upload de foto de funcionário - POSICIONADA APÓS MIDDLEWARE
+console.log('🔧 Registrando rota de upload de funcionário...');
+
+// Rota para upload de foto de funcionário - POSICIONADA CORRETAMENTE
 app.post('/api/funcionarios/upload-foto', authenticateToken, uploadFuncionario.single('foto'), async (req, res) => {
   let client;
 
@@ -347,6 +349,8 @@ app.post('/api/funcionarios/upload-foto', authenticateToken, uploadFuncionario.s
     }
   }
 });
+
+console.log('✅ Rota de upload de funcionário registrada com sucesso');
 
 // Depois adicionar o endpoint:
 app.post('/api/consultar-nfe', async (req, res) => {
@@ -3862,6 +3866,14 @@ app.use((err, req, res, next) => {
 // Iniciar servidor
 const server = app.listen(PORT, 'localhost', () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
+
+  // Debug: Listar todas as rotas registradas
+  console.log('🔍 Rotas registradas:');
+  app._router.stack.forEach((middleware) => {
+    if (middleware.route) {
+      console.log(`  ${Object.keys(middleware.route.methods).join(', ').toUpperCase()} ${middleware.route.path}`);
+    }
+  });
 
   // Inicializar estrutura do banco principal na inicialização com client válido
   pool.connect()
