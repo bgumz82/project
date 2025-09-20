@@ -797,7 +797,6 @@ app.post('/api/users/:id/upload-cracha', authenticateToken, uploadCracha.single(
 });
 
 // Rota para upload de foto de funcionário
-// Rota já foi movida para antes das outras rotas para evitar conflitos
 app.post('/api/funcionarios/upload-foto', authenticateToken, uploadFuncionario.single('foto'), async (req, res) => {
   let client;
 
@@ -944,9 +943,6 @@ app.post('/api/funcionarios/upload-foto', authenticateToken, uploadFuncionario.s
     }
   }
 });
-
-// Debug: Verificar se a rota está sendo registrada
-console.log('🔧 Registrando rota /api/funcionarios/upload-foto');
 
 // Rota para criar usuários (signup) - VERSÃO CORRIGIDA
 app.post('/api/auth/signup', async (req, res) => {
@@ -2425,8 +2421,7 @@ async function insertInitialData(client) {
           uf_emissao_nfe, ambiente_nfce, ambiente_cte, serie_padrao_cte, serie_padrao_mdfe, status,
           created_at, updated_at
         ) VALUES (
-          'EMPRESA DE EXEMPLO LTDA', '00.000.000/0001-00',
-          'Rua das Amostras, 100', 'São Paulo', 'SP',
+          'EMPRESA DE EXEMPLO LTDA', '00.000.000/0001-00', 'Rua das Amostras, 100', 'São Paulo', 'SP',
           'SP', '1', '1', '001', '001', 'ativo',
           NOW(), NOW()
         )
