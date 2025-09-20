@@ -118,6 +118,17 @@ export default defineConfig({
           });
         },
       },
+      "/api/funcionarios": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        secure: false,
+        timeout: 30000,
+        configure: (proxy, options) => {
+          proxy.on("proxyReq", (proxyReq, req, res) => {
+            console.log("🔥 Redirecionando Funcionários para localhost:", req.url);
+          });
+        },
+      },
       "/api": {
         target: "https://sistema.systemtruck.com.br",
         changeOrigin: true,
