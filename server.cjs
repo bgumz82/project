@@ -62,14 +62,14 @@ app.use(express.json());
 // Middleware para logging de requisições
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
-  
+
   // Log especial para rotas de funcionarios
   if (req.path.includes('/funcionarios')) {
     console.log('🔍 Rota de funcionários detectada:', req.path);
     console.log('📋 Método:', req.method);
     console.log('📋 Headers:', Object.keys(req.headers));
   }
-  
+
   next();
 });
 
@@ -132,12 +132,12 @@ const funcionarioStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadPath = path.join(__dirname, 'uploads', 'funcionarios');
     console.log('📁 Verificando diretório de upload:', uploadPath);
-    
+
     if (!fsSync.existsSync(uploadPath)) {
       console.log('📁 Criando diretório:', uploadPath);
       fsSync.mkdirSync(uploadPath, { recursive: true });
     }
-    
+
     console.log('✅ Diretório confirmado:', uploadPath);
     cb(null, uploadPath);
   },
@@ -147,11 +147,11 @@ const funcionarioStorage = multer.diskStorage({
     const timestamp = Date.now();
     const fileExtension = path.extname(file.originalname) || '.jpg';
     const filename = `${cpf}_${timestamp}${fileExtension}`;
-    
+
     console.log('📋 Gerando nome do arquivo:', filename);
     console.log('📋 CPF usado:', cpf);
     console.log('📋 Extensão:', fileExtension);
-    
+
     cb(null, filename);
   }
 });
@@ -797,6 +797,7 @@ app.post('/api/users/:id/upload-cracha', authenticateToken, uploadCracha.single(
 });
 
 // Rota para upload de foto de funcionário
+// Rota já foi movida para antes das outras rotas para evitar conflitos
 app.post('/api/funcionarios/upload-foto', authenticateToken, uploadFuncionario.single('foto'), async (req, res) => {
   let client;
 
@@ -839,7 +840,7 @@ app.post('/api/funcionarios/upload-foto', authenticateToken, uploadFuncionario.s
 
     // Verificar se o funcionário existe
     const funcionarioExists = await client.query(
-      'SELECT id, nome, cpf, foto_url FROM funcionarios WHERE id = $1', 
+      'SELECT id, nome, cpf, foto_url FROM funcionarios WHERE id = $1',
       [req.body.funcionario_id]
     );
 
@@ -882,7 +883,7 @@ app.post('/api/funcionarios/upload-foto', authenticateToken, uploadFuncionario.s
 
     // Atualizar o funcionário com a URL da foto no banco de dados
     const updateResult = await client.query(`
-      UPDATE funcionarios 
+      UPDATE funcionarios
       SET foto_url = $1, updated_at = NOW()
       WHERE id = $2
       RETURNING *
@@ -2539,7 +2540,6 @@ app.post('/api/db/query', authenticateToken, async (req, res) => {
   console.log('📡 Recebida requisição de query do usuário:', req.user.email);
 
   let client;
-  const queryText = req.body.query; // Store query text for error reporting
 
   try {
     // Obter pool correto para o usuário
@@ -2569,7 +2569,7 @@ app.post('/api/db/query', authenticateToken, async (req, res) => {
     res.status(500).json({
       error: 'Erro na consulta ao banco de dados',
       details: error.message,
-      query: queryText
+      query: req.body.query // Include the query for debugging
     });
   } finally {
     if (client) {
