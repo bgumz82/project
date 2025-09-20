@@ -200,6 +200,154 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+// Rota para upload de foto de funcionário - POSICIONADA APÓS MIDDLEWARE
+app.post('/api/funcionarios/upload-foto', authenticateToken, uploadFuncionario.single('foto'), async (req, res) => {
+  let client;
+
+  try {
+    console.log('📸 Upload de foto de funcionário solicitado');
+    console.log('👤 Upload solicitado por:', req.user.email);
+    console.log('📁 Dados recebidos:', {
+      funcionario_id: req.body.funcionario_id,
+      cpf: req.body.cpf,
+      file: req.file ? {
+        filename: req.file.filename,
+        originalname: req.file.originalname,
+        size: req.file.size,
+        mimetype: req.file.mimetype,
+        path: req.file.path
+      } : 'Nenhum arquivo'
+    });
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Nenhuma foto foi enviada' });
+    }
+
+    if (!req.body.funcionario_id) {
+      return res.status(400).json({ error: 'ID do funcionário é obrigatório' });
+    }
+
+    // Verificar se o arquivo foi realmente salvo
+    const fileExists = fsSync.existsSync(req.file.path);
+    console.log('🔍 Arquivo existe no sistema?', fileExists);
+    console.log('📁 Caminho do arquivo:', req.file.path);
+
+    if (!fileExists) {
+      console.error('❌ Arquivo não foi salvo no sistema de arquivos');
+      return res.status(500).json({ error: 'Erro ao salvar arquivo no servidor' });
+    }
+
+    // Obter pool correto para o usuário
+    const userPool = await getUserDatabasePool(req.user.id);
+    client = await userPool.connect();
+
+    // Verificar se o funcionário existe
+    const funcionarioExists = await client.query(
+      'SELECT id, nome, cpf, foto_url FROM funcionarios WHERE id = $1',
+      [req.body.funcionario_id]
+    );
+
+    if (funcionarioExists.rows.length === 0) {
+      // Deletar arquivo enviado já que não será usado
+      try {
+        await fs.unlink(req.file.path);
+      } catch (unlinkError) {
+        console.error('Erro ao remover arquivo:', unlinkError);
+      }
+      return res.status(404).json({ error: 'Funcionário não encontrado' });
+    }
+
+    const funcionario = funcionarioExists.rows[0];
+    console.log('✅ Funcionário encontrado:', funcionario.nome);
+    console.log('📋 Foto atual no banco:', funcionario.foto_url);
+
+    // URL da foto para armazenar no banco
+    const fotoUrl = `/uploads/funcionarios/${req.file.filename}`;
+    console.log('🔗 Nova URL da foto:', fotoUrl);
+
+    // Se existe uma foto anterior, deletar o arquivo físico
+    if (funcionario.foto_url) {
+      const oldPhotoPath = path.join(__dirname, funcionario.foto_url);
+      console.log('🗑️ Tentando remover foto anterior:', oldPhotoPath);
+      try {
+        if (fsSync.existsSync(oldPhotoPath)) {
+          await fs.unlink(oldPhotoPath);
+          console.log('✅ Foto anterior removida:', funcionario.foto_url);
+        } else {
+          console.log('⚠️ Foto anterior não existe no sistema de arquivos');
+        }
+      } catch (unlinkError) {
+        console.warn('⚠️ Não foi possível remover foto anterior:', unlinkError.message);
+        // Não falha a operação por isso
+      }
+    }
+
+    console.log('💾 Salvando URL da foto no banco:', fotoUrl);
+
+    // Atualizar o funcionário com a URL da foto no banco de dados
+    const updateResult = await client.query(`
+      UPDATE funcionarios
+      SET foto_url = $1, updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `, [fotoUrl, req.body.funcionario_id]);
+
+    if (updateResult.rows.length === 0) {
+      console.error('❌ Erro ao atualizar funcionário com URL da foto');
+      return res.status(500).json({ error: 'Erro ao atualizar funcionário com a foto' });
+    }
+
+    console.log('✅ URL da foto salva no banco com sucesso:', updateResult.rows[0].foto_url);
+
+    // Verificar se a foto está realmente acessível
+    const finalPhotoPath = path.join(__dirname, fotoUrl);
+    const finalFileExists = fsSync.existsSync(finalPhotoPath);
+    console.log('🔍 Foto final acessível?', finalFileExists, 'em:', finalPhotoPath);
+
+    res.json({
+      success: true,
+      message: 'Foto do funcionário enviada com sucesso',
+      foto_url: fotoUrl,
+      funcionario: {
+        id: funcionario.id,
+        nome: funcionario.nome,
+        foto_url: fotoUrl
+      },
+      debug: {
+        filename: req.file.filename,
+        path: req.file.path,
+        finalPath: finalPhotoPath,
+        fileExists: finalFileExists
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao fazer upload da foto do funcionário:', error);
+    console.error('❌ Stack trace:', error.stack);
+
+    // Se houve erro, tentar deletar o arquivo para não deixar "lixo"
+    if (req.file && req.file.path) {
+      try {
+        if (fsSync.existsSync(req.file.path)) {
+          await fs.unlink(req.file.path);
+          console.log('🗑️ Arquivo temporário removido após erro');
+        }
+      } catch (unlinkError) {
+        console.error('Erro ao remover arquivo temporário:', unlinkError);
+      }
+    }
+
+    res.status(500).json({
+      error: 'Erro ao fazer upload da foto do funcionário',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
 // Depois adicionar o endpoint:
 app.post('/api/consultar-nfe', async (req, res) => {
   try {
@@ -796,153 +944,7 @@ app.post('/api/users/:id/upload-cracha', authenticateToken, uploadCracha.single(
   }
 });
 
-// Rota para upload de foto de funcionário
-app.post('/api/funcionarios/upload-foto', authenticateToken, uploadFuncionario.single('foto'), async (req, res) => {
-  let client;
 
-  try {
-    console.log('📸 Upload de foto de funcionário solicitado');
-    console.log('👤 Upload solicitado por:', req.user.email);
-    console.log('📁 Dados recebidos:', {
-      funcionario_id: req.body.funcionario_id,
-      cpf: req.body.cpf,
-      file: req.file ? {
-        filename: req.file.filename,
-        originalname: req.file.originalname,
-        size: req.file.size,
-        mimetype: req.file.mimetype,
-        path: req.file.path
-      } : 'Nenhum arquivo'
-    });
-
-    if (!req.file) {
-      return res.status(400).json({ error: 'Nenhuma foto foi enviada' });
-    }
-
-    if (!req.body.funcionario_id) {
-      return res.status(400).json({ error: 'ID do funcionário é obrigatório' });
-    }
-
-    // Verificar se o arquivo foi realmente salvo
-    const fileExists = fsSync.existsSync(req.file.path);
-    console.log('🔍 Arquivo existe no sistema?', fileExists);
-    console.log('📁 Caminho do arquivo:', req.file.path);
-
-    if (!fileExists) {
-      console.error('❌ Arquivo não foi salvo no sistema de arquivos');
-      return res.status(500).json({ error: 'Erro ao salvar arquivo no servidor' });
-    }
-
-    // Obter pool correto para o usuário
-    const userPool = await getUserDatabasePool(req.user.id);
-    client = await userPool.connect();
-
-    // Verificar se o funcionário existe
-    const funcionarioExists = await client.query(
-      'SELECT id, nome, cpf, foto_url FROM funcionarios WHERE id = $1',
-      [req.body.funcionario_id]
-    );
-
-    if (funcionarioExists.rows.length === 0) {
-      // Deletar arquivo enviado já que não será usado
-      try {
-        await fs.unlink(req.file.path);
-      } catch (unlinkError) {
-        console.error('Erro ao remover arquivo:', unlinkError);
-      }
-      return res.status(404).json({ error: 'Funcionário não encontrado' });
-    }
-
-    const funcionario = funcionarioExists.rows[0];
-    console.log('✅ Funcionário encontrado:', funcionario.nome);
-    console.log('📋 Foto atual no banco:', funcionario.foto_url);
-
-    // URL da foto para armazenar no banco
-    const fotoUrl = `/uploads/funcionarios/${req.file.filename}`;
-    console.log('🔗 Nova URL da foto:', fotoUrl);
-
-    // Se existe uma foto anterior, deletar o arquivo físico
-    if (funcionario.foto_url) {
-      const oldPhotoPath = path.join(__dirname, funcionario.foto_url);
-      console.log('🗑️ Tentando remover foto anterior:', oldPhotoPath);
-      try {
-        if (fsSync.existsSync(oldPhotoPath)) {
-          await fs.unlink(oldPhotoPath);
-          console.log('✅ Foto anterior removida:', funcionario.foto_url);
-        } else {
-          console.log('⚠️ Foto anterior não existe no sistema de arquivos');
-        }
-      } catch (unlinkError) {
-        console.warn('⚠️ Não foi possível remover foto anterior:', unlinkError.message);
-        // Não falha a operação por isso
-      }
-    }
-
-    console.log('💾 Salvando URL da foto no banco:', fotoUrl);
-
-    // Atualizar o funcionário com a URL da foto no banco de dados
-    const updateResult = await client.query(`
-      UPDATE funcionarios
-      SET foto_url = $1, updated_at = NOW()
-      WHERE id = $2
-      RETURNING *
-    `, [fotoUrl, req.body.funcionario_id]);
-
-    if (updateResult.rows.length === 0) {
-      console.error('❌ Erro ao atualizar funcionário com URL da foto');
-      return res.status(500).json({ error: 'Erro ao atualizar funcionário com a foto' });
-    }
-
-    console.log('✅ URL da foto salva no banco com sucesso:', updateResult.rows[0].foto_url);
-
-    // Verificar se a foto está realmente acessível
-    const finalPhotoPath = path.join(__dirname, fotoUrl);
-    const finalFileExists = fsSync.existsSync(finalPhotoPath);
-    console.log('🔍 Foto final acessível?', finalFileExists, 'em:', finalPhotoPath);
-
-    res.json({
-      success: true,
-      message: 'Foto do funcionário enviada com sucesso',
-      foto_url: fotoUrl,
-      funcionario: {
-        id: funcionario.id,
-        nome: funcionario.nome,
-        foto_url: fotoUrl
-      },
-      debug: {
-        filename: req.file.filename,
-        path: req.file.path,
-        finalPath: finalPhotoPath,
-        fileExists: finalFileExists
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ Erro ao fazer upload da foto do funcionário:', error);
-    console.error('❌ Stack trace:', error.stack);
-
-    // Se houve erro, tentar deletar o arquivo para não deixar "lixo"
-    if (req.file && req.file.path) {
-      try {
-        if (fsSync.existsSync(req.file.path)) {
-          await fs.unlink(req.file.path);
-          console.log('🗑️ Arquivo temporário removido após erro');
-        }
-      } catch (unlinkError) {
-        console.error('Erro ao remover arquivo temporário:', unlinkError);
-      }
-    }
-
-    res.status(500).json({
-      error: 'Erro ao fazer upload da foto do funcionário',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  } finally {
-    if (client) {
-      client.release();
-    }
-  }
-});
 
 // Rota para criar usuários (signup) - VERSÃO CORRIGIDA
 app.post('/api/auth/signup', async (req, res) => {
