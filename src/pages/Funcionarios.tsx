@@ -855,8 +855,8 @@ export default function Funcionarios() {
                     value={selectedFuncionario.matricula}
                     size={220}
                     level="H"
-                    bgColor="#045800"
-                    fgColor="#267c23"
+                    bgColor="transparent"
+                    fgColor="#ffffff"
                   />
                 </div>
               </div>
