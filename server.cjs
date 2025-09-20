@@ -62,6 +62,14 @@ app.use(express.json());
 // Middleware para logging de requisições
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
+  
+  // Log especial para rotas de funcionarios
+  if (req.path.includes('/funcionarios')) {
+    console.log('🔍 Rota de funcionários detectada:', req.path);
+    console.log('📋 Método:', req.method);
+    console.log('📋 Headers:', Object.keys(req.headers));
+  }
+  
   next();
 });
 
@@ -154,10 +162,13 @@ const uploadFuncionario = multer({
     fileSize: 5 * 1024 * 1024 // 5MB máximo
   },
   fileFilter: function (req, file, cb) {
+    console.log('🔍 Verificando arquivo:', file.originalname, 'tipo:', file.mimetype);
     // Aceitar apenas imagens
     if (file.mimetype.startsWith('image/')) {
+      console.log('✅ Arquivo aceito:', file.mimetype);
       cb(null, true);
     } else {
+      console.log('❌ Arquivo rejeitado:', file.mimetype);
       cb(new Error('Apenas arquivos de imagem são permitidos'));
     }
   }
@@ -932,6 +943,9 @@ app.post('/api/funcionarios/upload-foto', authenticateToken, uploadFuncionario.s
     }
   }
 });
+
+// Debug: Verificar se a rota está sendo registrada
+console.log('🔧 Registrando rota /api/funcionarios/upload-foto');
 
 // Rota para criar usuários (signup) - VERSÃO CORRIGIDA
 app.post('/api/auth/signup', async (req, res) => {
