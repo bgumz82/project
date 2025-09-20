@@ -837,7 +837,11 @@ export default function Funcionarios() {
                     className="text-white mt-[19px]"
                     style={{ fontSize: '28px' }}
                   >
-                    {selectedFuncionario.funcao}
+                    {selectedFuncionario.funcao === 'administrativo' && 'Administrativo'}
+                    {selectedFuncionario.funcao === 'motorista' && 'Motorista'}
+                    {selectedFuncionario.funcao === 'motorista_carreta' && 'Motorista Carreta'}
+                    {selectedFuncionario.funcao === 'motorista_julieta' && 'Motorista Julieta'}
+                    {selectedFuncionario.funcao === 'gerente' && 'Gerente'}
                   </p>
                 </div>
 
