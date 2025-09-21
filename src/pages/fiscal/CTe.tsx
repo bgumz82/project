@@ -4070,7 +4070,6 @@ export default function CTe() {
           )}
         </button>
       </div>
-      </div>
       </form>
     </div>
   </div>
