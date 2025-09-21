@@ -291,7 +291,7 @@ export default function CTe() {
       if (associacoesFrota && associacoesFrota.length > 0) {
         console.log('🎯 Primeira associação no componente:', associacoesFrota[0])
         console.log('🎯 Funcionário da primeira associação:', associacoesFrota[0].funcionario)
-        console.log('🎯 Veículo principal da primeira associação:', associacoesFrota[0].veiculo_principal)
+        console.log('🎯 Veículo da primeira associação:', associacoesFrota[0].veiculo_principal)
         console.log('🎯 Estrutura completa da primeira associação:', JSON.stringify(associacoesFrota[0], null, 2))
       }
     }
@@ -1594,7 +1594,7 @@ export default function CTe() {
 
     // Validar remetente
     if (!formData.remetente_id || formData.remetente_id.trim() === '') {
-      toast.error('Por favor, selecione o remetente.')
+      toast.toast.error('Por favor, selecione o remetente.')
       return
     }
 
@@ -1772,7 +1772,7 @@ export default function CTe() {
       });
     }
 
-    // Preenche dados do motorista/associação se existirem
+    // Preenche dados do motorista se existirem
     if (documento.associacao_frota_id) {
       setSelectedMotoristaId(documento.associacao_frota_id);
     }
@@ -2891,7 +2891,7 @@ export default function CTe() {
                     </p>
                   </div>
 
-                  {/* Composição do Frete */}
+                  {/* Dados da Carga */}
                   <div className="bg-gray-50 p-4 rounded-lg space-y-4">
                     <h4 className="text-lg font-medium text-gray-900 mb-4">🚛 Composição do Frete</h4>
 
