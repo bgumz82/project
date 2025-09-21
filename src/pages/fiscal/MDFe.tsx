@@ -48,16 +48,16 @@ export default function MDFe() {
   const [selectedCTes, setSelectedCTes] = useState<string[]>([])
   const [showCTeSelection, setShowCTeSelection] = useState(false)
   const [isGeneratingFiles, setIsGeneratingFiles] = useState(false)
-  
+
   // Estados para paginação
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
-  
+
   // Estados para filtros
   const [filterMonth, setFilterMonth] = useState('')
   const [filterYear, setFilterYear] = useState('')
   const [searchNumber, setSearchNumber] = useState('')
-  
+
   const queryClient = useQueryClient()
 
   const { data: documentos, isLoading } = useQuery({
@@ -236,22 +236,22 @@ export default function MDFe() {
     if (filterStatus !== 'todos' && documento.status !== filterStatus) {
       return false
     }
-    
+
     // Filtro por mês e ano
     if (filterMonth || filterYear) {
       const dataEmissao = new Date(documento.data_emissao)
       const mes = (dataEmissao.getMonth() + 1).toString().padStart(2, '0')
       const ano = dataEmissao.getFullYear().toString()
-      
+
       if (filterMonth && mes !== filterMonth) {
         return false
       }
-      
+
       if (filterYear && ano !== filterYear) {
         return false
       }
     }
-    
+
     // Filtro por número do MDF-e
     if (searchNumber) {
       const numeroLimpo = searchNumber.replace(/\D/g, '')
@@ -260,7 +260,7 @@ export default function MDFe() {
         return false
       }
     }
-    
+
     return true
   }) || []
 
@@ -292,18 +292,33 @@ export default function MDFe() {
             <TruckIcon className="h-8 w-8 text-indigo-600 mr-3" />
             <h1 className="text-2xl font-semibold text-gray-900">Documentos MDF-e</h1>
           </div>
-          <button
-            onClick={() => {
-              console.log("🚀 Abrindo modal MDF-e - vai carregar CT-es emitidos...")
-              resetForm()
-              setIsModalOpen(true)
-              setShowCTeSelection(true) // Ativar busca de CT-es
-            }}
-            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-          >
-            <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-            Novo MDF-e
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => {
+                console.log('🔄 Atualizando lista de MDF-e manualmente')
+                queryClient.invalidateQueries({ queryKey: ['mdfe-documentos'] })
+                toast.success('Lista de MDF-e atualizada!')
+              }}
+              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+              Atualizar Dados
+            </button>
+            <button
+              onClick={() => {
+                console.log("🚀 Abrindo modal MDF-e - vai carregar CT-es emitidos...")
+                resetForm()
+                setIsModalOpen(true)
+                setShowCTeSelection(true) // Ativar busca de CT-es
+              }}
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+              Novo MDF-e
+            </button>
+          </div>
         </div>
 
         {/* Filtros */}
@@ -559,7 +574,7 @@ export default function MDFe() {
                             }`}
                             title={
                               documento.status === 'emitido' || documento.status === 'encerrado'
-                                ? `Não é possível excluir MDF-e ${documento.status}`
+                                ? `Não é possível excluir MDF-e ${documento.numero_mdfe.padStart(9, '0')} pois está ${documento.status}`
                                 : 'Excluir'
                             }
                             disabled={documento.status === 'emitido' || documento.status === 'encerrado'}
@@ -583,7 +598,7 @@ export default function MDFe() {
               <div className="text-sm text-gray-700">
                 Página {currentPage} de {totalPages}
               </div>
-              
+
               <div className="flex space-x-2">
                 <button
                   onClick={() => setCurrentPage(1)}
@@ -592,7 +607,7 @@ export default function MDFe() {
                 >
                   Primeira
                 </button>
-                
+
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
@@ -606,9 +621,9 @@ export default function MDFe() {
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     const startPage = Math.max(1, currentPage - 2)
                     const pageNumber = startPage + i
-                    
+
                     if (pageNumber > totalPages) return null
-                    
+
                     return (
                       <button
                         key={pageNumber}
@@ -632,7 +647,7 @@ export default function MDFe() {
                 >
                   Próxima
                 </button>
-                
+
                 <button
                   onClick={() => setCurrentPage(totalPages)}
                   disabled={currentPage === totalPages}
