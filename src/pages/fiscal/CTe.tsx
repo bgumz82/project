@@ -4071,9 +4071,9 @@ export default function CTe() {
         </button>
       </div>
       </div>
-    </form>
+      </form>
+    </div>
   </div>
-</div>
 )}
 </div>
 )
