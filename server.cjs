@@ -3225,87 +3225,97 @@ app.post('/api/cte-documentos', (req, res, next) => {
 
 // ===== ROTAS MDF-e DOCUMENTOS =====
 
-// Rota para excluir documento MDF-e
+// Rota para excluir documento MDF-e - USAR BANCO DO USUÁRIO
 app.delete('/api/mdfe-documentos/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  console.log('🗑️ Iniciando exclusão do MDF-e:', id);
+  console.log('👤 Requisição do usuário:', req.user.email);
+
   let client;
 
   try {
-    const { id } = req.params;
-    console.log('🗑️ Iniciando exclusão do MDF-e:', id);
+    // 🎯 USAR BANCO DO USUÁRIO - MESMA LÓGICA DE /api/db/query
+    const userId = req.user.id;
 
-    // Obter pool correto para o usuário
-    const userPool = await getUserDatabasePool(req.user.id);
-    client = await userPool.connect();
+    // Buscar configuração de banco do usuário
+    const userConfigResult = await mainPool.query(`
+      SELECT dc.*
+      FROM usuarios u
+      JOIN database_configurations dc ON u.database_config_id = dc.id
+      WHERE u.id = $1 AND dc.ativo = true
+    `, [userId]);
 
-    // Verificar se o MDF-e existe e seu status
+    if (userConfigResult.rows.length === 0) {
+      console.log('⚠️ Usuário sem configuração específica, usando pool padrão');
+      client = await pool.connect();
+    } else {
+      const dbConfig = userConfigResult.rows[0];
+      console.log('🔗 Conectando ao banco do usuário:', dbConfig.nome_empresa);
+
+      const userPool = new Pool({
+        host: dbConfig.host,
+        port: dbConfig.port,
+        database: dbConfig.database_name,
+        user: dbConfig.username,
+        password: dbConfig.password,
+        ssl: dbConfig.ssl_enabled ? { rejectUnauthorized: false } : false,
+        max: dbConfig.max_connections || 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: (dbConfig.timeout_seconds || 30) * 1000,
+      });
+
+      client = await userPool.connect();
+    }
+
+    await client.query('BEGIN');
+
+    // Verificar se o MDF-e existe e buscar informações
     const mdfeResult = await client.query(`
-      SELECT id, numero_mdfe, status, empresa_id
-      FROM mdfe_documentos
-      WHERE id = $1
+      SELECT numero_mdfe, status FROM mdfe_documentos WHERE id = $1
     `, [id]);
 
     if (mdfeResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Documento MDF-e não encontrado' });
     }
 
     const mdfe = mdfeResult.rows[0];
-    console.log(`📋 MDF-e encontrado: ${mdfe.numero_mdfe}, Status: ${mdfe.status}`);
 
-    // Validar se pode ser excluído (não pode estar emitido ou encerrado)
+    // Verificar se pode ser excluído (apenas pendentes e cancelados)
     if (mdfe.status === 'emitido' || mdfe.status === 'encerrado') {
-      return res.status(400).json({
-        error: `Não é possível excluir MDF-e ${mdfe.numero_mdfe} pois está com status "${mdfe.status}". Apenas MDF-es pendentes ou cancelados podem ser excluídos.`
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        error: `Não é possível excluir MDF-e ${mdfe.numero_mdfe.padStart(9, '0')} pois está ${mdfe.status}. Apenas MDF-es pendentes ou cancelados podem ser excluídos.`
       });
     }
 
-    // Buscar CT-es relacionados antes de excluir
-    const ctesRelacionados = await client.query(`
-      SELECT cte_documento_id, c.numero_cte
-      FROM mdfe_cte_relacionados mcr
-      JOIN cte_documentos c ON mcr.cte_documento_id = c.id
+    // Buscar CT-es relacionados antes da exclusão
+    const ctesResult = await client.query(`
+      SELECT c.numero_cte, c.serie
+      FROM cte_documentos c
+      JOIN mdfe_cte_relacionados mcr ON c.id = mcr.cte_documento_id
       WHERE mcr.mdfe_documento_id = $1
     `, [id]);
 
-    console.log(`🔗 CT-es relacionados encontrados: ${ctesRelacionados.rows.length}`);
+    // Excluir relacionamentos (CASCADE deve cuidar disso, mas vamos garantir)
+    await client.query(`DELETE FROM mdfe_cte_relacionados WHERE mdfe_documento_id = $1`, [id]);
 
-    // Iniciar transação para garantir consistência
-    await client.query('BEGIN');
+    // Excluir o MDF-e
+    await client.query(`DELETE FROM mdfe_documentos WHERE id = $1`, [id]);
 
-    try {
-      // 1. Remover relacionamentos CT-e/MDF-e
-      if (ctesRelacionados.rows.length > 0) {
-        await client.query(`
-          DELETE FROM mdfe_cte_relacionados
-          WHERE mdfe_documento_id = $1
-        `, [id]);
+    await client.query('COMMIT');
 
-        console.log(`✅ Relacionamentos CT-e/MDF-e removidos: ${ctesRelacionados.rows.length}`);
-      }
+    console.log('✅ MDF-e excluído com sucesso:', mdfe.numero_mdfe);
 
-      // 2. Excluir o documento MDF-e
-      await client.query(`
-        DELETE FROM mdfe_documentos
-        WHERE id = $1
-      `, [id]);
-
-      console.log(`✅ MDF-e ${mdfe.numero_mdfe} excluído com sucesso`);
-
-      // Commit da transação
-      await client.query('COMMIT');
-
-      res.json({
-        success: true,
-        message: `MDF-e ${mdfe.numero_mdfe} excluído com sucesso`,
-        ctesLiberados: ctesRelacionados.rows.map(r => r.numero_cte)
-      });
-
-    } catch (transactionError) {
-      // Rollback em caso de erro
-      await client.query('ROLLBACK');
-      throw transactionError;
-    }
+    res.json({ 
+      message: `MDF-e ${mdfe.numero_mdfe.padStart(9, '0')} excluído com sucesso`,
+      ctesLiberados: ctesResult.rows
+    });
 
   } catch (error) {
+    if (client) {
+      await client.query('ROLLBACK');
+    }
     console.error('❌ Erro ao excluir documento MDF-e:', error);
     res.status(500).json({
       error: 'Erro ao excluir documento MDF-e',
@@ -3318,57 +3328,66 @@ app.delete('/api/mdfe-documentos/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Rota para criar documento MDF-e
+// Rota para criar documento MDF-e - USAR BANCO DO USUÁRIO
 app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
-  const requestId = generateRequestId();
+  const data = req.body;
+  console.log('📝 Criando novo documento MDF-e:', data);
+  console.log('👤 Requisição do usuário:', req.user.email);
+
   let client;
 
   try {
-    console.log(`🚨 [${requestId}] === INÍCIO CRIAÇÃO MDF-e ===`);
-    console.log(`📝 [${requestId}] Dados RAW recebidos da interface:`, JSON.stringify(req.body, null, 2));
+    // 🎯 USAR BANCO DO USUÁRIO - MESMA LÓGICA DE /api/db/query
+    const userId = req.user.id;
 
-    // Conectar ao banco do usuário
-    console.log(`🔍 [${requestId}] USANDO BANCO DO USUÁRIO: ${req.user.email}`);
-    const userDbConfig = await getUserDbConfig(req.user.email);
+    // Buscar configuração de banco do usuário
+    const userConfigResult = await mainPool.query(`
+      SELECT dc.*
+      FROM usuarios u
+      JOIN database_configurations dc ON u.database_config_id = dc.id
+      WHERE u.id = $1 AND dc.ativo = true
+    `, [userId]);
 
-    if (!userDbConfig || !userDbConfig.configuracao_padrao) {
-      throw new Error('Configuração de banco de dados do usuário não encontrada');
+    if (userConfigResult.rows.length === 0) {
+      console.log('⚠️ Usuário sem configuração específica, usando pool padrão');
+      client = await pool.connect();
+    } else {
+      const dbConfig = userConfigResult.rows[0];
+      console.log('🔗 Conectando ao banco do usuário:', dbConfig.nome_empresa);
+
+      const userPool = new Pool({
+        host: dbConfig.host,
+        port: dbConfig.port,
+        database: dbConfig.database_name,
+        user: dbConfig.username,
+        password: dbConfig.password,
+        ssl: dbConfig.ssl_enabled ? { rejectUnauthorized: false } : false,
+        max: dbConfig.max_connections || 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: (dbConfig.timeout_seconds || 30) * 1000,
+      });
+
+      client = await userPool.connect();
     }
 
-    console.log(`🔗 Conectando ao banco do usuário: ${userDbConfig.configuracao_padrao.nome_empresa}`);
-    client = new Client(userDbConfig.configuracao_padrao);
-    await client.connect();
+    await client.query('BEGIN');
 
-    const data = req.body;
-
-    // Validar dados obrigatórios
-    if (!data.empresa_id) {
-      throw new Error('ID da empresa é obrigatório');
-    }
-
+    // Verificar se todos os CT-es selecionados são válidos e pertencem à empresa
     if (!data.cte_ids || !Array.isArray(data.cte_ids) || data.cte_ids.length === 0) {
       throw new Error('É necessário selecionar pelo menos um CT-e emitido para criar o MDF-e');
     }
 
-    console.log(`✅ CT-es selecionados para MDF-e: ${data.cte_ids.length}`);
-
-    // Verificar se todos os CT-es estão emitidos e pertencem à empresa
     const ctesValidation = await client.query(`
-      SELECT id, numero_cte, status, chave_acesso
+      SELECT id, numero_cte, status
       FROM cte_documentos
-      WHERE id = ANY($1) AND empresa_id = $2
+      WHERE id = ANY($1) AND empresa_id = $2 AND status = 'emitido'
     `, [data.cte_ids, data.empresa_id]);
 
     if (ctesValidation.rows.length !== data.cte_ids.length) {
-      throw new Error('Alguns CT-es selecionados não foram encontrados ou não pertencem à empresa');
+      throw new Error('Um ou mais CT-es selecionados não foram encontrados, não pertencem à empresa ou não estão no status "emitido"');
     }
 
-    const ctesNaoEmitidos = ctesValidation.rows.filter(cte => cte.status !== 'emitido');
-    if (ctesNaoEmitidos.length > 0) {
-      throw new Error(`CT-es ${ctesNaoEmitidos.map(c => c.numero_cte).join(', ')} não estão emitidos`);
-    }
-
-    console.log(`✅ Todos os CT-es validados: ${ctesValidation.rows.map(c => c.numero_cte).join(', ')}`);
+    console.log(`✅ CT-es selecionados e validados: ${ctesValidation.rows.map(c => c.numero_cte).join(', ')}`);
 
     // Buscar dados da empresa
     const empresa = await client.query(
@@ -3379,33 +3398,21 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
     if (empresa.rows.length === 0) {
       throw new Error('Empresa fiscal não encontrada');
     }
-
     const empresaData = empresa.rows[0];
-    console.log(`🏢 Empresa validada: ${empresaData.id}`);
 
-    // APLICAR MESMA LÓGICA DE NUMERAÇÃO SEQUENCIAL DO CT-e
+    // Gerar número sequencial para o MDF-e
     let numeroFinal = data.numero_mdfe;
     if (!numeroFinal || numeroFinal === "AUTO" || numeroFinal.trim() === "") {
-      console.log('🔒 Obtendo próximo número MDF-e da empresa cadastrada...');
-
-      // Buscar último número real usado nos documentos desta empresa
       const ultimoNumeroResult = await client.query(`
         SELECT COALESCE(MAX(CAST(numero_mdfe AS INTEGER)), 0) as ultimo_numero
         FROM mdfe_documentos
-        WHERE empresa_id = $1
-        AND numero_mdfe ~ '^[0-9]+$'
+        WHERE empresa_id = $1 AND numero_mdfe ~ '^[0-9]+$'
       `, [data.empresa_id]);
 
       const ultimoNumeroReal = ultimoNumeroResult.rows[0].ultimo_numero || 0;
       const proximoNumeroCalculado = ultimoNumeroReal + 1;
 
-      console.log('📋 ÚLTIMO NÚMERO MDF-e REAL NA BASE:', ultimoNumeroReal);
-      console.log('📋 PRÓXIMO NÚMERO MDF-e CALCULADO:', proximoNumeroCalculado);
-      console.log('📋 VALOR NA EMPRESA (campo):', empresaData.proximo_numero_mdfe);
-
-      // Usar o maior entre calculado e campo da empresa
       numeroFinal = Math.max(proximoNumeroCalculado, empresaData.proximo_numero_mdfe);
-      console.log('📋 NÚMERO MDF-e FINAL ESCOLHIDO:', numeroFinal);
 
       // Atualizar o próximo número na empresa
       await client.query(`
@@ -3413,12 +3420,10 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
         SET proximo_numero_mdfe = $2
         WHERE id = $1
       `, [data.empresa_id, numeroFinal + 1]);
-
-      console.log('📋 Próximo número MDF-e atualizado na empresa para:', numeroFinal + 1);
     }
 
-    // Usar série padrão da empresa se não fornecida
     const serieFinal = data.serie || empresaData.serie_padrao_mdfe || "001";
+    const codigoUFFinal = data.codigo_uf || empresaData.codigo_uf || "31"; // Default para MG
 
     // Criar o documento MDF-e
     const result = await client.query(`
@@ -3444,7 +3449,7 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
       data.data_emissao,
       data.data_saida,
       data.data_encerramento,
-      empresaData.codigo_uf || "31",
+      codigoUFFinal,
       data.forma_emissao || 1,
       data.status || "pendente",
       data.observacoes
@@ -3457,7 +3462,6 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
     const mdfeDoc = result.rows[0];
 
     // Vincular CT-es ao MDF-e
-    console.log('🔗 Vincular CT-es ao MDF-e...');
     for (const cteId of data.cte_ids) {
       await client.query(`
         INSERT INTO mdfe_cte_relacionados (mdfe_documento_id, cte_documento_id, created_at)
@@ -3465,7 +3469,9 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
       `, [mdfeDoc.id, cteId]);
     }
 
-    console.log(`✅ Documento MDF-e criado com sucesso: ${mdfeDoc.id}`);
+    await client.query('COMMIT');
+
+    console.log(`✅ Documento MDF-e criado com sucesso: ${mdfeDoc.id} - Número: ${mdfeDoc.numero_mdfe}`);
     console.log(`✅ CT-es vinculados: ${data.cte_ids.length}`);
 
     res.json({
@@ -3474,46 +3480,80 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error(`❌ [${requestId}] Erro ao criar documento MDF-e:`, error);
-    res.status(400).json({
+    if (client) {
+      await client.query('ROLLBACK');
+    }
+    console.error('❌ Erro ao criar documento MDF-e:', error);
+    res.status(500).json({
       error: error.message || 'Erro interno do servidor',
       details: error.stack
     });
   } finally {
     if (client) {
-      await client.end();
+      client.release();
     }
   }
 });
 
-// Função auxiliar para gerar ID de requisição
-function generateRequestId() {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
-}
-
-// ===== ROTAS ESPECÍFICAS PARA MDF-e =====
-
-// Rota para buscar documentos MDF-e
+// Rota para buscar documentos MDF-e - USAR BANCO DO USUÁRIO
 app.get('/api/mdfe-documentos', authenticateToken, async (req, res) => {
-  try {
-    console.log('🔍 Buscando documentos MDF-e...');
+  console.log('🔍 Buscando documentos MDF-e...');
+  console.log('👤 Requisição do usuário:', req.user.email);
 
-    const result = await pool.query(`
-      SELECT
+  let client;
+
+  try {
+    // 🎯 USAR BANCO DO USUÁRIO - MESMA LÓGICA DE /api/db/query
+    const userId = req.user.id;
+
+    // Buscar configuração de banco do usuário
+    const userConfigResult = await mainPool.query(`
+      SELECT dc.*
+      FROM usuarios u
+      JOIN database_configurations dc ON u.database_config_id = dc.id
+      WHERE u.id = $1 AND dc.ativo = true
+    `, [userId]);
+
+    if (userConfigResult.rows.length === 0) {
+      console.log('⚠️ Usuário sem configuração específica, usando pool padrão');
+      client = await pool.connect();
+    } else {
+      const dbConfig = userConfigResult.rows[0];
+      console.log('🔗 Conectando ao banco do usuário:', dbConfig.nome_empresa);
+
+      const userPool = new Pool({
+        host: dbConfig.host,
+        port: dbConfig.port,
+        database: dbConfig.database_name,
+        user: dbConfig.username,
+        password: dbConfig.password,
+        ssl: dbConfig.ssl_enabled ? { rejectUnauthorized: false } : false,
+        max: dbConfig.max_connections || 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: (dbConfig.timeout_seconds || 30) * 1000,
+      });
+
+      client = await userPool.connect();
+    }
+
+    const result = await client.query(`
+      SELECT 
         m.*,
-        e.razao_social as empresa_razao_social,
-        e.cnpj as empresa_cnpj
+        e.razao_social,
+        e.cnpj
       FROM mdfe_documentos m
       JOIN empresas_fiscais e ON m.empresa_id = e.id
-      ORDER BY m.data_emissao DESC, CAST(m.numero_mdfe AS INTEGER) DESC
+      ORDER BY m.data_emissao DESC, m.numero_mdfe DESC
     `);
 
-    // Para cada MDF-e, buscar os CT-es vinculados
+    console.log('✅ Documentos MDF-e encontrados:', result.rows.length);
+
+    // Buscar CT-es vinculados para cada MDF-e
     const documentosComCTes = await Promise.all(
       result.rows.map(async (mdfe) => {
         try {
-          const ctesResult = await pool.query(`
-            SELECT
+          const ctesResult = await client.query(`
+            SELECT 
               c.id,
               c.numero_cte,
               c.serie,
@@ -3529,26 +3569,24 @@ app.get('/api/mdfe-documentos', authenticateToken, async (req, res) => {
           return {
             ...mdfe,
             empresa: {
-              razao_social: mdfe.empresa_razao_social,
-              cnpj: mdfe.empresa_cnpj,
+              razao_social: mdfe.razao_social,
+              cnpj: mdfe.cnpj
             },
             ctes_vinculados: ctesResult.rows
           };
         } catch (error) {
-          console.error(`❌ Erro ao buscar CT-es do MDF-e ${mdfe.numero_mdfe}:`, error);
+          console.error('❌ Erro ao buscar CT-es vinculados:', error);
           return {
             ...mdfe,
             empresa: {
-              razao_social: mdfe.empresa_razao_social,
-              cnpj: mdfe.empresa_cnpj,
+              razao_social: mdfe.razao_social,
+              cnpj: mdfe.cnpj
             },
             ctes_vinculados: []
           };
         }
       })
     );
-
-    console.log('✅ Documentos MDF-e encontrados:', documentosComCTes.length);
 
     res.json(documentosComCTes);
 
@@ -3558,6 +3596,10 @@ app.get('/api/mdfe-documentos', authenticateToken, async (req, res) => {
       error: 'Erro ao buscar documentos MDF-e',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 });
 
