@@ -266,9 +266,11 @@ export default function FleetAssociations() {
                       <tr key={associacao.id}>
                         <td className="px-3 py-4 text-sm">
                           <div>
-                            <div className="font-medium text-gray-900">{associacao.funcionario?.nome}</div>
+                            <div className="font-medium text-gray-900">
+                              {associacao.funcionario?.nome || 'Nome não informado'}
+                            </div>
                             <div className="text-gray-500 text-xs">
-                              Mat: {associacao.funcionario?.matricula} • CNH: {associacao.funcionario?.cnh}
+                              Mat: {associacao.funcionario?.matricula || 'N/A'} • CNH: {associacao.funcionario?.cnh || 'N/A'}
                             </div>
                             {associacao.funcionario?.validade_cnh && (
                               <div className="text-gray-500 text-xs">
@@ -279,9 +281,11 @@ export default function FleetAssociations() {
                         </td>
                         <td className="px-3 py-4 text-sm">
                           <div>
-                            <div className="font-medium text-gray-900">{associacao.veiculo_principal?.placa}</div>
+                            <div className="font-medium text-gray-900">
+                              {associacao.veiculo_principal?.placa || 'Placa não informada'}
+                            </div>
                             <div className="text-gray-500 text-xs">
-                              {associacao.veiculo_principal?.marca} {associacao.veiculo_principal?.modelo}
+                              {associacao.veiculo_principal?.marca || 'Marca N/A'} {associacao.veiculo_principal?.modelo || 'Modelo N/A'}
                             </div>
                             <div className="text-gray-500 text-xs">
                               Caminhão Principal
@@ -298,7 +302,7 @@ export default function FleetAssociations() {
                             )}
                             {associacao.veiculo_implemento && (
                               <div className="text-purple-600 text-xs">
-                                + {associacao.veiculo_implemento.placa} ({TIPO_LABELS[associacao.veiculo_implemento.tipo as keyof typeof TIPO_LABELS]})
+                                + {associacao.veiculo_implemento.placa} ({TIPO_LABELS[associacao.veiculo_implemento.tipo as keyof typeof TIPO_LABELS] || associacao.veiculo_implemento.tipo})
                               </div>
                             )}
                             </div>
