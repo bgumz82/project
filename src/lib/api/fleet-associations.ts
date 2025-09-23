@@ -291,8 +291,8 @@ export async function createAssociacaoFrota(associacao: AssociacaoFrotaCreate): 
       throw new Error('Funcionário não encontrado')
     }
 
-    if (funcionario.funcao !== 'motorista') {
-      throw new Error('Apenas funcionários com função "Motorista" podem ser associados a veículos')
+    if (!['motorista', 'motorista_carreta', 'motorista_julieta'].includes(funcionario.funcao)) {
+      throw new Error('Apenas funcionários com função "Motorista", "Motorista Carreta" ou "Motorista Julieta" podem ser associados a veículos')
     }
 
     if (funcionario.status !== 'ativo') {
@@ -385,8 +385,8 @@ export async function updateAssociacaoFrota(id: string, associacao: Partial<Asso
         SELECT funcao, status, cnh FROM funcionarios WHERE id = $1
       `, [associacao.funcionario_id])
 
-      if (!funcionario || funcionario.funcao !== 'motorista' || funcionario.status !== 'ativo' || !funcionario.cnh) {
-        throw new Error('Funcionário deve ser um motorista ativo com CNH')
+      if (!funcionario || !['motorista', 'motorista_carreta', 'motorista_julieta'].includes(funcionario.funcao) || funcionario.status !== 'ativo' || !funcionario.cnh) {
+        throw new Error('Funcionário deve ser um motorista ativo com CNH (Motorista, Motorista Carreta ou Motorista Julieta)')
       }
 
       updates.push(`funcionario_id = $${paramIndex}`)
