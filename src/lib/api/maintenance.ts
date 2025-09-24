@@ -1,3 +1,4 @@
+
 import { query, queryOne } from '@/lib/db'
 
 export interface Maintenance {
@@ -25,24 +26,90 @@ export interface MaintenanceCreate {
   alerta_enviado?: boolean
 }
 
-export async function getMaintenances(): Promise<Maintenance[]> {
-  const maintenances = await query(`
+export interface MaintenancesResponse {
+  maintenances: Maintenance[]
+  total: number
+  totalPages: number
+}
+
+export async function getMaintenances(
+  page: number = 1,
+  limit: number = 10,
+  searchTerm: string = '',
+  filterType: string = '',
+  filterStatus: string = ''
+): Promise<MaintenancesResponse> {
+  const offset = (page - 1) * limit
+  
+  // Construir condições de busca
+  let whereConditions = []
+  let params: any[] = []
+  let paramIndex = 1
+
+  // Filtro por termo de busca (placa ou modelo do veículo)
+  if (searchTerm) {
+    whereConditions.push(`(v.placa ILIKE $${paramIndex} OR v.modelo ILIKE $${paramIndex})`)
+    params.push(`%${searchTerm}%`)
+    paramIndex++
+  }
+
+  // Filtro por tipo
+  if (filterType) {
+    whereConditions.push(`m.tipo = $${paramIndex}`)
+    params.push(filterType)
+    paramIndex++
+  }
+
+  // Filtro por status
+  if (filterStatus === 'pendente') {
+    whereConditions.push(`m.data_realizada IS NULL`)
+  } else if (filterStatus === 'realizada') {
+    whereConditions.push(`m.data_realizada IS NOT NULL`)
+  }
+
+  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''
+
+  // Query para contar total de registros
+  const countQuery = `
+    SELECT COUNT(*) as total
+    FROM manutencoes m
+    JOIN veiculos v ON m.veiculo_id = v.id
+    ${whereClause}
+  `
+
+  const countResult = await query(countQuery, params)
+  const total = parseInt(countResult[0]?.total || '0')
+  const totalPages = Math.ceil(total / limit)
+
+  // Query para buscar registros paginados
+  const maintenancesQuery = `
     SELECT 
       m.*,
       v.placa as veiculo_placa,
       v.modelo as veiculo_modelo
     FROM manutencoes m
     JOIN veiculos v ON m.veiculo_id = v.id
+    ${whereClause}
     ORDER BY m.data_prevista ASC
-  `)
+    LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+  `
 
-  return maintenances.map(maintenance => ({
+  params.push(limit, offset)
+  const maintenances = await query(maintenancesQuery, params)
+
+  const formattedMaintenances = maintenances.map(maintenance => ({
     ...maintenance,
     veiculo: {
       placa: maintenance.veiculo_placa,
       modelo: maintenance.veiculo_modelo
     }
   }))
+
+  return {
+    maintenances: formattedMaintenances,
+    total,
+    totalPages
+  }
 }
 
 export async function createMaintenance(maintenance: MaintenanceCreate): Promise<Maintenance> {
