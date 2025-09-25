@@ -13,6 +13,14 @@ export interface DashboardStats {
     postos: number
     total: number
   }
+  totalFuncionarios: {
+    administrativo: number
+    motorista: number
+    motorista_carreta: number
+    motorista_julieta: number
+    gerente: number
+    total: number
+  }
   associacoesAtivas: number
 }
 
@@ -52,6 +60,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       checklistsHoje,
       abastecimentosHoje,
       cadastrosStats,
+      funcionariosStats,
       associacoesAtivas
     ] = await Promise.all([
       query('SELECT COUNT(*) as total FROM veiculos'),
@@ -81,6 +90,17 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         WHERE ativo = true
       `, [], false), // Usar banco específico do usuário para cadastros
       query(`
+        SELECT 
+          COUNT(CASE WHEN funcao = 'administrativo' THEN 1 END) as administrativo,
+          COUNT(CASE WHEN funcao = 'motorista' THEN 1 END) as motorista,
+          COUNT(CASE WHEN funcao = 'motorista_carreta' THEN 1 END) as motorista_carreta,
+          COUNT(CASE WHEN funcao = 'motorista_julieta' THEN 1 END) as motorista_julieta,
+          COUNT(CASE WHEN funcao = 'gerente' THEN 1 END) as gerente,
+          COUNT(*) as total
+        FROM funcionarios 
+        WHERE ativo = true
+      `),
+      query(`
         SELECT COUNT(*) as total 
         FROM associacoes_frota 
         WHERE ativo = true AND data_fim IS NULL
@@ -97,6 +117,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         fornecedores: parseInt(cadastrosStats[0]?.fornecedores || '0'),
         postos: parseInt(cadastrosStats[0]?.postos || '0'),
         total: parseInt(cadastrosStats[0]?.total || '0')
+      },
+      totalFuncionarios: {
+        administrativo: parseInt(funcionariosStats[0]?.administrativo || '0'),
+        motorista: parseInt(funcionariosStats[0]?.motorista || '0'),
+        motorista_carreta: parseInt(funcionariosStats[0]?.motorista_carreta || '0'),
+        motorista_julieta: parseInt(funcionariosStats[0]?.motorista_julieta || '0'),
+        gerente: parseInt(funcionariosStats[0]?.gerente || '0'),
+        total: parseInt(funcionariosStats[0]?.total || '0')
       },
       associacoesAtivas: parseInt(associacoesAtivas[0]?.total || '0')
     }

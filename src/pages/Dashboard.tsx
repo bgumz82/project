@@ -279,6 +279,48 @@ export default function Dashboard() {
                   </div>
                 </div>
               )}
+
+              {/* Card - Total de Funcionários - Só mostra se tem permissão */}
+              {hasPermission('funcionarios') && (
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                  <div className="p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <UserGroupIcon className="h-5 w-5 text-orange-400" aria-hidden="true" />
+                      </div>
+                      <div className="ml-3 w-0 flex-1">
+                        <dl>
+                          <dt className="text-xs font-medium text-gray-500 truncate">
+                            Total de Funcionários
+                          </dt>
+                          <dd className="flex items-baseline">
+                            <div className="text-lg font-semibold text-gray-900">
+                              {stats?.totalFuncionarios?.total ?? 0}
+                            </div>
+                          </dd>
+                          <dd className="mt-0.5 text-xs text-gray-500">
+                            {stats?.totalFuncionarios?.administrativo ?? 0} admin • {' '}
+                            {stats?.totalFuncionarios?.motorista ?? 0} motorista • {' '}
+                            {stats?.totalFuncionarios?.motorista_carreta ?? 0} carreta • {' '}
+                            {stats?.totalFuncionarios?.motorista_julieta ?? 0} julieta • {' '}
+                            {stats?.totalFuncionarios?.gerente ?? 0} gerente
+                          </dd>
+                        </dl>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 px-3 py-2">
+                    <div className="text-xs">
+                      <Link
+                        to="/funcionarios"
+                        className="font-medium text-indigo-600 hover:text-indigo-900"
+                      >
+                        Ver todos os funcionários
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Card de Associações de Frota Ativas - Só mostra se tem permissão */}
