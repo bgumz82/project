@@ -14,11 +14,11 @@ export interface DashboardStats {
     total: number
   }
   totalFuncionarios: {
-    administrativo: number
-    motorista: number
-    motorista_carreta: number
-    motorista_julieta: number
-    gerente: number
+    detalhamento: Array<{
+      funcao: string
+      quantidade: number
+      nomeFormatado: string
+    }>
     total: number
   }
   associacoesAtivas: number
@@ -91,14 +91,12 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       `, [], false), // Usar banco específico do usuário para cadastros
       query(`
         SELECT 
-          COUNT(CASE WHEN funcao = 'administrativo' THEN 1 END) as administrativo,
-          COUNT(CASE WHEN funcao = 'motorista' THEN 1 END) as motorista,
-          COUNT(CASE WHEN funcao = 'motorista_carreta' THEN 1 END) as motorista_carreta,
-          COUNT(CASE WHEN funcao = 'motorista_julieta' THEN 1 END) as motorista_julieta,
-          COUNT(CASE WHEN funcao = 'gerente' THEN 1 END) as gerente,
-          COUNT(*) as total
+          funcao,
+          COUNT(*) as quantidade
         FROM funcionarios 
         WHERE ativo = true
+        GROUP BY funcao
+        ORDER BY funcao
       `),
       query(`
         SELECT COUNT(*) as total 
@@ -119,12 +117,22 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         total: parseInt(cadastrosStats[0]?.total || '0')
       },
       totalFuncionarios: {
-        administrativo: parseInt(funcionariosStats[0]?.administrativo || '0'),
-        motorista: parseInt(funcionariosStats[0]?.motorista || '0'),
-        motorista_carreta: parseInt(funcionariosStats[0]?.motorista_carreta || '0'),
-        motorista_julieta: parseInt(funcionariosStats[0]?.motorista_julieta || '0'),
-        gerente: parseInt(funcionariosStats[0]?.gerente || '0'),
-        total: parseInt(funcionariosStats[0]?.total || '0')
+        detalhamento: funcionariosStats.map(item => {
+          const nomesFormatados: { [key: string]: string } = {
+            'administrativo': 'Administrativo',
+            'motorista': 'Motorista',
+            'motorista_carreta': 'Motorista Carreta',
+            'motorista_julieta': 'Motorista Julieta',
+            'gerente': 'Gerente'
+          }
+          
+          return {
+            funcao: item.funcao,
+            quantidade: parseInt(item.quantidade),
+            nomeFormatado: nomesFormatados[item.funcao] || item.funcao
+          }
+        }),
+        total: funcionariosStats.reduce((acc, item) => acc + parseInt(item.quantidade), 0)
       },
       associacoesAtivas: parseInt(associacoesAtivas[0]?.total || '0')
     }

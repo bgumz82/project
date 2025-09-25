@@ -299,11 +299,12 @@ export default function Dashboard() {
                             </div>
                           </dd>
                           <dd className="mt-0.5 text-xs text-gray-500">
-                            {stats?.totalFuncionarios?.administrativo ?? 0} admin • {' '}
-                            {stats?.totalFuncionarios?.motorista ?? 0} motorista • {' '}
-                            {stats?.totalFuncionarios?.motorista_carreta ?? 0} carreta • {' '}
-                            {stats?.totalFuncionarios?.motorista_julieta ?? 0} julieta • {' '}
-                            {stats?.totalFuncionarios?.gerente ?? 0} gerente
+                            {stats?.totalFuncionarios?.detalhamento?.map((item, index) => (
+                              <span key={item.funcao}>
+                                {item.quantidade} {item.nomeFormatado.toLowerCase()}
+                                {index < (stats?.totalFuncionarios?.detalhamento?.length ?? 0) - 1 ? ' • ' : ''}
+                              </span>
+                            )) || 'Nenhum funcionário'}
                           </dd>
                         </dl>
                       </div>
