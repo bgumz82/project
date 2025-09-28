@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
@@ -35,9 +35,18 @@ const TIPO_ICONS = {
 export default function Cadastros() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedCadastro, setSelectedCadastro] = useState<Cadastro | null>(null)
-  const [filterTipo, setFilterTipo] = useState<CadastroTipo | 'todos'>('todos')
   const [emails, setEmails] = useState<string[]>([''])
   const queryClient = useQueryClient()
+  
+  // Estados para paginação
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  
+  // Estados para filtros
+  const [filterTipo, setFilterTipo] = useState<CadastroTipo | 'todos'>('todos')
+  const [filterStatus, setFilterStatus] = useState<'todos' | 'ativo' | 'inativo'>('todos')
+  const [searchRazaoSocial, setSearchRazaoSocial] = useState('')
+  const [searchCidade, setSearchCidade] = useState('')
 
   const { data: cadastros, isLoading } = useQuery({
     queryKey: ['cadastros'],
@@ -45,6 +54,11 @@ export default function Cadastros() {
     retry: 3,
     staleTime: 1000 * 60 * 5
   })
+
+  // Reset página quando filtros mudam - SEMPRE deve ser chamado na mesma posição
+  React.useEffect(() => {
+    setCurrentPage(1)
+  }, [filterTipo, filterStatus, searchRazaoSocial, searchCidade, itemsPerPage])
 
   const createMutation = useMutation({
     mutationFn: createCadastro,
@@ -153,9 +167,48 @@ export default function Cadastros() {
     setEmails(newEmails)
   }
 
-  const filteredCadastros = filterTipo === 'todos' 
-    ? cadastros 
-    : cadastros?.filter(c => c.tipo === filterTipo)
+  // Aplicar filtros
+  const filteredCadastros = cadastros?.filter(cadastro => {
+    // Filtro por tipo
+    if (filterTipo !== 'todos' && cadastro.tipo !== filterTipo) {
+      return false
+    }
+    
+    // Filtro por status
+    if (filterStatus !== 'todos') {
+      if (filterStatus === 'ativo' && !cadastro.ativo) {
+        return false
+      }
+      if (filterStatus === 'inativo' && cadastro.ativo) {
+        return false
+      }
+    }
+    
+    // Filtro por razão social
+    if (searchRazaoSocial) {
+      const searchTerm = searchRazaoSocial.toLowerCase()
+      if (!cadastro.razao_social.toLowerCase().includes(searchTerm)) {
+        return false
+      }
+    }
+    
+    // Filtro por cidade
+    if (searchCidade) {
+      const searchTerm = searchCidade.toLowerCase()
+      if (!cadastro.cidade.toLowerCase().includes(searchTerm)) {
+        return false
+      }
+    }
+    
+    return true
+  }) || []
+
+  // Aplicar paginação
+  const totalItems = filteredCadastros.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedCadastros = filteredCadastros.slice(startIndex, endIndex)
 
   if (isLoading) {
     return (
@@ -184,18 +237,89 @@ export default function Cadastros() {
 
         {/* Filtros */}
         <div className="mt-6 bg-white shadow rounded-lg p-4">
-          <div className="flex items-center space-x-4">
-            <label className="text-sm font-medium text-gray-700">Filtrar por tipo:</label>
-            <select
-              value={filterTipo}
-              onChange={(e) => setFilterTipo(e.target.value as CadastroTipo | 'todos')}
-              className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            >
-              <option value="todos">Todos</option>
-              <option value="cliente">Clientes</option>
-              <option value="fornecedor">Fornecedores</option>
-              <option value="abastecimento">Postos de Abastecimento</option>
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tipo:</label>
+              <select
+                value={filterTipo}
+                onChange={(e) => setFilterTipo(e.target.value as CadastroTipo | 'todos')}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="todos">Todos</option>
+                <option value="cliente">Clientes</option>
+                <option value="fornecedor">Fornecedores</option>
+                <option value="abastecimento">Postos de Abastecimento</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status:</label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as any)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="todos">Todos</option>
+                <option value="ativo">Ativos</option>
+                <option value="inativo">Inativos</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Razão Social:</label>
+              <input
+                type="text"
+                value={searchRazaoSocial}
+                onChange={(e) => setSearchRazaoSocial(e.target.value)}
+                placeholder="Digite a razão social..."
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Cidade:</label>
+              <input
+                type="text"
+                value={searchCidade}
+                onChange={(e) => setSearchCidade(e.target.value)}
+                placeholder="Digite a cidade..."
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Registros por página:</label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Informações dos filtros aplicados */}
+          <div className="mt-3 flex items-center justify-between text-sm text-gray-600">
+            <div>
+              Mostrando {startIndex + 1} a {Math.min(endIndex, totalItems)} de {totalItems} registros
+            </div>
+            {(filterTipo !== 'todos' || filterStatus !== 'todos' || searchRazaoSocial || searchCidade) && (
+              <button
+                onClick={() => {
+                  setFilterTipo('todos')
+                  setFilterStatus('todos')
+                  setSearchRazaoSocial('')
+                  setSearchCidade('')
+                }}
+                className="text-indigo-600 hover:text-indigo-900 font-medium"
+              >
+                Limpar filtros
+              </button>
+            )}
           </div>
         </div>
 
@@ -230,7 +354,7 @@ export default function Cadastros() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {filteredCadastros?.map((cadastro) => {
+                    {paginatedCadastros?.map((cadastro) => {
                       const IconComponent = TIPO_ICONS[cadastro.tipo]
                       return (
                         <tr key={cadastro.id}>
@@ -286,6 +410,75 @@ export default function Cadastros() {
             </div>
           </div>
         </div>
+
+        {/* Paginação */}
+        {totalPages > 1 && (
+          <div className="mt-6 bg-white shadow rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                Página {currentPage} de {totalPages}
+              </div>
+              
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Primeira
+                </button>
+                
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Anterior
+                </button>
+
+                {/* Números das páginas */}
+                <div className="flex space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const startPage = Math.max(1, currentPage - 2)
+                    const pageNumber = startPage + i
+                    
+                    if (pageNumber > totalPages) return null
+                    
+                    return (
+                      <button
+                        key={pageNumber}
+                        onClick={() => setCurrentPage(pageNumber)}
+                        className={`px-3 py-1 text-sm border rounded ${
+                          currentPage === pageNumber
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Próxima
+                </button>
+                
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Última
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal de Cadastro/Edição */}
