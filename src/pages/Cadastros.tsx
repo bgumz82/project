@@ -140,11 +140,6 @@ export default function Cadastros() {
   }
 
   const handleEdit = (cadastro: Cadastro) => {
-    console.log('🔍 EDITANDO CADASTRO:', cadastro.razao_social, 'CNPJ:', cadastro.cnpj)
-    console.log('📧 EMAILS RAW:', cadastro.emails)
-    console.log('📧 EMAILS TYPE:', typeof cadastro.emails)
-    console.log('📧 EMAILS IS ARRAY:', Array.isArray(cadastro.emails))
-    
     setSelectedCadastro(cadastro)
     
     // Garantir que emails seja sempre um array
@@ -163,7 +158,6 @@ export default function Cadastros() {
       emailStrings = (cadastro.emails as string).split(',').map((email: string) => email.trim()).filter((email: string) => email.length > 0)
     }
     
-    console.log('📧 EMAILS PROCESSADOS:', emailStrings)
     setEmails(emailStrings)
     setIsModalOpen(true)
   }
