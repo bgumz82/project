@@ -13,7 +13,7 @@ export interface Cadastro {
   estado: string
   cep: string
   telefone: string | null
-  emails: string[]
+  emails: string[] // Changed to string[] to align with the backend storage
   ativo: boolean
   created_at: string
   updated_at: string
@@ -29,7 +29,7 @@ export interface CadastroInsert {
   estado: string
   cep: string
   telefone?: string | null
-  emails: string[]
+  emails: string[] // Changed to string[] to align with the backend storage
   ativo?: boolean
 }
 
@@ -43,9 +43,23 @@ export interface CadastroCreate {
   estado: string
   cep: string
   telefone?: string | null
-  emails: string[]
+  emails: string[] // Changed to string[] to align with the backend storage
   ativo?: boolean
 }
+
+// Helper function to parse emails from a string or array
+const parseEmails = (emailsData: string | string[] | undefined): string[] => {
+  if (!emailsData) {
+    return [];
+  }
+  if (Array.isArray(emailsData)) {
+    return emailsData;
+  }
+  if (typeof emailsData === 'string') {
+    return emailsData.split(',').map(email => email.trim()).filter(email => email.length > 0);
+  }
+  return [];
+};
 
 export async function getCadastros(): Promise<Cadastro[]> {
   try {
@@ -75,11 +89,7 @@ export async function getCadastros(): Promise<Cadastro[]> {
 
     return result.map(cadastro => ({
       ...cadastro,
-      emails: Array.isArray(cadastro.emails) 
-        ? cadastro.emails 
-        : cadastro.emails 
-          ? [{ email: cadastro.emails }] 
-          : []
+      emails: parseEmails(cadastro.emails)
     }))
   } catch (error) {
     console.error('❌ Erro ao buscar cadastros:', error)
@@ -116,7 +126,7 @@ export async function verificarClientePorCNPJ(cnpj: string): Promise<Cadastro | 
       console.log('✅ Cliente encontrado:', result.razao_social)
       return {
         ...result,
-        emails: Array.isArray(result.emails) ? result.emails : []
+        emails: parseEmails(result.emails)
       }
     }
 
@@ -157,11 +167,7 @@ export async function getCadastrosByTipo(tipo: CadastroTipo): Promise<Cadastro[]
 
     return result.map(cadastro => ({
       ...cadastro,
-      emails: Array.isArray(cadastro.emails) 
-        ? cadastro.emails 
-        : cadastro.emails 
-          ? [{ email: cadastro.emails }] 
-          : []
+      emails: parseEmails(cadastro.emails)
     }))
   } catch (error) {
     console.error(`❌ Erro ao buscar cadastros do tipo ${tipo}:`, error)
@@ -181,11 +187,7 @@ export async function getCadastro(id: string): Promise<Cadastro | null> {
 
     return {
       ...result,
-      emails: Array.isArray(result.emails) 
-        ? result.emails 
-        : result.emails 
-          ? [{ email: result.emails }] 
-          : []
+      emails: parseEmails(result.emails)
     }
   } catch (error) {
     console.error('❌ Erro ao buscar cadastro:', error)
@@ -240,7 +242,7 @@ export async function createCadastro(cadastro: CadastroCreate): Promise<Cadastro
       cadastro.estado,
       cadastro.cep,
       cadastro.telefone,
-      JSON.stringify(cadastro.emails),
+      JSON.stringify(cadastro.emails), // Store emails as a JSON string
       cadastro.ativo !== undefined ? cadastro.ativo : true
     ])
 
@@ -252,11 +254,7 @@ export async function createCadastro(cadastro: CadastroCreate): Promise<Cadastro
 
     return {
       ...result,
-      emails: Array.isArray(result.emails) 
-        ? result.emails 
-        : result.emails 
-          ? [{ email: result.emails }] 
-          : []
+      emails: parseEmails(result.emails)
     }
   } catch (error) {
     console.error('❌ Erro ao criar cadastro:', error)
@@ -340,7 +338,7 @@ export async function updateCadastro(id: string, cadastro: Partial<CadastroCreat
 
     if (cadastro.emails !== undefined) {
       updates.push(`emails = $${paramIndex}`)
-      values.push(JSON.stringify(cadastro.emails))
+      values.push(JSON.stringify(cadastro.emails)) // Store emails as a JSON string
       paramIndex++
     }
 
@@ -375,11 +373,7 @@ export async function updateCadastro(id: string, cadastro: Partial<CadastroCreat
 
     return {
       ...result,
-      emails: Array.isArray(result.emails) 
-        ? result.emails 
-        : result.emails 
-          ? [{ email: result.emails }] 
-          : []
+      emails: parseEmails(result.emails)
     }
   } catch (error) {
     console.error('❌ Erro ao atualizar cadastro:', error)
