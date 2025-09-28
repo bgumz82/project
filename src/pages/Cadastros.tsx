@@ -140,10 +140,30 @@ export default function Cadastros() {
   }
 
   const handleEdit = (cadastro: Cadastro) => {
+    console.log('🔍 EDITANDO CADASTRO:', cadastro.razao_social, 'CNPJ:', cadastro.cnpj)
+    console.log('📧 EMAILS RAW:', cadastro.emails)
+    console.log('📧 EMAILS TYPE:', typeof cadastro.emails)
+    console.log('📧 EMAILS IS ARRAY:', Array.isArray(cadastro.emails))
+    
     setSelectedCadastro(cadastro)
-    const emailStrings = cadastro.emails.length > 0 
-      ? cadastro.emails 
-      : ['']
+    
+    // Garantir que emails seja sempre um array
+    let emailStrings: string[] = ['']
+    
+    if (Array.isArray(cadastro.emails)) {
+      emailStrings = cadastro.emails.length > 0 ? cadastro.emails : ['']
+    } else if (cadastro.emails && typeof cadastro.emails === 'object') {
+      // Se for um objeto, tentar extrair emails
+      const emailsObj = cadastro.emails as any
+      if (emailsObj.email && typeof emailsObj.email === 'string') {
+        emailStrings = emailsObj.email.split(',').map((email: string) => email.trim()).filter((email: string) => email.length > 0)
+      }
+    } else if (typeof cadastro.emails === 'string') {
+      // Se for string, dividir por vírgula
+      emailStrings = (cadastro.emails as string).split(',').map((email: string) => email.trim()).filter((email: string) => email.length > 0)
+    }
+    
+    console.log('📧 EMAILS PROCESSADOS:', emailStrings)
     setEmails(emailStrings)
     setIsModalOpen(true)
   }
