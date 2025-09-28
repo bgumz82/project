@@ -47,8 +47,8 @@ export interface CadastroCreate {
   ativo?: boolean
 }
 
-// Helper function to parse emails from a string, JSON string or array
-const parseEmails = (emailsData: string | string[] | undefined | null): string[] => {
+// Helper function to parse emails from a string, JSON string, object or array
+const parseEmails = (emailsData: any): string[] => {
   if (!emailsData) {
     return [];
   }
@@ -56,6 +56,21 @@ const parseEmails = (emailsData: string | string[] | undefined | null): string[]
   // Se for array, retorna direto
   if (Array.isArray(emailsData)) {
     return emailsData;
+  }
+  
+  // Se for objeto (retornado diretamente do PostgreSQL JSON)
+  if (typeof emailsData === 'object' && emailsData !== null) {
+    // Se for objeto com propriedade email
+    if (emailsData.email && typeof emailsData.email === 'string') {
+      return emailsData.email.split(',').map((email: string) => email.trim()).filter((email: string) => email.length > 0);
+    }
+    
+    // Se for array dentro do objeto
+    if (Array.isArray(emailsData.email)) {
+      return emailsData.email;
+    }
+    
+    return [];
   }
   
   if (typeof emailsData === 'string') {
