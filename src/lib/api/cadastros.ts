@@ -47,17 +47,42 @@ export interface CadastroCreate {
   ativo?: boolean
 }
 
-// Helper function to parse emails from a string or array
-const parseEmails = (emailsData: string | string[] | undefined): string[] => {
+// Helper function to parse emails from a string, JSON string or array
+const parseEmails = (emailsData: string | string[] | undefined | null): string[] => {
   if (!emailsData) {
     return [];
   }
+  
+  // Se for array, retorna direto
   if (Array.isArray(emailsData)) {
     return emailsData;
   }
+  
   if (typeof emailsData === 'string') {
-    return emailsData.split(',').map(email => email.trim()).filter(email => email.length > 0);
+    // Tenta fazer parse como JSON primeiro
+    try {
+      const parsed = JSON.parse(emailsData);
+      
+      // Se for objeto com propriedade email
+      if (parsed && typeof parsed === 'object' && parsed.email) {
+        return parsed.email.split(',').map((email: string) => email.trim()).filter((email: string) => email.length > 0);
+      }
+      
+      // Se for array
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+      
+      // Se for string dentro do JSON
+      if (typeof parsed === 'string') {
+        return parsed.split(',').map(email => email.trim()).filter(email => email.length > 0);
+      }
+    } catch (e) {
+      // Se não conseguir fazer parse, trata como string simples
+      return emailsData.split(',').map(email => email.trim()).filter(email => email.length > 0);
+    }
   }
+  
   return [];
 };
 
@@ -242,7 +267,7 @@ export async function createCadastro(cadastro: CadastroCreate): Promise<Cadastro
       cadastro.estado,
       cadastro.cep,
       cadastro.telefone,
-      JSON.stringify(cadastro.emails), // Store emails as a JSON string
+      JSON.stringify({ email: cadastro.emails.join(',') }), // Store emails as JSON with comma-separated string
       cadastro.ativo !== undefined ? cadastro.ativo : true
     ])
 
@@ -338,7 +363,7 @@ export async function updateCadastro(id: string, cadastro: Partial<CadastroCreat
 
     if (cadastro.emails !== undefined) {
       updates.push(`emails = $${paramIndex}`)
-      values.push(JSON.stringify(cadastro.emails)) // Store emails as a JSON string
+      values.push(JSON.stringify({ email: cadastro.emails.join(',') })) // Store emails as JSON with comma-separated string
       paramIndex++
     }
 
