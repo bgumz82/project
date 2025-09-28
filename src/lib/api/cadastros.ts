@@ -50,7 +50,7 @@ export interface CadastroCreate {
 export async function getCadastros(): Promise<Cadastro[]> {
   try {
     console.log('🔍 Buscando todos os cadastros')
-    
+
     const result = await query(`
       SELECT 
         id,
@@ -70,12 +70,16 @@ export async function getCadastros(): Promise<Cadastro[]> {
       FROM cadastros 
       ORDER BY razao_social
     `)
-    
+
     console.log('✅ Cadastros encontrados:', result.length)
-    
+
     return result.map(cadastro => ({
       ...cadastro,
-      emails: Array.isArray(cadastro.emails) ? cadastro.emails : []
+      emails: Array.isArray(cadastro.emails) 
+        ? cadastro.emails 
+        : cadastro.emails 
+          ? [{ email: cadastro.emails }] 
+          : []
     }))
   } catch (error) {
     console.error('❌ Erro ao buscar cadastros:', error)
@@ -87,7 +91,7 @@ export async function getCadastros(): Promise<Cadastro[]> {
 export async function verificarClientePorCNPJ(cnpj: string): Promise<Cadastro | null> {
   try {
     console.log('🔍 Verificando cliente por CNPJ:', cnpj)
-    
+
     const result = await queryOne(`
       SELECT 
         id,
@@ -107,7 +111,7 @@ export async function verificarClientePorCNPJ(cnpj: string): Promise<Cadastro | 
       FROM cadastros 
       WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
     `, [cnpj])
-    
+
     if (result) {
       console.log('✅ Cliente encontrado:', result.razao_social)
       return {
@@ -115,7 +119,7 @@ export async function verificarClientePorCNPJ(cnpj: string): Promise<Cadastro | 
         emails: Array.isArray(result.emails) ? result.emails : []
       }
     }
-    
+
     console.log('❌ Cliente não encontrado para CNPJ:', cnpj)
     return null
   } catch (error) {
@@ -127,7 +131,7 @@ export async function verificarClientePorCNPJ(cnpj: string): Promise<Cadastro | 
 export async function getCadastrosByTipo(tipo: CadastroTipo): Promise<Cadastro[]> {
   try {
     console.log('🔍 Buscando cadastros por tipo:', tipo)
-    
+
     const result = await query(`
       SELECT 
         id,
@@ -148,12 +152,16 @@ export async function getCadastrosByTipo(tipo: CadastroTipo): Promise<Cadastro[]
       WHERE tipo = $1 AND ativo = true
       ORDER BY razao_social
     `, [tipo])
-    
+
     console.log(`✅ Cadastros do tipo ${tipo} encontrados:`, result.length)
-    
+
     return result.map(cadastro => ({
       ...cadastro,
-      emails: Array.isArray(cadastro.emails) ? cadastro.emails : []
+      emails: Array.isArray(cadastro.emails) 
+        ? cadastro.emails 
+        : cadastro.emails 
+          ? [{ email: cadastro.emails }] 
+          : []
     }))
   } catch (error) {
     console.error(`❌ Erro ao buscar cadastros do tipo ${tipo}:`, error)
@@ -168,12 +176,16 @@ export async function getCadastro(id: string): Promise<Cadastro | null> {
       FROM cadastros
       WHERE id = $1
     `, [id])
-    
+
     if (!result) return null
-    
+
     return {
       ...result,
-      emails: Array.isArray(result.emails) ? result.emails : []
+      emails: Array.isArray(result.emails) 
+        ? result.emails 
+        : result.emails 
+          ? [{ email: result.emails }] 
+          : []
     }
   } catch (error) {
     console.error('❌ Erro ao buscar cadastro:', error)
@@ -184,23 +196,23 @@ export async function getCadastro(id: string): Promise<Cadastro | null> {
 export async function createCadastro(cadastro: CadastroCreate): Promise<Cadastro> {
   try {
     console.log('📝 Criando novo cadastro:', cadastro)
-    
+
     // Validar emails
     if (!cadastro.emails || cadastro.emails.length === 0) {
       throw new Error('Pelo menos um email é obrigatório')
     }
-    
+
     // Validar CNPJ se fornecido
     if (cadastro.cnpj) {
       const existingCadastro = await queryOne(`
         SELECT id FROM cadastros WHERE cnpj = $1
       `, [cadastro.cnpj])
-      
+
       if (existingCadastro) {
         throw new Error('CNPJ já cadastrado no sistema')
       }
     }
-    
+
     const result = await queryOne(`
       INSERT INTO cadastros (
         tipo,
@@ -237,10 +249,14 @@ export async function createCadastro(cadastro: CadastroCreate): Promise<Cadastro
     }
 
     console.log('✅ Cadastro criado com sucesso:', result.id)
-    
+
     return {
       ...result,
-      emails: Array.isArray(result.emails) ? result.emails : []
+      emails: Array.isArray(result.emails) 
+        ? result.emails 
+        : result.emails 
+          ? [{ email: result.emails }] 
+          : []
     }
   } catch (error) {
     console.error('❌ Erro ao criar cadastro:', error)
@@ -251,18 +267,18 @@ export async function createCadastro(cadastro: CadastroCreate): Promise<Cadastro
 export async function updateCadastro(id: string, cadastro: Partial<CadastroCreate>): Promise<Cadastro> {
   try {
     console.log('📝 Atualizando cadastro:', id, cadastro)
-    
+
     // Validar CNPJ se fornecido e diferente do atual
     if (cadastro.cnpj) {
       const existingCadastro = await queryOne(`
         SELECT id FROM cadastros WHERE cnpj = $1 AND id != $2
       `, [cadastro.cnpj, id])
-      
+
       if (existingCadastro) {
         throw new Error('CNPJ já cadastrado em outro registro')
       }
     }
-    
+
     // Construir query dinamicamente
     const updates: string[] = []
     const values: any[] = []
@@ -359,7 +375,11 @@ export async function updateCadastro(id: string, cadastro: Partial<CadastroCreat
 
     return {
       ...result,
-      emails: Array.isArray(result.emails) ? result.emails : []
+      emails: Array.isArray(result.emails) 
+        ? result.emails 
+        : result.emails 
+          ? [{ email: result.emails }] 
+          : []
     }
   } catch (error) {
     console.error('❌ Erro ao atualizar cadastro:', error)
@@ -370,7 +390,7 @@ export async function updateCadastro(id: string, cadastro: Partial<CadastroCreat
 export async function deleteCadastro(id: string): Promise<void> {
   try {
     console.log('🗑️ Excluindo cadastro:', id)
-    
+
     // Verificar se o cadastro está sendo usado em abastecimentos
     const abastecimentosCount = await queryOne(`
       SELECT COUNT(*) as count
@@ -378,11 +398,11 @@ export async function deleteCadastro(id: string): Promise<void> {
       JOIN cadastros c ON a.posto_id::text = c.id::text
       WHERE c.id = $1
     `, [id])
-    
+
     if (abastecimentosCount && parseInt(abastecimentosCount.count) > 0) {
       throw new Error('Não é possível excluir este cadastro pois ele possui abastecimentos vinculados')
     }
-    
+
     await query('DELETE FROM cadastros WHERE id = $1', [id])
     console.log('✅ Cadastro excluído com sucesso')
   } catch (error) {

@@ -128,7 +128,7 @@ export default function Cadastros() {
       estado: formData.get('estado') as string,
       cep: formData.get('cep') as string,
       telefone: formData.get('telefone') as string || null,
-      emails: validEmails,
+      emails: validEmails.map(email => ({ email })),
       ativo: formData.get('ativo') === 'true'
     }
 
@@ -141,7 +141,10 @@ export default function Cadastros() {
 
   const handleEdit = (cadastro: Cadastro) => {
     setSelectedCadastro(cadastro)
-    setEmails(cadastro.emails.length > 0 ? cadastro.emails : [''])
+    const emailStrings = cadastro.emails.length > 0 
+      ? cadastro.emails.map(emailObj => emailObj.email) 
+      : ['']
+    setEmails(emailStrings)
     setIsModalOpen(true)
   }
 
