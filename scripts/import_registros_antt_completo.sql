@@ -37,7 +37,7 @@ BEGIN
   )
   SELECT COUNT(*) INTO placas_encontradas
   FROM placas_planilha pp
-  JOIN veiculos v ON pp.placa = v.placa;
+  JOIN veiculos v ON pp.placa = REPLACE(v.placa, '-', '');
   
   RAISE NOTICE 'Placas encontradas: % de % total', placas_encontradas, placas_total;
   
@@ -71,7 +71,7 @@ SELECT
   NOW() as created_at,
   NOW() as updated_at
 FROM veiculos v 
-WHERE v.placa IN (
+WHERE REPLACE(v.placa, '-', '') IN (
   'PZK6625', 'PWZ8271', 'NRZ1657', 'FFW9954', 'FLR5889', 'IVO5113',
   'ITB2019', 'HRV0378', 'IOW6816', 'IOW6803', 'API8949', 'API8951',
   'MKZ6992', 'QUT6161', 'HRV0377', 'QUY9785', 'MLM6904', 'MML2573',
@@ -115,7 +115,7 @@ SELECT
   NOW() as created_at,
   NOW() as updated_at
 FROM veiculos v 
-WHERE v.placa = 'QIC5497'
+WHERE REPLACE(v.placa, '-', '') = 'QIC5497'
 AND NOT EXISTS (
   SELECT 1 FROM registros_antt ra2 
   WHERE ra2.veiculo_id = v.id AND ra2.antt = '49284900'
@@ -173,6 +173,6 @@ FROM (
     'TEX5B78', 'QIC5497'
   ]) as placa_busca
 ) placas_planilha
-WHERE placa_busca NOT IN (SELECT placa FROM veiculos)
+WHERE placa_busca NOT IN (SELECT REPLACE(placa, '-', '') FROM veiculos)
 HAVING COUNT(*) > 0;
 
