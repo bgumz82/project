@@ -206,29 +206,40 @@ export default function ApolicesSeguro() {
   };
 
   const filteredApolices = apolices?.filter((a) => {
-    const statusMatch =
-      filterStatus === "todos" || a.status === filterStatus;
-    const ativoMatch =
-      filterAtivo === "todos" ||
-      (filterAtivo === "ativo" && a.ativo) ||
-      (filterAtivo === "inativo" && !a.ativo);
-    return statusMatch && ativoMatch;
-  });
+    try {
+      const statusMatch =
+        filterStatus === "todos" || a.status === filterStatus;
+      const ativoMatch =
+        filterAtivo === "todos" ||
+        (filterAtivo === "ativo" && a.ativo) ||
+        (filterAtivo === "inativo" && !a.ativo);
+      return statusMatch && ativoMatch;
+    } catch (error) {
+      console.error("Erro ao filtrar apólice:", a, error);
+      return false;
+    }
+  }) || [];
 
   // Verificar status automaticamente baseado na data
   useEffect(() => {
-    if (apolices) {
-      const hoje = new Date();
-      apolices.forEach((apolice) => {
-        const dataFinal = new Date(apolice.data_final);
-        if (apolice.status === "ativa" && dataFinal < hoje) {
-          // Atualizar status para vencida automaticamente
-          updateMutation.mutate({ 
-            id: apolice.id, 
-            data: { status: "vencida" } 
-          });
-        }
-      });
+    if (apolices && apolices.length > 0) {
+      try {
+        const hoje = new Date();
+        apolices.forEach((apolice) => {
+          if (apolice.data_final && apolice.status === "ativa") {
+            const dataFinal = new Date(apolice.data_final);
+            if (!isNaN(dataFinal.getTime()) && dataFinal < hoje) {
+              // Atualizar status para vencida automaticamente
+              updateMutation.mutate({ 
+                id: apolice.id, 
+                data: { status: "vencida" } 
+              });
+            }
+          }
+        });
+      } catch (error) {
+        console.error("Erro ao verificar status das apólices:", error);
+      }
     }
   }, [apolices]);
 
@@ -325,15 +336,15 @@ export default function ApolicesSeguro() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {filteredApolices?.map((apolice) => (
+                    {filteredApolices && filteredApolices.length > 0 ? filteredApolices.map((apolice) => (
                       <tr key={apolice.id}>
                         <td className="px-3 py-4 text-sm">
                           <div>
                             <div className="font-medium text-gray-900">
-                              {apolice.empresa?.razao_social}
+                              {apolice.empresa?.razao_social || "N/A"}
                             </div>
                             <div className="text-xs text-gray-400 font-mono">
-                              {formatCNPJ(apolice.empresa?.cnpj || "")}
+                              {apolice.empresa?.cnpj ? formatCNPJ(apolice.empresa.cnpj) : "N/A"}
                             </div>
                           </div>
                         </td>
@@ -352,13 +363,13 @@ export default function ApolicesSeguro() {
                             <div className="flex items-center text-green-600">
                               <CalendarIcon className="h-4 w-4 mr-1" />
                               <span className="text-xs">
-                                {new Date(apolice.data_inicial).toLocaleDateString("pt-BR")}
+                                {apolice.data_inicial ? new Date(apolice.data_inicial).toLocaleDateString("pt-BR") : "N/A"}
                               </span>
                             </div>
                             <div className="flex items-center text-red-600">
                               <CalendarIcon className="h-4 w-4 mr-1" />
                               <span className="text-xs">
-                                {new Date(apolice.data_final).toLocaleDateString("pt-BR")}
+                                {apolice.data_final ? new Date(apolice.data_final).toLocaleDateString("pt-BR") : "N/A"}
                               </span>
                             </div>
                           </div>
@@ -368,16 +379,16 @@ export default function ApolicesSeguro() {
                             <div className="flex items-center">
                               <CurrencyDollarIcon className="h-4 w-4 text-green-500 mr-1" />
                               <span className="font-medium">
-                                R$ {apolice.limite_averbacao.toLocaleString("pt-BR", {
+                                R$ {(apolice.limite_averbacao || 0).toLocaleString("pt-BR", {
                                   minimumFractionDigits: 2,
                                 })}
                               </span>
                             </div>
                             <div className="text-xs text-gray-600">
-                              {apolice.seguradora_nome}
+                              {apolice.seguradora_nome || "N/A"}
                             </div>
                             <div className="text-xs text-gray-500 font-mono">
-                              {formatCNPJ(apolice.seguradora_cnpj)}
+                              {apolice.seguradora_cnpj ? formatCNPJ(apolice.seguradora_cnpj) : "N/A"}
                             </div>
                           </div>
                         </td>
@@ -420,7 +431,13 @@ export default function ApolicesSeguro() {
                           </button>
                         </td>
                       </tr>
-                    ))}
+                    )) : (
+                      <tr>
+                        <td colSpan={6} className="px-3 py-8 text-center text-sm text-gray-500">
+                          {isLoading ? "Carregando..." : "Nenhuma apólice encontrada"}
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
