@@ -1009,9 +1009,7 @@ export default function Frete() {
                         {apolicesDisponiveis.map((apolice) => (
                           <option key={apolice.id} value={apolice.id}>
                             {apolice.identificador} - {apolice.numero_apolice} 
-                            (Saldo: R$ {(apolice.saldo_disponivel || 0).toLocaleString("pt-BR", {
-                              minimumFractionDigits: 2,
-                            })})
+                            ({apolice.seguradora_nome})
                           </option>
                         ))}
                       </select>

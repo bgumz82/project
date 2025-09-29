@@ -143,6 +143,25 @@ export default function ApolicesSeguro() {
       return;
     }
 
+    const seguradora_nome = formData.get("seguradora_nome") as string;
+    const seguradora_cnpj = formData.get("seguradora_cnpj") as string;
+    
+    if (!seguradora_nome.trim()) {
+      toast.error("Nome da seguradora é obrigatório");
+      return;
+    }
+    
+    if (!seguradora_cnpj.trim()) {
+      toast.error("CNPJ da seguradora é obrigatório");
+      return;
+    }
+    
+    const cnpjLimpo = seguradora_cnpj.replace(/\D/g, "");
+    if (cnpjLimpo.length !== 14) {
+      toast.error("CNPJ da seguradora deve conter 14 dígitos");
+      return;
+    }
+
     // Validar datas
     const dataIni = new Date(data_inicial);
     const dataFim = new Date(data_final);
@@ -159,7 +178,8 @@ export default function ApolicesSeguro() {
       data_inicial,
       data_final,
       limite_averbacao,
-      valor_utilizado: parseFloat(formData.get("valor_utilizado") as string) || 0,
+      seguradora_nome: seguradora_nome.trim(),
+      seguradora_cnpj: cnpjLimpo,
       status: formData.get("status") as "ativa" | "vencida" | "cancelada",
       observacoes: (formData.get("observacoes") as string) || null,
       ativo: formData.get("ativo") !== "false",
@@ -294,7 +314,7 @@ export default function ApolicesSeguro() {
                         Vigência
                       </th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        Limite / Utilizado
+                        Limite / Seguradora
                       </th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                         Status
@@ -354,14 +374,10 @@ export default function ApolicesSeguro() {
                               </span>
                             </div>
                             <div className="text-xs text-gray-600">
-                              Utilizado: R$ {apolice.valor_utilizado.toLocaleString("pt-BR", {
-                                minimumFractionDigits: 2,
-                              })}
+                              {apolice.seguradora_nome}
                             </div>
-                            <div className="text-xs text-blue-600 font-medium">
-                              Saldo: R$ {(apolice.saldo_disponivel || 0).toLocaleString("pt-BR", {
-                                minimumFractionDigits: 2,
-                              })}
+                            <div className="text-xs text-gray-500 font-mono">
+                              {formatCNPJ(apolice.seguradora_cnpj)}
                             </div>
                           </div>
                         </td>
@@ -546,12 +562,57 @@ export default function ApolicesSeguro() {
                   </div>
                 </div>
 
+                {/* Seguradora */}
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Dados da Seguradora
+                  </h3>
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div>
+                      <label
+                        htmlFor="seguradora_nome"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Nome da Seguradora *
+                      </label>
+                      <input
+                        type="text"
+                        name="seguradora_nome"
+                        id="seguradora_nome"
+                        defaultValue={selectedApolice?.seguradora_nome}
+                        required
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        placeholder="Ex: Seguradora ABC S/A"
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="seguradora_cnpj"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        CNPJ da Seguradora *
+                      </label>
+                      <input
+                        type="text"
+                        name="seguradora_cnpj"
+                        id="seguradora_cnpj"
+                        defaultValue={selectedApolice?.seguradora_cnpj}
+                        required
+                        maxLength={18}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        placeholder="00.000.000/0000-00"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Valores */}
                 <div className="border-t pt-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    Valores
+                    Limite de Averbação
                   </h3>
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-1">
                     <div>
                       <label
                         htmlFor="limite_averbacao"
@@ -567,24 +628,6 @@ export default function ApolicesSeguro() {
                         min="0"
                         defaultValue={selectedApolice?.limite_averbacao}
                         required
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="valor_utilizado"
-                        className="block text-sm font-medium text-gray-700"
-                      >
-                        Valor Utilizado (R$)
-                      </label>
-                      <input
-                        type="number"
-                        name="valor_utilizado"
-                        id="valor_utilizado"
-                        step="0.01"
-                        min="0"
-                        defaultValue={selectedApolice?.valor_utilizado || 0}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       />
                     </div>

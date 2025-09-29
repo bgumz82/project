@@ -1580,7 +1580,8 @@ export interface ApoliceSeguro {
   data_inicial: string;
   data_final: string;
   limite_averbacao: number;
-  valor_utilizado: number;
+  seguradora_nome: string;
+  seguradora_cnpj: string;
   status: "ativa" | "vencida" | "cancelada";
   observacoes: string | null;
   ativo: boolean;
@@ -1590,7 +1591,6 @@ export interface ApoliceSeguro {
     razao_social: string;
     cnpj: string;
   };
-  saldo_disponivel?: number;
 }
 
 export interface ApoliceSeguroCreate {
@@ -1600,7 +1600,8 @@ export interface ApoliceSeguroCreate {
   data_inicial: string;
   data_final: string;
   limite_averbacao: number;
-  valor_utilizado?: number;
+  seguradora_nome: string;
+  seguradora_cnpj: string;
   status?: "ativa" | "vencida" | "cancelada";
   observacoes?: string | null;
   ativo?: boolean;
@@ -2303,8 +2304,7 @@ export async function getApolicesSeguro(): Promise<ApoliceSeguro[]> {
       SELECT 
         a.*,
         e.razao_social as empresa_razao_social,
-        e.cnpj as empresa_cnpj,
-        (a.limite_averbacao - a.valor_utilizado) as saldo_disponivel
+        e.cnpj as empresa_cnpj
       FROM apolices_seguro a
       JOIN empresas_fiscais e ON a.empresa_id = e.id
       ORDER BY a.created_at DESC
@@ -2332,8 +2332,7 @@ export async function getApoliceSeguro(id: string): Promise<ApoliceSeguro | null
       SELECT 
         a.*,
         e.razao_social as empresa_razao_social,
-        e.cnpj as empresa_cnpj,
-        (a.limite_averbacao - a.valor_utilizado) as saldo_disponivel
+        e.cnpj as empresa_cnpj
       FROM apolices_seguro a
       JOIN empresas_fiscais e ON a.empresa_id = e.id
       WHERE a.id = $1
@@ -2380,6 +2379,18 @@ export async function createApoliceSeguro(
     }
     if (!apolice.limite_averbacao || apolice.limite_averbacao <= 0) {
       throw new Error("Limite de averbação deve ser maior que zero");
+    }
+    if (!apolice.seguradora_nome || !apolice.seguradora_nome.trim()) {
+      throw new Error("Nome da seguradora é obrigatório");
+    }
+    if (!apolice.seguradora_cnpj || !apolice.seguradora_cnpj.trim()) {
+      throw new Error("CNPJ da seguradora é obrigatório");
+    }
+
+    // Validar CNPJ da seguradora
+    const cnpjSeguradora = apolice.seguradora_cnpj.replace(/\D/g, "");
+    if (cnpjSeguradora.length !== 14) {
+      throw new Error("CNPJ da seguradora deve conter exatamente 14 dígitos");
     }
 
     // Validar datas
@@ -2434,13 +2445,14 @@ export async function createApoliceSeguro(
         data_inicial,
         data_final,
         limite_averbacao,
-        valor_utilizado,
+        seguradora_nome,
+        seguradora_cnpj,
         status,
         observacoes,
         ativo,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
       RETURNING *
     `,
       [
@@ -2450,7 +2462,8 @@ export async function createApoliceSeguro(
         apolice.data_inicial,
         apolice.data_final,
         apolice.limite_averbacao,
-        apolice.valor_utilizado || 0,
+        apolice.seguradora_nome.trim(),
+        cnpjSeguradora,
         status,
         apolice.observacoes || null,
         apolice.ativo !== false,
@@ -2529,9 +2542,25 @@ export async function updateApoliceSeguro(
       paramIndex++;
     }
 
-    if (apolice.valor_utilizado !== undefined) {
-      updates.push(`valor_utilizado = $${paramIndex}`);
-      values.push(apolice.valor_utilizado);
+    if (apolice.seguradora_nome !== undefined) {
+      if (!apolice.seguradora_nome.trim()) {
+        throw new Error("Nome da seguradora é obrigatório");
+      }
+      updates.push(`seguradora_nome = $${paramIndex}`);
+      values.push(apolice.seguradora_nome.trim());
+      paramIndex++;
+    }
+
+    if (apolice.seguradora_cnpj !== undefined) {
+      if (!apolice.seguradora_cnpj.trim()) {
+        throw new Error("CNPJ da seguradora é obrigatório");
+      }
+      const cnpjLimpo = apolice.seguradora_cnpj.replace(/\D/g, "");
+      if (cnpjLimpo.length !== 14) {
+        throw new Error("CNPJ da seguradora deve conter exatamente 14 dígitos");
+      }
+      updates.push(`seguradora_cnpj = $${paramIndex}`);
+      values.push(cnpjLimpo);
       paramIndex++;
     }
 

@@ -35,7 +35,8 @@ CREATE TABLE IF NOT EXISTS apolices_seguro (
   data_inicial date NOT NULL,
   data_final date NOT NULL,
   limite_averbacao decimal(15,2) NOT NULL CHECK (limite_averbacao > 0),
-  valor_utilizado decimal(15,2) DEFAULT 0 CHECK (valor_utilizado >= 0),
+  seguradora_nome varchar(200) NOT NULL,
+  seguradora_cnpj varchar(14) NOT NULL,
   status apolice_status DEFAULT 'ativa',
   observacoes text,
   ativo boolean DEFAULT true,
@@ -53,10 +54,10 @@ ALTER TABLE apolices_seguro
 ADD CONSTRAINT apolices_seguro_datas_validas_check 
 CHECK (data_final > data_inicial);
 
--- Adicionar constraint para garantir que valor utilizado não exceda o limite
+-- Adicionar constraint para validar CNPJ da seguradora (14 dígitos)
 ALTER TABLE apolices_seguro 
-ADD CONSTRAINT apolices_seguro_valor_utilizado_limite_check 
-CHECK (valor_utilizado <= limite_averbacao);
+ADD CONSTRAINT apolices_seguro_seguradora_cnpj_check 
+CHECK (LENGTH(seguradora_cnpj) = 14 AND seguradora_cnpj ~ '^[0-9]+$');
 
 -- Adicionar constraint de unicidade do número da apólice por empresa
 ALTER TABLE apolices_seguro 
@@ -75,7 +76,8 @@ COMMENT ON TABLE apolices_seguro IS 'Controle de apólices de seguro para averba
 COMMENT ON COLUMN apolices_seguro.numero_apolice IS 'Número oficial da apólice de seguro';
 COMMENT ON COLUMN apolices_seguro.identificador IS 'Identificador personalizado para seleção nos registros de frete';
 COMMENT ON COLUMN apolices_seguro.limite_averbacao IS 'Valor máximo permitido para averbação nesta apólice';
-COMMENT ON COLUMN apolices_seguro.valor_utilizado IS 'Valor já utilizado/averbado nesta apólice';
+COMMENT ON COLUMN apolices_seguro.seguradora_nome IS 'Nome da empresa seguradora';
+COMMENT ON COLUMN apolices_seguro.seguradora_cnpj IS 'CNPJ da empresa seguradora (14 dígitos)';
 COMMENT ON COLUMN apolices_seguro.status IS 'Status da apólice (ativa, vencida, cancelada)';
 
 -- Trigger para updated_at
@@ -113,8 +115,8 @@ RETURNS TABLE (
   numero_apolice varchar,
   identificador varchar,
   limite_averbacao decimal,
-  valor_utilizado decimal,
-  saldo_disponivel decimal
+  seguradora_nome varchar,
+  seguradora_cnpj varchar
 ) AS $$
 BEGIN
   RETURN QUERY
@@ -123,8 +125,8 @@ BEGIN
     a.numero_apolice,
     a.identificador,
     a.limite_averbacao,
-    a.valor_utilizado,
-    (a.limite_averbacao - a.valor_utilizado) as saldo_disponivel
+    a.seguradora_nome,
+    a.seguradora_cnpj
   FROM apolices_seguro a
   WHERE a.empresa_id = empresa_id_param
     AND a.status = 'ativa'
