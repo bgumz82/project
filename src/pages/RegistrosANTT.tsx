@@ -1,4 +1,5 @@
-import { useState } from 'react'
+
+import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
@@ -22,9 +23,23 @@ import { getVehicles } from '@/lib/api/vehicles'
 export default function RegistrosANTT() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedRegistro, setSelectedRegistro] = useState<RegistroANTT | null>(null)
+
+  // Estados para paginação
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+
+  // Estados para filtros
+  const [filterStatus, setFilterStatus] = useState<'todos' | 'ativo' | 'inativo'>('todos')
+  const [filterUF, setFilterUF] = useState('')
+  const [searchPlaca, setSearchPlaca] = useState('')
+  const [searchRazaoSocial, setSearchRazaoSocial] = useState('')
+  const [searchCNPJ, setSearchCNPJ] = useState('')
+  const [searchANTT, setSearchANTT] = useState('')
+  const [filterEmpresaProprietario, setFilterEmpresaProprietario] = useState<'todos' | 'sim' | 'nao'>('todos')
+
   const queryClient = useQueryClient()
 
-  const { data: registros, isLoading } = useQuery({
+  const { data: registros, isLoading, refetch } = useQuery({
     queryKey: ['registros-antt'],
     queryFn: getRegistrosANTT,
     retry: 3,
@@ -118,6 +133,73 @@ export default function RegistrosANTT() {
     return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
   }
 
+  // Aplicar filtros
+  const filteredRegistros = registros?.filter(registro => {
+    // Filtro por status
+    if (filterStatus !== 'todos' && 
+        ((filterStatus === 'ativo' && !registro.ativo) || 
+         (filterStatus === 'inativo' && registro.ativo))) {
+      return false
+    }
+
+    // Filtro por UF
+    if (filterUF && registro.uf_registro !== filterUF) {
+      return false
+    }
+
+    // Filtro por empresa proprietário
+    if (filterEmpresaProprietario !== 'todos' &&
+        ((filterEmpresaProprietario === 'sim' && !registro.empresa_proprietario) ||
+         (filterEmpresaProprietario === 'nao' && registro.empresa_proprietario))) {
+      return false
+    }
+
+    // Filtro por placa
+    if (searchPlaca) {
+      const placaLimpa = searchPlaca.replace(/[^\w]/g, '')
+      const placaRegistroLimpa = registro.veiculo?.placa?.replace(/[^\w]/g, '') || ''
+      if (!placaRegistroLimpa.toLowerCase().includes(placaLimpa.toLowerCase())) {
+        return false
+      }
+    }
+
+    // Filtro por razão social
+    if (searchRazaoSocial && !registro.razao_social_proprietario.toLowerCase().includes(searchRazaoSocial.toLowerCase())) {
+      return false
+    }
+
+    // Filtro por CNPJ
+    if (searchCNPJ) {
+      const cnpjLimpo = searchCNPJ.replace(/[^\d]/g, '')
+      const cnpjRegistroLimpo = registro.cnpj.replace(/[^\d]/g, '')
+      if (!cnpjRegistroLimpo.includes(cnpjLimpo)) {
+        return false
+      }
+    }
+
+    // Filtro por ANTT
+    if (searchANTT && !registro.antt.includes(searchANTT)) {
+      return false
+    }
+
+    return true
+  }) || []
+
+  // Aplicar paginação
+  const totalItems = filteredRegistros.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedRegistros = filteredRegistros.slice(startIndex, endIndex)
+
+  // Reset página quando filtros mudam
+  React.useEffect(() => {
+    setCurrentPage(1)
+  }, [filterStatus, filterUF, filterEmpresaProprietario, searchPlaca, searchRazaoSocial, searchCNPJ, searchANTT, itemsPerPage])
+
+  // Obter UFs únicas para o filtro
+  const ufsUnicas = [...new Set(registros?.map(r => r.uf_registro) || [])].sort()
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -134,16 +216,160 @@ export default function RegistrosANTT() {
             <DocumentTextIcon className="h-8 w-8 text-indigo-600 mr-3" />
             <h1 className="text-2xl font-semibold text-gray-900">Registros ANTT</h1>
           </div>
-          <button
-            onClick={() => {
-              resetForm()
-              setIsModalOpen(true)
-            }}
-            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-          >
-            <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-            Novo Registro ANTT
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => {
+                console.log('🔄 Atualizando lista de registros ANTT manualmente')
+                refetch()
+                toast.success('Lista de registros ANTT atualizada!')
+              }}
+              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+              Atualizar Dados
+            </button>
+            <button
+              onClick={() => {
+                resetForm()
+                setIsModalOpen(true)
+              }}
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+              Novo Registro ANTT
+            </button>
+          </div>
+        </div>
+
+        {/* Filtros */}
+        <div className="mt-6 bg-white shadow rounded-lg p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status:</label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as any)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="todos">Todos</option>
+                <option value="ativo">Ativo</option>
+                <option value="inativo">Inativo</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">UF:</label>
+              <select
+                value={filterUF}
+                onChange={(e) => setFilterUF(e.target.value)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="">Todas</option>
+                {ESTADOS_BRASIL.map((uf) => (
+                  <option key={uf} value={uf}>{uf}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Empresa Proprietário:</label>
+              <select
+                value={filterEmpresaProprietario}
+                onChange={(e) => setFilterEmpresaProprietario(e.target.value as any)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="todos">Todos</option>
+                <option value="sim">Sim</option>
+                <option value="nao">Não</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Registros por página:</label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Segunda linha de filtros */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Placa:</label>
+              <input
+                type="text"
+                value={searchPlaca}
+                onChange={(e) => setSearchPlaca(e.target.value)}
+                placeholder="Digite a placa..."
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Razão Social:</label>
+              <input
+                type="text"
+                value={searchRazaoSocial}
+                onChange={(e) => setSearchRazaoSocial(e.target.value)}
+                placeholder="Digite a razão social..."
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">CNPJ:</label>
+              <input
+                type="text"
+                value={searchCNPJ}
+                onChange={(e) => setSearchCNPJ(e.target.value)}
+                placeholder="Digite o CNPJ..."
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">ANTT:</label>
+              <input
+                type="text"
+                value={searchANTT}
+                onChange={(e) => setSearchANTT(e.target.value)}
+                placeholder="Digite o ANTT..."
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Informações dos filtros aplicados */}
+          <div className="mt-3 flex items-center justify-between text-sm text-gray-600">
+            <div>
+              Mostrando {startIndex + 1} a {Math.min(endIndex, totalItems)} de {totalItems} registros
+            </div>
+            {(filterStatus !== 'todos' || filterUF || filterEmpresaProprietario !== 'todos' || searchPlaca || searchRazaoSocial || searchCNPJ || searchANTT) && (
+              <button
+                onClick={() => {
+                  setFilterStatus('todos')
+                  setFilterUF('')
+                  setFilterEmpresaProprietario('todos')
+                  setSearchPlaca('')
+                  setSearchRazaoSocial('')
+                  setSearchCNPJ('')
+                  setSearchANTT('')
+                }}
+                className="text-indigo-600 hover:text-indigo-900 font-medium"
+              >
+                Limpar filtros
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="mt-8 flex flex-col">
@@ -180,11 +406,11 @@ export default function RegistrosANTT() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {registros?.map((registro) => (
+                    {paginatedRegistros?.map((registro) => (
                       <tr key={registro.id}>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
                           <div>
-                            <div className="font-medium">{registro.veiculo?.placa}</div>
+                            <div className="font-medium font-mono">{registro.veiculo?.placa}</div>
                             <div className="text-gray-500">{registro.veiculo?.marca} {registro.veiculo?.modelo}</div>
                           </div>
                         </td>
@@ -242,6 +468,75 @@ export default function RegistrosANTT() {
             </div>
           </div>
         </div>
+
+        {/* Paginação */}
+        {totalPages > 1 && (
+          <div className="mt-6 bg-white shadow rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                Página {currentPage} de {totalPages}
+              </div>
+
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Primeira
+                </button>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Anterior
+                </button>
+
+                {/* Números das páginas */}
+                <div className="flex space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const startPage = Math.max(1, currentPage - 2)
+                    const pageNumber = startPage + i
+
+                    if (pageNumber > totalPages) return null
+
+                    return (
+                      <button
+                        key={pageNumber}
+                        onClick={() => setCurrentPage(pageNumber)}
+                        className={`px-3 py-1 text-sm border rounded ${
+                          currentPage === pageNumber
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Próxima
+                </button>
+
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Última
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal de Cadastro/Edição */}
