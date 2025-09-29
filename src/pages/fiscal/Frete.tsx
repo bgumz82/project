@@ -19,10 +19,12 @@ import {
   getClientesAtivos,
   getCidadesPorNome,
   getCidadePorCodigo,
+  getApolicesAtivasPorEmpresa,
   formatCNPJ,
   type FreteDocumento,
   type FreteDocumentoCreate,
   type Cidade,
+  type ApoliceSeguro,
 } from "@/lib/api/fiscal";
 import toast from "react-hot-toast";
 
@@ -62,6 +64,8 @@ export default function Frete() {
   const [showDestinoDropdown, setShowDestinoDropdown] = useState(false);
   const [selectedCidadeOrigemIbge, setSelectedCidadeOrigemIbge] = useState("");
   const [selectedCidadeDestinoIbge, setSelectedCidadeDestinoIbge] = useState("");
+  const [selectedEmpresaId, setSelectedEmpresaId] = useState("");
+  const [apolicesDisponiveis, setApolicesDisponiveis] = useState<ApoliceSeguro[]>([]);
 
   const queryClient = useQueryClient();
 
@@ -138,6 +142,24 @@ export default function Frete() {
     setShowDestinoDropdown(false);
     setSelectedCidadeOrigemIbge("");
     setSelectedCidadeDestinoIbge("");
+    setSelectedEmpresaId("");
+    setApolicesDisponiveis([]);
+  };
+
+  // Função para buscar apólices quando empresa for selecionada
+  const handleEmpresaChange = async (empresaId: string) => {
+    setSelectedEmpresaId(empresaId);
+    if (empresaId) {
+      try {
+        const apolices = await getApolicesAtivasPorEmpresa(empresaId);
+        setApolicesDisponiveis(apolices);
+      } catch (error) {
+        console.error("Erro ao buscar apólices da empresa:", error);
+        setApolicesDisponiveis([]);
+      }
+    } else {
+      setApolicesDisponiveis([]);
+    }
   };
 
   // Funções de busca de cidades
@@ -585,7 +607,8 @@ export default function Frete() {
                     <select
                       name="empresa_id"
                       id="empresa_id"
-                      defaultValue={selectedDocumento?.empresa_id}
+                      value={selectedEmpresaId || selectedDocumento?.empresa_id || ""}
+                      onChange={(e) => handleEmpresaChange(e.target.value)}
                       required
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
@@ -974,16 +997,29 @@ export default function Frete() {
                         htmlFor="seguro_carga_id"
                         className="block text-sm font-medium text-gray-700"
                       >
-                        Seguro de Carga
+                        Apólice de Seguro
                       </label>
-                      <input
-                        type="text"
+                      <select
                         name="seguro_carga_id"
                         id="seguro_carga_id"
                         defaultValue={selectedDocumento?.seguro_carga_id || ""}
-                        placeholder="ID do seguro (futuro)"
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      />
+                      >
+                        <option value="">Selecione uma apólice (opcional)</option>
+                        {apolicesDisponiveis.map((apolice) => (
+                          <option key={apolice.id} value={apolice.id}>
+                            {apolice.identificador} - {apolice.numero_apolice} 
+                            (Saldo: R$ {(apolice.saldo_disponivel || 0).toLocaleString("pt-BR", {
+                              minimumFractionDigits: 2,
+                            })})
+                          </option>
+                        ))}
+                      </select>
+                      {apolicesDisponiveis.length === 0 && selectedEmpresaId && (
+                        <p className="mt-1 text-xs text-yellow-600">
+                          ⚠️ Nenhuma apólice ativa encontrada para esta empresa
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

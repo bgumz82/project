@@ -31,6 +31,7 @@ import CTe from './pages/fiscal/CTe'
 import NovoCtEAuto from './pages/fiscal/NovoCtEAuto'
 import MDFe from './pages/fiscal/MDFe'
 import Frete from './pages/fiscal/Frete'
+import ApolicesSeguro from './pages/fiscal/ApolicesSeguro'
 
 // Mobile Routes
 import MobileLogin from './pages/mobile/Login'
@@ -352,6 +353,15 @@ export function AppRoutes() {
           element={
             <ProtectedRoute moduleKey="fiscal">
               <Frete />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/fiscal/apolices-seguro"
+          element={
+            <ProtectedRoute moduleKey="fiscal">
+              <ApolicesSeguro />
             </ProtectedRoute>
           }
         />

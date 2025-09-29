@@ -159,6 +159,11 @@ export default function Sidebar() {
           { name: 'CT-e', href: '/fiscal/cte', icon: DocumentTextIcon },
           { name: 'MDF-e', href: '/fiscal/mdfe', icon: TruckIcon },
           { name: 'Frete', href: '/fiscal/frete', icon: CurrencyDollarIcon },
+          {
+            name: 'Apólices de Seguro',
+            href: '/fiscal/apolices-seguro',
+            icon: ShieldCheckIcon,
+          },
         ]
       })
     }
@@ -178,11 +183,16 @@ export default function Sidebar() {
     return item.submenu?.some(subitem => location.pathname === subitem.href) || false
   }
 
+  // Helper function to check if a given path is active
+  const isActive = (pathname: string) => {
+    return location.pathname === pathname
+  }
+
   return (
     <div className="flex flex-col w-56 bg-gray-800 h-[calc(100vh-4rem)] overflow-y-auto">
       <nav className="mt-3 flex-1 space-y-1 px-2 pb-3">
         {navigation.map((item) => {
-          const isActive = location.pathname === item.href
+          const isCurrentPage = location.pathname === item.href
           const hasActiveSubmenu = isInSubmenu(item)
           const isExpanded = expandedMenus.has(item.name) || hasActiveSubmenu
 
@@ -194,7 +204,7 @@ export default function Sidebar() {
                   <button
                     onClick={() => toggleMenu(item.name)}
                     className={`${
-                      isActive || hasActiveSubmenu
+                      isCurrentPage || hasActiveSubmenu
                         ? 'bg-gray-900 text-white'
                         : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                     } group flex items-center justify-between w-full px-2 py-1.5 text-xs font-medium rounded-md transition-colors duration-200`}
@@ -202,7 +212,7 @@ export default function Sidebar() {
                     <div className="flex items-center">
                       <item.icon
                         className={`${
-                          isActive || hasActiveSubmenu ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300'
+                          isCurrentPage || hasActiveSubmenu ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300'
                         } mr-2 flex-shrink-0 h-4 w-4`}
                         aria-hidden="true"
                       />
@@ -249,14 +259,14 @@ export default function Sidebar() {
                 <Link
                   to={item.href}
                   className={`${
-                    isActive
+                    isCurrentPage
                       ? 'bg-gray-900 text-white border-r-2 border-indigo-500'
                       : 'text-gray-300 hover:bg-gray-700 hover:text-white border-r-2 border-transparent hover:border-gray-500'
                   } group flex items-center px-2 py-1.5 text-xs font-medium rounded-md transition-all duration-200`}
                 >
                   <item.icon
                     className={`${
-                      isActive ? 'text-indigo-400' : 'text-gray-400 group-hover:text-gray-300'
+                      isCurrentPage ? 'text-indigo-400' : 'text-gray-400 group-hover:text-gray-300'
                     } mr-2 flex-shrink-0 h-4 w-4`}
                     aria-hidden="true"
                   />

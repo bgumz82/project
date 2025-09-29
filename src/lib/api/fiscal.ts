@@ -1571,6 +1571,41 @@ export async function deleteMDFeDocumento(id: string): Promise<void> {
   }
 }
 
+// Tipos para Apólices de Seguro
+export interface ApoliceSeguro {
+  id: string;
+  empresa_id: string;
+  numero_apolice: string;
+  identificador: string;
+  data_inicial: string;
+  data_final: string;
+  limite_averbacao: number;
+  valor_utilizado: number;
+  status: "ativa" | "vencida" | "cancelada";
+  observacoes: string | null;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+  empresa?: {
+    razao_social: string;
+    cnpj: string;
+  };
+  saldo_disponivel?: number;
+}
+
+export interface ApoliceSeguroCreate {
+  empresa_id: string;
+  numero_apolice: string;
+  identificador: string;
+  data_inicial: string;
+  data_final: string;
+  limite_averbacao: number;
+  valor_utilizado?: number;
+  status?: "ativa" | "vencida" | "cancelada";
+  observacoes?: string | null;
+  ativo?: boolean;
+}
+
 // Tipos para Controle de Frete
 export interface FreteDocumento {
   id: string;
@@ -2255,6 +2290,341 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
       : 'Erro desconhecido na geração de arquivos CT-e';
 
     throw new Error(errorMessage);
+  }
+}
+
+// ===== APÓLICES DE SEGURO =====
+
+export async function getApolicesSeguro(): Promise<ApoliceSeguro[]> {
+  try {
+    console.log("🔍 Buscando apólices de seguro");
+
+    const result = await query(`
+      SELECT 
+        a.*,
+        e.razao_social as empresa_razao_social,
+        e.cnpj as empresa_cnpj,
+        (a.limite_averbacao - a.valor_utilizado) as saldo_disponivel
+      FROM apolices_seguro a
+      JOIN empresas_fiscais e ON a.empresa_id = e.id
+      ORDER BY a.created_at DESC
+    `);
+
+    console.log("✅ Apólices de seguro encontradas:", result.length);
+
+    return result.map((apolice) => ({
+      ...apolice,
+      empresa: {
+        razao_social: apolice.empresa_razao_social,
+        cnpj: apolice.empresa_cnpj,
+      },
+    }));
+  } catch (error) {
+    console.error("❌ Erro ao buscar apólices de seguro:", error);
+    throw error;
+  }
+}
+
+export async function getApoliceSeguro(id: string): Promise<ApoliceSeguro | null> {
+  try {
+    const result = await queryOne(
+      `
+      SELECT 
+        a.*,
+        e.razao_social as empresa_razao_social,
+        e.cnpj as empresa_cnpj,
+        (a.limite_averbacao - a.valor_utilizado) as saldo_disponivel
+      FROM apolices_seguro a
+      JOIN empresas_fiscais e ON a.empresa_id = e.id
+      WHERE a.id = $1
+    `,
+      [id],
+    );
+
+    if (!result) return null;
+
+    return {
+      ...result,
+      empresa: {
+        razao_social: result.empresa_razao_social,
+        cnpj: result.empresa_cnpj,
+      },
+    };
+  } catch (error) {
+    console.error("❌ Erro ao buscar apólice de seguro:", error);
+    throw error;
+  }
+}
+
+export async function createApoliceSeguro(
+  apolice: ApoliceSeguroCreate,
+): Promise<ApoliceSeguro> {
+  try {
+    console.log("📝 Criando nova apólice de seguro:", apolice);
+
+    // Validações básicas
+    if (!apolice.empresa_id) {
+      throw new Error("Empresa é obrigatória");
+    }
+    if (!apolice.numero_apolice) {
+      throw new Error("Número da apólice é obrigatório");
+    }
+    if (!apolice.identificador) {
+      throw new Error("Identificador é obrigatório");
+    }
+    if (!apolice.data_inicial) {
+      throw new Error("Data inicial é obrigatória");
+    }
+    if (!apolice.data_final) {
+      throw new Error("Data final é obrigatória");
+    }
+    if (!apolice.limite_averbacao || apolice.limite_averbacao <= 0) {
+      throw new Error("Limite de averbação deve ser maior que zero");
+    }
+
+    // Validar datas
+    const dataInicial = new Date(apolice.data_inicial);
+    const dataFinal = new Date(apolice.data_final);
+    
+    if (dataFinal <= dataInicial) {
+      throw new Error("Data final deve ser maior que a data inicial");
+    }
+
+    // Verificar se empresa existe e está ativa
+    const empresa = await queryOne(
+      `
+      SELECT id FROM empresas_fiscais WHERE id = $1 AND status = 'ativo'
+    `,
+      [apolice.empresa_id],
+    );
+
+    if (!empresa) {
+      throw new Error("Empresa fiscal não encontrada ou inativa");
+    }
+
+    // Verificar se número da apólice já existe para esta empresa
+    const existingApolice = await queryOne(
+      `
+      SELECT id FROM apolices_seguro 
+      WHERE empresa_id = $1 AND numero_apolice = $2
+    `,
+      [apolice.empresa_id, apolice.numero_apolice],
+    );
+
+    if (existingApolice) {
+      throw new Error("Número da apólice já existe para esta empresa");
+    }
+
+    // Determinar status baseado nas datas
+    const hoje = new Date();
+    let status = apolice.status || "ativa";
+    
+    if (dataFinal < hoje) {
+      status = "vencida";
+    } else if (dataInicial > hoje) {
+      status = "ativa"; // Futura, mas consideramos ativa
+    }
+
+    const result = await queryOne(
+      `
+      INSERT INTO apolices_seguro (
+        empresa_id,
+        numero_apolice,
+        identificador,
+        data_inicial,
+        data_final,
+        limite_averbacao,
+        valor_utilizado,
+        status,
+        observacoes,
+        ativo,
+        created_at,
+        updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+      RETURNING *
+    `,
+      [
+        apolice.empresa_id,
+        apolice.numero_apolice,
+        apolice.identificador,
+        apolice.data_inicial,
+        apolice.data_final,
+        apolice.limite_averbacao,
+        apolice.valor_utilizado || 0,
+        status,
+        apolice.observacoes || null,
+        apolice.ativo !== false,
+      ],
+    );
+
+    if (!result) {
+      throw new Error("Erro ao criar apólice de seguro");
+    }
+
+    console.log("✅ Apólice de seguro criada com sucesso:", result.id);
+    return result;
+  } catch (error) {
+    console.error("❌ Erro ao criar apólice de seguro:", error);
+    throw error;
+  }
+}
+
+export async function updateApoliceSeguro(
+  id: string,
+  apolice: Partial<ApoliceSeguroCreate>,
+): Promise<ApoliceSeguro> {
+  try {
+    console.log("📝 Atualizando apólice de seguro:", id, apolice);
+
+    // Construir query dinamicamente
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    if (apolice.empresa_id !== undefined) {
+      // Verificar se empresa existe e está ativa
+      const empresa = await queryOne(
+        `SELECT id FROM empresas_fiscais WHERE id = $1 AND status = 'ativo'`,
+        [apolice.empresa_id]
+      );
+      if (!empresa) {
+        throw new Error("Empresa fiscal não encontrada ou inativa");
+      }
+      
+      updates.push(`empresa_id = $${paramIndex}`);
+      values.push(apolice.empresa_id);
+      paramIndex++;
+    }
+
+    if (apolice.numero_apolice !== undefined) {
+      updates.push(`numero_apolice = $${paramIndex}`);
+      values.push(apolice.numero_apolice);
+      paramIndex++;
+    }
+
+    if (apolice.identificador !== undefined) {
+      updates.push(`identificador = $${paramIndex}`);
+      values.push(apolice.identificador);
+      paramIndex++;
+    }
+
+    if (apolice.data_inicial !== undefined) {
+      updates.push(`data_inicial = $${paramIndex}`);
+      values.push(apolice.data_inicial);
+      paramIndex++;
+    }
+
+    if (apolice.data_final !== undefined) {
+      updates.push(`data_final = $${paramIndex}`);
+      values.push(apolice.data_final);
+      paramIndex++;
+    }
+
+    if (apolice.limite_averbacao !== undefined) {
+      if (apolice.limite_averbacao <= 0) {
+        throw new Error("Limite de averbação deve ser maior que zero");
+      }
+      updates.push(`limite_averbacao = $${paramIndex}`);
+      values.push(apolice.limite_averbacao);
+      paramIndex++;
+    }
+
+    if (apolice.valor_utilizado !== undefined) {
+      updates.push(`valor_utilizado = $${paramIndex}`);
+      values.push(apolice.valor_utilizado);
+      paramIndex++;
+    }
+
+    if (apolice.status !== undefined) {
+      updates.push(`status = $${paramIndex}`);
+      values.push(apolice.status);
+      paramIndex++;
+    }
+
+    if (apolice.observacoes !== undefined) {
+      updates.push(`observacoes = $${paramIndex}`);
+      values.push(apolice.observacoes);
+      paramIndex++;
+    }
+
+    if (apolice.ativo !== undefined) {
+      updates.push(`ativo = $${paramIndex}`);
+      values.push(apolice.ativo);
+      paramIndex++;
+    }
+
+    // Sempre atualizar updated_at
+    updates.push(`updated_at = NOW()`);
+
+    if (updates.length === 1) {
+      // Apenas updated_at
+      throw new Error("Nenhum campo para atualizar");
+    }
+
+    // Adicionar ID como último parâmetro
+    values.push(id);
+
+    const result = await queryOne(
+      `
+      UPDATE apolices_seguro
+      SET ${updates.join(", ")}
+      WHERE id = $${paramIndex}
+      RETURNING *
+    `,
+      values,
+    );
+
+    if (!result) {
+      throw new Error("Apólice de seguro não encontrada");
+    }
+
+    console.log("✅ Apólice de seguro atualizada com sucesso:", result.id);
+    return result;
+  } catch (error) {
+    console.error("❌ Erro ao atualizar apólice de seguro:", error);
+    throw error;
+  }
+}
+
+export async function deleteApoliceSeguro(id: string): Promise<void> {
+  try {
+    console.log("🗑️ Excluindo apólice de seguro:", id);
+
+    // Verificar se há documentos de frete vinculados
+    const freteVinculado = await queryOne(
+      `
+      SELECT COUNT(*) as count FROM frete_documentos WHERE seguro_carga_id = $1
+    `,
+      [id]
+    );
+
+    if (freteVinculado && parseInt(freteVinculado.count) > 0) {
+      throw new Error(
+        "Não é possível excluir apólice com documentos de frete vinculados"
+      );
+    }
+
+    await query("DELETE FROM apolices_seguro WHERE id = $1", [id]);
+    console.log("✅ Apólice de seguro excluída com sucesso");
+  } catch (error) {
+    console.error("❌ Erro ao excluir apólice de seguro:", error);
+    throw error;
+  }
+}
+
+export async function getApolicesAtivasPorEmpresa(empresaId: string): Promise<ApoliceSeguro[]> {
+  try {
+    console.log("🔍 Buscando apólices ativas para empresa:", empresaId);
+
+    const result = await query(`
+      SELECT * FROM get_apolices_ativas($1)
+    `, [empresaId]);
+
+    console.log("✅ Apólices ativas encontradas:", result.length);
+    return result;
+  } catch (error) {
+    console.error("❌ Erro ao buscar apólices ativas:", error);
+    throw error;
   }
 }
 
