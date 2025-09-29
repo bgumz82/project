@@ -153,9 +153,11 @@ export default function Frete() {
       try {
         const apolices = await getApolicesAtivasPorEmpresa(empresaId);
         setApolicesDisponiveis(apolices);
+        console.log("✅ Apólices carregadas para empresa:", empresaId, apolices.length);
       } catch (error) {
         console.error("Erro ao buscar apólices da empresa:", error);
         setApolicesDisponiveis([]);
+        toast.error("Erro ao carregar apólices de seguro");
       }
     } else {
       setApolicesDisponiveis([]);
@@ -294,6 +296,19 @@ export default function Frete() {
 
   const handleEdit = async (documento: FreteDocumento) => {
     setSelectedDocumento(documento);
+
+    // Carregar apólices da empresa selecionada
+    if (documento.empresa_id) {
+      try {
+        const apolices = await getApolicesAtivasPorEmpresa(documento.empresa_id);
+        setApolicesDisponiveis(apolices);
+        setSelectedEmpresaId(documento.empresa_id);
+        console.log("✅ Apólices carregadas para edição:", apolices.length);
+      } catch (error) {
+        console.error("Erro ao buscar apólices da empresa:", error);
+        setApolicesDisponiveis([]);
+      }
+    }
 
     // Preencher campos de cidade se existirem
     if (documento.cidade_origem_ibge) {
@@ -1013,9 +1028,19 @@ export default function Frete() {
                           </option>
                         ))}
                       </select>
-                      {apolicesDisponiveis.length === 0 && selectedEmpresaId && (
+                      {!selectedEmpresaId && (
+                        <p className="mt-1 text-xs text-gray-500">
+                          🏢 Primeiro selecione uma empresa para carregar as apólices
+                        </p>
+                      )}
+                      {selectedEmpresaId && apolicesDisponiveis.length === 0 && (
                         <p className="mt-1 text-xs text-yellow-600">
                           ⚠️ Nenhuma apólice ativa encontrada para esta empresa
+                        </p>
+                      )}
+                      {selectedEmpresaId && apolicesDisponiveis.length > 0 && (
+                        <p className="mt-1 text-xs text-green-600">
+                          ✅ {apolicesDisponiveis.length} apólice(s) disponível(is)
                         </p>
                       )}
                     </div>
