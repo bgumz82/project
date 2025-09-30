@@ -3187,9 +3187,17 @@ app.post('/api/cte-documentos', (req, res, next) => {
             const tomadorFrete = freteResult.rows[0].tomador_frete;
             console.log('📋 Tomador definido no frete:', tomadorFrete);
 
-            // Salvar o valor literal, não o UUID
-            tomadorIdFinal = tomadorFrete; // "remetente" ou "destinatario"
-            console.log('✅ Tomador definido como valor literal (baseado no frete):', tomadorIdFinal);
+            // CORREÇÃO: Usar o ID correto baseado no valor do frete
+            if (tomadorFrete === 'remetente') {
+              tomadorIdFinal = remetenteIdFinal;
+              console.log('✅ Tomador definido como REMETENTE (UUID):', tomadorIdFinal);
+            } else if (tomadorFrete === 'destinatario') {
+              tomadorIdFinal = destinatarioIdFinal;
+              console.log('✅ Tomador definido como DESTINATÁRIO (UUID):', tomadorIdFinal);
+            } else {
+              console.warn('⚠️ Valor de tomador_frete desconhecido:', tomadorFrete);
+              tomadorIdFinal = remetenteIdFinal; // Fallback para remetente
+            }
           } else {
             // ABORTAR se não encontrar frete cadastrado
             console.error('❌ Frete não encontrado - abortar criação do CT-e');
