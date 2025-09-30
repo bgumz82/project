@@ -1361,9 +1361,9 @@ export default function CTe() {
       console.log('✅ Informações do frete encontradas:', informacoesFrete)
 
       // Definir tomador baseado na configuração do frete
-      let tomadorIdFinal = ''
-      let remetenteIdFinal = ''
-      let destinatarioIdFinal = ''
+      let tomadorIdFinal: string | null = null
+      let remetenteIdFinal: string | null = null
+      let destinatarioIdFinal: string | null = null
 
       // Buscar IDs dos participantes pelos CNPJs
       const remetenteQuery = `SELECT id FROM cadastros WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true LIMIT 1`
