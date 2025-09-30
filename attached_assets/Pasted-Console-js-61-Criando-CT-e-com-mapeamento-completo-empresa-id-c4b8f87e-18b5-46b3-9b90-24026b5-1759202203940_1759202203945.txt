@@ -1,0 +1,139 @@
+Console.js:61 📝 Criando CT-e com mapeamento completo: {empresa_id: 'c4b8f87e-18b5-46b3-9b90-24026b558227', data_emissao: '2025-09-30', chave_acesso_1: '31250923153943000907551090001704751870253740', numero_cte: 'AUTO', serie: '001', …}
+Console.js:61 🔍 Dados NF-e específicos being enviados: {remetente_cnpj: '23153943000907', destinatario_cnpj: '01257995000133', remetente_razao: 'COOPERATIVA AGROPECUARIA DO VALE DO PARACATU LTDA', destinatario_razao: 'GOIASMINAS IND. DE LATICINIOS LTDA'}
+Console.js:61 📝 Criando novo documento CT-e: {empresa_id: 'c4b8f87e-18b5-46b3-9b90-24026b558227', data_emissao: '2025-09-30', chave_acesso_1: '31250923153943000907551090001704751870253740', numero_cte: 'AUTO', serie: '001', …}
+Console.js:61 🔍 Validando empresa_id: {valor: 'c4b8f87e-18b5-46b3-9b90-24026b558227', tipo: 'string', existe: true, temConteudo: true}
+Console.js:61 🔍 Verificando empresa_id: c4b8f87e-18b5-46b3-9b90-24026b558227
+Console.js:61 🔍 Executando query: 
+      SELECT id, serie_padrao_cte, codigo_uf, status FROM empresas_fiscais WHERE id = $1
+    
+Console.js:61 📋 Parâmetros: ['c4b8f87e-18b5-46b3-9b90-24026b558227']
+Console.js:61 ✅ Query response: {rows: Array(1), rowCount: 1}
+Console.js:61 📊 Query rows: [{…}]
+Console.js:61 🏢 Empresa encontrada: {id: 'c4b8f87e-18b5-46b3-9b90-24026b558227', serie_padrao_cte: '001', codigo_uf: '31', status: 'ativo'}
+Console.js:61 🔍 Executando query: 
+        SELECT get_next_cte_number($1) as numero
+      
+Console.js:61 📋 Parâmetros: ['c4b8f87e-18b5-46b3-9b90-24026b558227']
+Console.js:61 ✅ Query response: {rows: Array(1), rowCount: 1}
+Console.js:61 📊 Query rows: [{…}]
+Console.js:61 🔍 Executando query: 
+      SELECT id FROM cte_documentos 
+      WHERE empresa_id = $1 AND numero_cte = $2 AND serie = $3
+    
+Console.js:61 📋 Parâmetros: (3) ['c4b8f87e-18b5-46b3-9b90-24026b558227', '1011', '001']
+Console.js:61 ✅ Query response: {rows: Array(0), rowCount: 0}
+Console.js:61 📊 Query rows: []
+Console.js:61 ⚠️ Chave de acesso não gerada, forçando regeneração...
+Console.js:61 🔍 Executando query: 
+        UPDATE cte_documentos 
+        SET chave_acesso = NULL,
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+        
+Console.js:61 📋 Parâmetros: ['46a19d99-a84e-437c-b998-3096f6077d74']
+Console.js:61 ✅ Query response: {rows: Array(1), rowCount: 1}
+Console.js:61 📊 Query rows: [{…}]
+Console.js:61 ✅ Chave de acesso regenerada: null
+Console.js:61 🔧 Sidebar renderizando. hasPermission disponível: function
+Console.js:61 🔍 Verificando permissões para construir navegação
+Console.js:61 🔧 Sidebar renderizando. hasPermission disponível: function
+Console.js:61 🔍 Verificando permissões para construir navegação
+Console.js:61 🔍 Buscando documentos CT-e
+Console.js:61 🔍 Executando query: 
+      SELECT 
+        c.*,
+        e.razao_social as empresa_razao_social,
+        e.cnpj as empresa_cnpj
+      FROM cte_documentos c
+      JOIN empresas_fiscais e ON c.empresa_id = e.id
+      ORDER BY c.data_emissao DESC, c.numero_cte DESC
+    
+Console.js:61 📋 Parâmetros: []
+Console.js:61 🎯 Associações carregadas no componente CT-e: 2
+Console.js:61 🎯 Primeira associação no componente: {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+Console.js:61 🎯 Funcionário da primeira associação: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', matricula: '0649', cnh: '01513695482', validade_cnh: '2025-09-10T00:00:00.000Z'}
+Console.js:61 🎯 Veículo da primeira associação: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T', marca: 'IVECO', tipo: 'caminhao'}
+Console.js:61 🎯 Estrutura completa da primeira associação: {
+  "id": "75861510-367b-44cc-9dc0-6c379c5755fb",
+  "funcionario_id": "3af7727b-0382-425c-98d2-ffae6a93210f",
+  "veiculo_principal_id": "0761c4af-f13b-4e63-889c-99abefbb4cfc",
+  "veiculo_reboque1_id": "37cb31a7-6fda-4465-8a45-a9ce9b9eeb80",
+  "veiculo_reboque2_id": "f9d46b40-bda8-422b-842c-5bc965044772",
+  "veiculo_implemento_id": null,
+  "data_inicio": "2025-09-22T00:00:00.000Z",
+  "data_fim": null,
+  "ativo": true,
+  "observacoes": null,
+  "created_at": "2025-09-23T00:38:59.109Z",
+  "updated_at": "2025-09-23T00:38:59.109Z",
+  "funcionario": {
+    "nome": "CACIO ROBERTO DE SOUSA DUARTE",
+    "matricula": "0649",
+    "cnh": "01513695482",
+    "validade_cnh": "2025-09-10T00:00:00.000Z"
+  },
+  "veiculo_principal": {
+    "placa": "AWM-3029",
+    "modelo": "STRALIS 600S40T",
+    "marca": "IVECO",
+    "tipo": "caminhao"
+  },
+  "veiculo_reboque1": {
+    "placa": "AON-8409",
+    "modelo": "SRF BT",
+    "marca": "SR FACCHINI",
+    "tipo": "bi_trem_1_reboque"
+  },
+  "veiculo_reboque2": {
+    "placa": "AON-7470",
+    "modelo": "SRF BT",
+    "marca": "SR FACCHINI",
+    "tipo": "bi_trem_2_reboque"
+  }
+}
+Console.js:61 🎯 Associações carregadas no componente CT-e: 2
+Console.js:61 🎯 Primeira associação no componente: {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+Console.js:61 🎯 Funcionário da primeira associação: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', matricula: '0649', cnh: '01513695482', validade_cnh: '2025-09-10T00:00:00.000Z'}
+Console.js:61 🎯 Veículo da primeira associação: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T', marca: 'IVECO', tipo: 'caminhao'}
+Console.js:61 🎯 Estrutura completa da primeira associação: {
+  "id": "75861510-367b-44cc-9dc0-6c379c5755fb",
+  "funcionario_id": "3af7727b-0382-425c-98d2-ffae6a93210f",
+  "veiculo_principal_id": "0761c4af-f13b-4e63-889c-99abefbb4cfc",
+  "veiculo_reboque1_id": "37cb31a7-6fda-4465-8a45-a9ce9b9eeb80",
+  "veiculo_reboque2_id": "f9d46b40-bda8-422b-842c-5bc965044772",
+  "veiculo_implemento_id": null,
+  "data_inicio": "2025-09-22T00:00:00.000Z",
+  "data_fim": null,
+  "ativo": true,
+  "observacoes": null,
+  "created_at": "2025-09-23T00:38:59.109Z",
+  "updated_at": "2025-09-23T00:38:59.109Z",
+  "funcionario": {
+    "nome": "CACIO ROBERTO DE SOUSA DUARTE",
+    "matricula": "0649",
+    "cnh": "01513695482",
+    "validade_cnh": "2025-09-10T00:00:00.000Z"
+  },
+  "veiculo_principal": {
+    "placa": "AWM-3029",
+    "modelo": "STRALIS 600S40T",
+    "marca": "IVECO",
+    "tipo": "caminhao"
+  },
+  "veiculo_reboque1": {
+    "placa": "AON-8409",
+    "modelo": "SRF BT",
+    "marca": "SR FACCHINI",
+    "tipo": "bi_trem_1_reboque"
+  },
+  "veiculo_reboque2": {
+    "placa": "AON-7470",
+    "modelo": "SRF BT",
+    "marca": "SR FACCHINI",
+    "tipo": "bi_trem_2_reboque"
+  }
+}
+Console.js:61 ✅ Query response: {rows: Array(6), rowCount: 6}
+Console.js:61 📊 Query rows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+Console.js:61 ✅ Documentos CT-e encontrados: 6

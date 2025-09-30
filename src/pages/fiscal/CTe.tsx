@@ -1140,6 +1140,8 @@ export default function CTe() {
     e.preventDefault()
     setIsSubmittingRapido(true) // Inicia o estado de submissão
 
+    console.log('🚀🚀🚀 VERSÃO ATUALIZADA - handleSubmitRapido iniciado em:', new Date().toISOString())
+
     try {
       // Validações básicas
       if (!formRapido.empresa_id) {
