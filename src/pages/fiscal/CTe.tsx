@@ -1340,6 +1340,12 @@ export default function CTe() {
       }
 
       console.log('🚛 Tipo de reboque para consulta de frete:', tipoReboque)
+      console.log('📋 Parâmetros para busca de frete:')
+      console.log('  - CNPJ Remetente:', cnpjRemetenteChave)
+      console.log('  - CNPJ Destinatário:', formRapido.cnpj_destinatario)
+      console.log('  - Tipo Reboque:', tipoReboque)
+      console.log('  - Cidade Origem IBGE:', rapidoSelectedInicio.codigo)
+      console.log('  - Cidade Destino IBGE:', rapidoSelectedTermino.codigo)
 
       // Buscar informações completas do frete cadastrado (obrigatório)
       const informacoesFrete = await buscarFrete(
@@ -1349,6 +1355,8 @@ export default function CTe() {
         rapidoSelectedInicio.codigo,
         rapidoSelectedTermino.codigo
       )
+
+      console.log('🔍 Resultado da busca de frete:', informacoesFrete)
 
       // Verificar se frete foi encontrado - obrigatório para criar CT-e
       if (!informacoesFrete) {
@@ -1369,30 +1377,51 @@ export default function CTe() {
       const remetenteQuery = `SELECT id FROM cadastros WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true LIMIT 1`
       const destinatarioQuery = `SELECT id FROM cadastros WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true LIMIT 1`
 
+      console.log('🔍 Buscando IDs dos participantes pelos CNPJs...')
+      console.log('  - Remetente CNPJ:', cnpjRemetenteChave)
+      console.log('  - Destinatário CNPJ:', formRapido.cnpj_destinatario)
+
       try {
         const [remetenteResult, destinatarioResult] = await Promise.all([
           query(remetenteQuery, [cnpjRemetenteChave]),
           query(destinatarioQuery, [formRapido.cnpj_destinatario])
         ])
 
+        console.log('📊 Resultado da busca de remetente:', remetenteResult)
+        console.log('📊 Resultado da busca de destinatário:', destinatarioResult)
+
         if (remetenteResult?.rows?.length > 0) {
           remetenteIdFinal = remetenteResult.rows[0].id
-          console.log('✅ Remetente encontrado:', remetenteIdFinal)
+          console.log('✅ Remetente encontrado - ID:', remetenteIdFinal)
+        } else {
+          console.error('❌ Remetente NÃO encontrado!')
         }
 
         if (destinatarioResult?.rows?.length > 0) {
           destinatarioIdFinal = destinatarioResult.rows[0].id
-          console.log('✅ Destinatário encontrado:', destinatarioIdFinal)
+          console.log('✅ Destinatário encontrado - ID:', destinatarioIdFinal)
+        } else {
+          console.error('❌ Destinatário NÃO encontrado!')
         }
+
+        console.log('📝 IDs definidos antes de escolher tomador:')
+        console.log('  - Remetente ID:', remetenteIdFinal)
+        console.log('  - Destinatário ID:', destinatarioIdFinal)
+        console.log('  - Tomador do frete configurado:', informacoesFrete.tomador_frete)
 
         // Definir tomador baseado na configuração do frete - usar ID real do cadastro
         if (informacoesFrete.tomador_frete === 'remetente') {
           tomadorIdFinal = remetenteIdFinal  // Usar ID do remetente
-          console.log('👤 Tomador definido como REMETENTE (ID):', tomadorIdFinal)
+          console.log('👤 Tomador definido como REMETENTE - ID:', tomadorIdFinal)
         } else if (informacoesFrete.tomador_frete === 'destinatario') {
           tomadorIdFinal = destinatarioIdFinal  // Usar ID do destinatário
-          console.log('👤 Tomador definido como DESTINATÁRIO (ID):', tomadorIdFinal)
+          console.log('👤 Tomador definido como DESTINATÁRIO - ID:', tomadorIdFinal)
         }
+
+        console.log('📝 IDs FINAIS antes de criar CT-e:')
+        console.log('  - Tomador ID:', tomadorIdFinal)
+        console.log('  - Remetente ID:', remetenteIdFinal)
+        console.log('  - Destinatário ID:', destinatarioIdFinal)
 
         // Validar se tomador foi definido corretamente
         if (!tomadorIdFinal) {
