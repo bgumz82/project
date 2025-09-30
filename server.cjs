@@ -583,163 +583,163 @@ app.get('/api/verificar-cliente/:cnpj', async (req, res) => {
   }
 });
 
-// Rota para criar CT-e
-app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
-  const requestId = generateRequestId();
-  let client;
-
-  try {
-    console.log(`🔥 [${requestId}] Criando novo CT-e`);
-    console.log(`📝 [${requestId}] Dados recebidos:`, JSON.stringify(req.body, null, 2));
-
-    // Obter pool correto para o usuário
-    const userPool = await getUserDatabasePool(req.user.id);
-    client = await userPool.connect();
-
-    // Validações básicas
-    if (!req.body.empresa_id) {
-      return res.status(400).json({ error: 'empresa_id é obrigatório' });
-    }
-
-    if (!req.body.chave_acesso_1) {
-      return res.status(400).json({ error: 'chave_acesso_1 é obrigatória' });
-    }
-
-    // Verificar se empresa existe
-    const empresaResult = await client.query(
-      'SELECT id, serie_padrao_cte, codigo_uf, proximo_numero_cte FROM empresas_fiscais WHERE id = $1',
-      [req.body.empresa_id]
-    );
-
-    if (empresaResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Empresa fiscal não encontrada' });
-    }
-
-    const empresa = empresaResult.rows[0];
-
-    // Obter próximo número se não fornecido
-    let numeroFinal = req.body.numero_cte;
-    if (!numeroFinal || numeroFinal === 'AUTO') {
-      numeroFinal = empresa.proximo_numero_cte.toString();
-    }
-
-    // Preparar dados para inserção
-    const documentoData = {
-      empresa_id: req.body.empresa_id,
-      numero_cte: numeroFinal,
-      serie: req.body.serie || empresa.serie_padrao_cte || '001',
-      data_emissao: req.body.data_emissao,
-      codigo_uf: req.body.codigo_uf || empresa.codigo_uf,
-      status: req.body.status || 'pendente',
-      chave_acesso_1: req.body.chave_acesso_1,
-      chave_acesso_2: req.body.chave_acesso_2 || null,
-      chave_acesso_3: req.body.chave_acesso_3 || null,
-      chave_acesso_4: req.body.chave_acesso_4 || null,
-      valor_prestacao: req.body.valor_prestacao || null,
-      valor_receber: req.body.valor_receber || null,
-      valor_tributos: req.body.valor_tributos || null,
-      valor_pedagio: req.body.valor_pedagio || null,
-      valor_seguro: req.body.valor_seguro || null,
-      icms_situacao_tributaria: req.body.icms_situacao_tributaria || null,
-      icms_bc_valor: req.body.icms_bc_valor || null,
-      icms_aliquota: req.body.icms_aliquota || null,
-      icms_valor: req.body.icms_valor || null,
-      valor_carga: req.body.valor_carga || null,
-      quantidade_carga: req.body.quantidade_carga || null,
-      produto_predominante_id: req.body.produto_predominante_id || null,
-      tomador_id: req.body.tomador_id || null,
-      remetente_id: req.body.remetente_id || null,
-      destinatario_id: req.body.destinatario_id || null,
-      recebedor_id: req.body.recebedor_id || null,
-      cfop: req.body.cfop || null,
-      finalidade_cte: req.body.finalidade_cte || '0',
-      tipo_servico: req.body.tipo_servico || '0',
-      cidade_inicio_ibge: req.body.cidade_inicio_ibge || null,
-      cidade_termino_ibge: req.body.cidade_termino_ibge || null,
-      uf_inicio: req.body.uf_inicio || null,
-      uf_termino: req.body.uf_termino || null,
-      cidade_inicio_nome: req.body.cidade_inicio_nome || null,
-      cidade_termino_nome: req.body.cidade_termino_nome || null,
-      rntrc: req.body.rntrc || null,
-      motorista_nome: req.body.motorista_nome || null,
-      motorista_cnh: req.body.motorista_cnh || null,
-      motorista_matricula: req.body.motorista_matricula || null,
-      motorista_validade_cnh: req.body.motorista_validade_cnh || null,
-      placa_veiculo: req.body.placa_veiculo || null,
-      placa_reboque: req.body.placa_reboque || null,
-      associacao_frota_id: req.body.associacao_frota_id || null,
-      observacoes: req.body.observacoes || null
-    };
-
-    console.log(`📝 [${requestId}] Inserindo CT-e no banco...`);
-
-    // Inserir no banco de dados
-    const result = await client.query(`
-      INSERT INTO cte_documentos (
-        empresa_id, numero_cte, serie, data_emissao, codigo_uf, status,
-        chave_acesso_1, chave_acesso_2, chave_acesso_3, chave_acesso_4,
-        valor_prestacao, valor_receber, valor_tributos, valor_pedagio, valor_seguro,
-        icms_situacao_tributaria, icms_bc_valor, icms_aliquota, icms_valor,
-        valor_carga, quantidade_carga, produto_predominante_id,
-        tomador_id, remetente_id, destinatario_id, recebedor_id,
-        cfop, finalidade_cte, tipo_servico,
-        cidade_inicio_ibge, cidade_termino_ibge, uf_inicio, uf_termino,
-        cidade_inicio_nome, cidade_termino_nome,
-        rntrc, motorista_nome, motorista_cnh, motorista_matricula, motorista_validade_cnh,
-        placa_veiculo, placa_reboque, associacao_frota_id, observacoes,
-        created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-        $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29,
-        $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44,
-        NOW(), NOW()
-      ) RETURNING *
-    `, [
-      documentoData.empresa_id, documentoData.numero_cte, documentoData.serie,
-      documentoData.data_emissao, documentoData.codigo_uf, documentoData.status,
-      documentoData.chave_acesso_1, documentoData.chave_acesso_2, documentoData.chave_acesso_3, documentoData.chave_acesso_4,
-      documentoData.valor_prestacao, documentoData.valor_receber, documentoData.valor_tributos,
-      documentoData.valor_pedagio, documentoData.valor_seguro,
-      documentoData.icms_situacao_tributaria, documentoData.icms_bc_valor, documentoData.icms_aliquota, documentoData.icms_valor,
-      documentoData.valor_carga, documentoData.quantidade_carga, documentoData.produto_predominante_id,
-      documentoData.tomador_id, documentoData.remetente_id, documentoData.destinatario_id, documentoData.recebedor_id,
-      documentoData.cfop, documentoData.finalidade_cte, documentoData.tipo_servico,
-      documentoData.cidade_inicio_ibge, documentoData.cidade_termino_ibge, documentoData.uf_inicio, documentoData.uf_termino,
-      documentoData.cidade_inicio_nome, documentoData.cidade_termino_nome,
-      documentoData.rntrc, documentoData.motorista_nome, documentoData.motorista_cnh,
-      documentoData.motorista_matricula, documentoData.motorista_validade_cnh,
-      documentoData.placa_veiculo, documentoData.placa_reboque, documentoData.associacao_frota_id, documentoData.observacoes
-    ]);
-
-    if (result.rows.length === 0) {
-      throw new Error('Erro ao criar CT-e no banco de dados');
-    }
-
-    const novoDocumento = result.rows[0];
-
-    // Atualizar próximo número na empresa
-    await client.query(`
-      UPDATE empresas_fiscais 
-      SET proximo_numero_cte = $1
-      WHERE id = $2
-    `, [parseInt(numeroFinal) + 1, req.body.empresa_id]);
-
-    console.log(`✅ [${requestId}] CT-e criado com sucesso:`, novoDocumento.id);
-
-    res.status(201).json(novoDocumento);
-
-  } catch (error) {
-    console.error(`❌ [${requestId}] Erro ao criar CT-e:`, error);
-    res.status(500).json({
-      error: 'Erro ao criar CT-e',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  } finally {
-    if (client) {
-      client.release();
-    }
-  }
-});
+// ROTA REMOVIDA - usando rota com mapeamento completo mais abaixo
+// Rota para criar CT-e - OLD VERSION (duplicada)
+// app.post('/api/cte-documentos', authenticateToken, async (req, res) => {
+//   const requestId = generateRequestId();
+//   let client;
+// 
+//   try {
+//     console.log(`🔥 [${requestId}] Criando novo CT-e`);
+//     console.log(`📝 [${requestId}] Dados recebidos:`, JSON.stringify(req.body, null, 2));
+//     // Obter pool correto para o usuário
+//     const userPool = await getUserDatabasePool(req.user.id);
+//     client = await userPool.connect();
+// 
+//     // Validações básicas
+//     if (!req.body.empresa_id) {
+//       return res.status(400).json({ error: 'empresa_id é obrigatório' });
+//     }
+// 
+//     if (!req.body.chave_acesso_1) {
+//       return res.status(400).json({ error: 'chave_acesso_1 é obrigatória' });
+//     }
+// 
+//     // Verificar se empresa existe
+//     const empresaResult = await client.query(
+//       'SELECT id, serie_padrao_cte, codigo_uf, proximo_numero_cte FROM empresas_fiscais WHERE id = $1',
+//       [req.body.empresa_id]
+//     );
+// 
+//     if (empresaResult.rows.length === 0) {
+//       return res.status(404).json({ error: 'Empresa fiscal não encontrada' });
+//     }
+// 
+//     const empresa = empresaResult.rows[0];
+// 
+//     // Obter próximo número se não fornecido
+//     let numeroFinal = req.body.numero_cte;
+//     if (!numeroFinal || numeroFinal === 'AUTO') {
+//       numeroFinal = empresa.proximo_numero_cte.toString();
+//     }
+// 
+//     // Preparar dados para inserção
+//     const documentoData = {
+//       empresa_id: req.body.empresa_id,
+//       numero_cte: numeroFinal,
+//       serie: req.body.serie || empresa.serie_padrao_cte || '001',
+//       data_emissao: req.body.data_emissao,
+//       codigo_uf: req.body.codigo_uf || empresa.codigo_uf,
+//       status: req.body.status || 'pendente',
+//       chave_acesso_1: req.body.chave_acesso_1,
+//       chave_acesso_2: req.body.chave_acesso_2 || null,
+//       chave_acesso_3: req.body.chave_acesso_3 || null,
+//       chave_acesso_4: req.body.chave_acesso_4 || null,
+//       valor_prestacao: req.body.valor_prestacao || null,
+//       valor_receber: req.body.valor_receber || null,
+//       valor_tributos: req.body.valor_tributos || null,
+//       valor_pedagio: req.body.valor_pedagio || null,
+//       valor_seguro: req.body.valor_seguro || null,
+//       icms_situacao_tributaria: req.body.icms_situacao_tributaria || null,
+//       icms_bc_valor: req.body.icms_bc_valor || null,
+//       icms_aliquota: req.body.icms_aliquota || null,
+//       icms_valor: req.body.icms_valor || null,
+//       valor_carga: req.body.valor_carga || null,
+//       quantidade_carga: req.body.quantidade_carga || null,
+//       produto_predominante_id: req.body.produto_predominante_id || null,
+//       tomador_id: req.body.tomador_id || null,
+//       remetente_id: req.body.remetente_id || null,
+//       destinatario_id: req.body.destinatario_id || null,
+//       recebedor_id: req.body.recebedor_id || null,
+//       cfop: req.body.cfop || null,
+//       finalidade_cte: req.body.finalidade_cte || '0',
+//       tipo_servico: req.body.tipo_servico || '0',
+//       cidade_inicio_ibge: req.body.cidade_inicio_ibge || null,
+//       cidade_termino_ibge: req.body.cidade_termino_ibge || null,
+//       uf_inicio: req.body.uf_inicio || null,
+//       uf_termino: req.body.uf_termino || null,
+//       cidade_inicio_nome: req.body.cidade_inicio_nome || null,
+//       cidade_termino_nome: req.body.cidade_termino_nome || null,
+//       rntrc: req.body.rntrc || null,
+//       motorista_nome: req.body.motorista_nome || null,
+//       motorista_cnh: req.body.motorista_cnh || null,
+//       motorista_matricula: req.body.motorista_matricula || null,
+//       motorista_validade_cnh: req.body.motorista_validade_cnh || null,
+//       placa_veiculo: req.body.placa_veiculo || null,
+//       placa_reboque: req.body.placa_reboque || null,
+//       associacao_frota_id: req.body.associacao_frota_id || null,
+//       observacoes: req.body.observacoes || null
+//     };
+// 
+//     console.log(`📝 [${requestId}] Inserindo CT-e no banco...`);
+// 
+//     // Inserir no banco de dados
+//     const result = await client.query(`
+//       INSERT INTO cte_documentos (
+//         empresa_id, numero_cte, serie, data_emissao, codigo_uf, status,
+//         chave_acesso_1, chave_acesso_2, chave_acesso_3, chave_acesso_4,
+//         valor_prestacao, valor_receber, valor_tributos, valor_pedagio, valor_seguro,
+//         icms_situacao_tributaria, icms_bc_valor, icms_aliquota, icms_valor,
+//         valor_carga, quantidade_carga, produto_predominante_id,
+//         tomador_id, remetente_id, destinatario_id, recebedor_id,
+//         cfop, finalidade_cte, tipo_servico,
+//         cidade_inicio_ibge, cidade_termino_ibge, uf_inicio, uf_termino,
+//         cidade_inicio_nome, cidade_termino_nome,
+//         rntrc, motorista_nome, motorista_cnh, motorista_matricula, motorista_validade_cnh,
+//         placa_veiculo, placa_reboque, associacao_frota_id, observacoes,
+//         created_at, updated_at
+//       ) VALUES (
+//         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
+//         $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29,
+//         $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44,
+//         NOW(), NOW()
+//       ) RETURNING *
+//     `, [
+//       documentoData.empresa_id, documentoData.numero_cte, documentoData.serie,
+//       documentoData.data_emissao, documentoData.codigo_uf, documentoData.status,
+//       documentoData.chave_acesso_1, documentoData.chave_acesso_2, documentoData.chave_acesso_3, documentoData.chave_acesso_4,
+//       documentoData.valor_prestacao, documentoData.valor_receber, documentoData.valor_tributos,
+//       documentoData.valor_pedagio, documentoData.valor_seguro,
+//       documentoData.icms_situacao_tributaria, documentoData.icms_bc_valor, documentoData.icms_aliquota, documentoData.icms_valor,
+//       documentoData.valor_carga, documentoData.quantidade_carga, documentoData.produto_predominante_id,
+//       documentoData.tomador_id, documentoData.remetente_id, documentoData.destinatario_id, documentoData.recebedor_id,
+//       documentoData.cfop, documentoData.finalidade_cte, documentoData.tipo_servico,
+//       documentoData.cidade_inicio_ibge, documentoData.cidade_termino_ibge, documentoData.uf_inicio, documentoData.uf_termino,
+//       documentoData.cidade_inicio_nome, documentoData.cidade_termino_nome,
+//       documentoData.rntrc, documentoData.motorista_nome, documentoData.motorista_cnh,
+//       documentoData.motorista_matricula, documentoData.motorista_validade_cnh,
+//       documentoData.placa_veiculo, documentoData.placa_reboque, documentoData.associacao_frota_id, documentoData.observacoes
+//     ]);
+// 
+//     if (result.rows.length === 0) {
+//       throw new Error('Erro ao criar CT-e no banco de dados');
+//     }
+// 
+//     const novoDocumento = result.rows[0];
+// 
+//     // Atualizar próximo número na empresa
+//     await client.query(`
+//       UPDATE empresas_fiscais 
+//       SET proximo_numero_cte = $1
+//       WHERE id = $2
+//     `, [parseInt(numeroFinal) + 1, req.body.empresa_id]);
+// 
+//     console.log(`✅ [${requestId}] CT-e criado com sucesso:`, novoDocumento.id);
+// 
+//     res.status(201).json(novoDocumento);
+// 
+//   } catch (error) {
+//     console.error(`❌ [${requestId}] Erro ao criar CT-e:`, error);
+//     res.status(500).json({
+//       error: 'Erro ao criar CT-e',
+//       details: process.env.NODE_ENV === 'development' ? error.message : undefined
+//     });
+//   } finally {
+//     if (client) {
+//       client.release();
+//     }
+//   }
+// });
 
 // Endpoint para cadastrar cliente automaticamente da NF-e
 app.post('/api/cadastrar-cliente-nfe', async (req, res) => {
