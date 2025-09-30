@@ -1154,13 +1154,7 @@ export default function CTe() {
         return
       }
 
-      if (!formRapido.produto_id) {
-        toast.error('Selecione o produto')
-        setIsSubmittingRapido(false)
-        return
-      }
-
-      // Limpar e validar chave de NF-e
+      // Limpar e validar chave de NF-e (fazer antes de produto para consultar NF-e)
       const chaveNFeLimpa = formRapido.chave_nfe.replace(/\s/g, '') // Remove todos os espaços
       if (!chaveNFeLimpa || chaveNFeLimpa.length !== 44) {
         toast.error('Informe uma chave de NF-e válida (44 dígitos). Chave atual tem ' + chaveNFeLimpa.length + ' dígitos.')
@@ -1171,6 +1165,77 @@ export default function CTe() {
       // Validar se chave contém apenas números
       if (!/^\d+$/.test(chaveNFeLimpa)) {
         toast.error('A chave de NF-e deve conter apenas números')
+        setIsSubmittingRapido(false)
+        return
+      }
+
+      // Consultar NF-e para obter dados do produto predominante
+      console.log('📄 Consultando NF-e para obter dados do produto...')
+      let produtoIdFinal = formRapido.produto_id
+
+      try {
+        const responseNFe = await fetch('/api/consultar-nfe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
+          },
+          body: JSON.stringify({ chaveNFE: chaveNFeLimpa })
+        })
+
+        if (responseNFe.ok) {
+          const dadosNFe = await responseNFe.json()
+          console.log('✅ Dados da NF-e recebidos:', dadosNFe)
+
+          // Se houver produto na NF-e
+          if (dadosNFe.produto && dadosNFe.produto.descricao) {
+            const descricaoProduto = dadosNFe.produto.descricao
+            const codigoNCM = dadosNFe.produto.codigo_ncm
+
+            // Buscar se produto já existe
+            const produtosExistentes = await getProdutosCTe()
+            const produtoExistente = produtosExistentes.find(p => 
+              p.descricao.toLowerCase() === descricaoProduto.toLowerCase() ||
+              (codigoNCM && p.cod_ncm === codigoNCM)
+            )
+
+            if (produtoExistente) {
+              produtoIdFinal = produtoExistente.id
+              console.log('✅ Produto predominante encontrado:', produtoExistente.descricao)
+              toast.success(`Produto encontrado: ${produtoExistente.descricao}`)
+            } else if (!formRapido.produto_id) {
+              // Criar novo produto se não existir e não foi selecionado manualmente
+              console.log('📦 Criando novo produto:', descricaoProduto)
+              const novoProdutoQuery = `
+                INSERT INTO cte_produtos (descricao, cod_ncm, unidade_medida)
+                VALUES ($1, $2, $3)
+                RETURNING id, descricao
+              `
+              const resultadoNovoProduto = await query(novoProdutoQuery, [
+                descricaoProduto,
+                codigoNCM || null,
+                'KG'
+              ])
+
+              if (resultadoNovoProduto.rows && resultadoNovoProduto.rows.length > 0) {
+                produtoIdFinal = resultadoNovoProduto.rows[0].id
+                console.log('✅ Novo produto criado com ID:', produtoIdFinal)
+                toast.success(`Produto criado: ${descricaoProduto}`)
+                
+                // Atualizar lista de produtos
+                await queryClient.invalidateQueries({ queryKey: ['produtos-cte'] })
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('⚠️ Erro ao consultar NF-e para produto:', error)
+        // Continuar mesmo com erro - produto pode ser selecionado manualmente
+      }
+
+      // Validar se produto foi definido
+      if (!produtoIdFinal) {
+        toast.error('Selecione o produto predominante ou informe uma chave de NF-e válida')
         setIsSubmittingRapido(false)
         return
       }
@@ -1320,13 +1385,21 @@ export default function CTe() {
           console.log('✅ Destinatário encontrado:', destinatarioIdFinal)
         }
 
-        // Definir tomador baseado na configuração do frete - SALVAR VALOR LITERAL igual ao CT-e Auto
+        // Definir tomador baseado na configuração do frete - usar ID real do cadastro
         if (informacoesFrete.tomador_frete === 'remetente') {
-          tomadorIdFinal = 'remetente'  // Salvar literal, não UUID
-          console.log('👤 Tomador definido como REMETENTE (valor literal):', tomadorIdFinal)
+          tomadorIdFinal = remetenteIdFinal  // Usar ID do remetente
+          console.log('👤 Tomador definido como REMETENTE (ID):', tomadorIdFinal)
         } else if (informacoesFrete.tomador_frete === 'destinatario') {
-          tomadorIdFinal = 'destinatario'  // Salvar literal, não UUID
-          console.log('👤 Tomador definido como DESTINATÁRIO (valor literal):', tomadorIdFinal)
+          tomadorIdFinal = destinatarioIdFinal  // Usar ID do destinatário
+          console.log('👤 Tomador definido como DESTINATÁRIO (ID):', tomadorIdFinal)
+        }
+
+        // Validar se tomador foi definido corretamente
+        if (!tomadorIdFinal) {
+          console.error('❌ Tomador não foi definido')
+          toast.error('Erro: não foi possível definir o tomador do serviço')
+          setIsSubmittingRapido(false)
+          return
         }
 
       } catch (error) {
@@ -1446,7 +1519,7 @@ export default function CTe() {
         // Dados da carga
         valor_carga: parseFloat(formRapido.valor_nota),
         quantidade_carga: parseFloat(formRapido.quantidade),
-        produto_predominante_id: formRapido.produto_id,
+        produto_predominante_id: produtoIdFinal,
         chave_acesso_1: chaveNFeLimpa,
         // Dados padrão
         tipo_servico: '0',
@@ -1594,7 +1667,7 @@ export default function CTe() {
 
     // Validar remetente
     if (!formData.remetente_id || formData.remetente_id.trim() === '') {
-      toast.toast.error('Por favor, selecione o remetente.')
+      toast.error('Por favor, selecione o remetente.')
       return
     }
 
