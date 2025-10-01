@@ -48,8 +48,9 @@ export async function generateCTeXML(
   produto: ProdutoInfo | null,
 ): Promise<string> {
 
-  const dataEmissao = new Date(documento.data_emissao)
-  const dataEmissaoFormatada = dataEmissao.toISOString().slice(0, 19) + '-03:00'
+  // Usar data/hora atual da geração do XML
+  const dataEmissaoAtual = new Date()
+  const dataEmissaoFormatada = dataEmissaoAtual.toISOString().slice(0, 19) + '-03:00'
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <CTe xmlns="http://www.portalfiscal.inf.br/cte">
