@@ -78,7 +78,16 @@ export async function generateCTeXML(
 <xDetRetira>CONFORME SOLICITACAO</xDetRetira>
 <indIEToma>1</indIEToma>
 <toma3>
-<toma>${documento.tomador_id === 'remetente' ? '0' : documento.tomador_id === 'destinatario' ? '1' : '4'}</toma>
+<toma>${(() => {
+  // Verificar se o tomador é igual ao remetente ou destinatário
+  if (documento.tomador_id && documento.remetente_id && documento.tomador_id === documento.remetente_id) {
+    return '0'; // Remetente
+  } else if (documento.tomador_id && documento.destinatario_id && documento.tomador_id === documento.destinatario_id) {
+    return '3'; // Destinatário
+  } else {
+    return '4'; // Outros
+  }
+})()}</toma>
 </toma3>
 </ide>
 ${documento.observacoes ? `<compl>
