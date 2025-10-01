@@ -2196,7 +2196,8 @@ export async function generateCTeFiles(documentoId: string): Promise<void> {
         rntrc: documento.empresa_rntrc
       },
       remetente,
-      destinatario
+      destinatario,
+      produto
     );
 
     // Normalizar basePath - sempre usar padrão sem "./" no início

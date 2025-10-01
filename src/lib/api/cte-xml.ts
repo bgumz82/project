@@ -33,12 +33,19 @@ interface EmpresaInfo {
   rntrc: string
 }
 
+interface ProdutoInfo {
+  id: string
+  descricao: string
+  cod_ncm?: string
+}
+
 
 export async function generateCTeXML(
   documento: CTeDocumento,
   empresa: EmpresaInfo,
   remetente: ClienteInfo | null,
   destinatario: ClienteInfo | null,
+  produto: ProdutoInfo | null,
 ): Promise<string> {
 
   const dataEmissao = new Date(documento.data_emissao)
@@ -213,7 +220,7 @@ ${documento.valor_tributos && parseFloat(documento.valor_tributos as any) > 0 ? 
 <infCTeNorm>
 <infCarga>
 <vCarga>${(parseFloat(documento.valor_carga as any) || 0).toFixed(2)}</vCarga>
-<proPred>MERCADORIA GERAL</proPred>
+<proPred>${removeAccents(produto?.descricao || 'MERCADORIA GERAL').toUpperCase()}</proPred>
 <xOutCat>LIQUIDO</xOutCat>
 <infQ>
 <cUnid>04</cUnid>
