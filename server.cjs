@@ -3229,7 +3229,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
           // Buscar produto existente por NCM (sem cte_documento_id, pois são produtos globais)
           const produtoResult = await client.query(`
             SELECT id FROM cte_produtos
-            WHERE ncm_produto = $1
+            WHERE cod_ncm = $1
               AND cte_documento_id IS NULL
             LIMIT 1
           `, [data.nfe_produto_ncm]);
@@ -3243,15 +3243,13 @@ app.post('/api/cte-documentos', (req, res, next) => {
             
             const novoProdutoResult = await client.query(`
               INSERT INTO cte_produtos (
-                descricao_produto,
-                ncm_produto,
-                codigo_produto
-              ) VALUES ($1, $2, $3)
+                descricao,
+                cod_ncm
+              ) VALUES ($1, $2)
               RETURNING id
             `, [
               data.nfe_produto_descricao,
-              data.nfe_produto_ncm,
-              data.nfe_produto_ncm // Usar NCM como código também
+              data.nfe_produto_ncm
             ]);
 
             if (novoProdutoResult.rows.length > 0) {
