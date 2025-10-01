@@ -68,12 +68,12 @@ export async function generateCTeXML(
 <UFEnv>${parseEndereco(empresa.endereco_completo, empresa.cidade, empresa.estado, empresa.cep).uf.toUpperCase()}</UFEnv>
 <modal>01</modal>
 <tpServ>${documento.tipo_servico || '0'}</tpServ>
-${documento.cidade_inicio_ibge ? `<cMunIni>${documento.cidade_inicio_ibge}</cMunIni>` : ''}
+<cMunIni>${documento.cidade_inicio_ibge || await getCityCode(documento.cidade_inicio_nome || 'NAO INFORMADO', documento.uf_inicio || 'MG')}</cMunIni>
 <xMunIni>${removeAccents(documento.cidade_inicio_nome || 'NAO INFORMADO').toUpperCase()}</xMunIni>
-<UFIni>${documento.uf_inicio || await getUFFromCityCode(documento.cidade_inicio_ibge || '3550308')}</UFIni>
-${documento.cidade_termino_ibge ? `<cMunFim>${documento.cidade_termino_ibge}</cMunFim>` : ''}
+<UFIni>${documento.uf_inicio || 'MG'}</UFIni>
+<cMunFim>${documento.cidade_termino_ibge || await getCityCode(documento.cidade_termino_nome || 'NAO INFORMADO', documento.uf_termino || 'GO')}</cMunFim>
 <xMunFim>${removeAccents(documento.cidade_termino_nome || 'NAO INFORMADO').toUpperCase()}</xMunFim>
-<UFFim>${documento.uf_termino || await getUFFromCityCode(documento.cidade_termino_ibge || '3550308')}</UFFim>
+<UFFim>${documento.uf_termino || 'GO'}</UFFim>
 <retira>1</retira>
 <xDetRetira>CONFORME SOLICITACAO</xDetRetira>
 <indIEToma>1</indIEToma>
@@ -382,60 +382,3 @@ async function getCityCode(cityName: string, uf: string): Promise<string> {
   }
 }
 
-// Função para buscar UF baseada no código IBGE da cidade
-async function getUFFromCityCode(cityCode: string): Promise<string> {
-  try {
-    console.log('🔍 Buscando UF para código da cidade:', cityCode)
-
-    // Primeiro tentar usar o mapeamento por código IBGE (mais rápido e confiável)
-    const ufFromCode = getUFFromCode(cityCode?.substring(0, 2) || '35')
-    console.log('📍 UF do mapeamento por código:', ufFromCode)
-
-    // Se conseguiu mapear por código, usar esse resultado
-    if (ufFromCode !== 'SP' || cityCode?.substring(0, 2) === '35') {
-      return ufFromCode
-    }
-
-    // Se não conseguiu mapear ou é código padrão, tentar buscar no banco
-    try {
-      // Buscar com JOIN correto entre cities e states
-      const result = await query(`
-        SELECT s.uf, s.name as uf_name
-        FROM cities c
-        JOIN states s ON c.state_id = s.id
-        WHERE c.cod_city = $1
-        LIMIT 1
-      `, [cityCode])
-
-      if (result && result.length > 0) {
-        const uf = result[0].uf
-        if (uf) {
-          console.log('✅ UF encontrada via JOIN com states:', uf)
-          return uf.toUpperCase()
-        }
-      }
-    } catch (dbError) {
-      console.log('⚠️ Erro ao consultar banco, usando mapeamento por código:', dbError instanceof Error ? dbError.message : String(dbError))
-    }
-
-    console.log('⚠️ UF não encontrada na tabela, usando fallback final')
-    return ufFromCode
-  } catch (error) {
-    console.error('❌ Erro ao buscar UF da cidade:', error)
-    return 'SP' // Default para São Paulo
-  }
-}
-
-function getUFFromCode(codigo: string): string {
-  const ufMap: { [key: string]: string } = {
-    "12": "AC", "27": "AL", "16": "AP", "13": "AM", "29": "BA", "23": "CE",
-    "53": "DF", "32": "ES", "52": "GO", "21": "MA", "51": "MT", "50": "MS",
-    "31": "MG", "15": "PA", "25": "PB", "41": "PR", "26": "PE", "22": "PI",
-    "33": "RJ", "24": "RN", "43": "RS", "11": "RO", "14": "RR", "42": "SC",
-    "35": "SP", "28": "SE", "17": "TO"
-  }
-
-  const uf = ufMap[codigo] || "SP"
-  console.log('🗺️ Mapeamento código para UF - Código:', codigo, '→ UF:', uf)
-  return uf
-}
