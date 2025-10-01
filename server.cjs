@@ -3220,14 +3220,53 @@ app.post('/api/cte-documentos', (req, res, next) => {
         }
       }
 
-      // 4. MAPEAR/CRIAR PRODUTO PREDOMINANTE PELO NCM DA NF-E - TEMPORARIAMENTE DESABILITADO
-      // COMENTADO PARA RESOLVER PROBLEMA DE CONEXÃO DE BANCO
-      console.log('⚠️ Busca de produto temporariamente desabilitada devido a problema de conexão');
-      console.log('🔍 NCM informado na NF-e:', data.nfe_produto_ncm);
-      console.log('📝 Descrição informada na NF-e:', data.nfe_produto_descricao);
+      // 4. MAPEAR/CRIAR PRODUTO PREDOMINANTE PELO NCM DA NF-E
+      if (data.nfe_produto_ncm && data.nfe_produto_descricao) {
+        console.log('🔍 Buscando produto por NCM:', data.nfe_produto_ncm);
+        console.log('📝 Descrição do produto:', data.nfe_produto_descricao);
 
-      // Produto será null por enquanto - CT-e será criado sem produto específico
-      produtoPredominanteIdFinal = null;
+        try {
+          // Buscar produto existente por NCM
+          const produtoResult = await client.query(`
+            SELECT id FROM cte_produtos
+            WHERE ncm_produto = $1
+            LIMIT 1
+          `, [data.nfe_produto_ncm]);
+
+          if (produtoResult.rows.length > 0) {
+            produtoPredominanteIdFinal = produtoResult.rows[0].id;
+            console.log('✅ Produto existente encontrado:', produtoPredominanteIdFinal);
+          } else {
+            // Criar novo produto se não existir
+            console.log('📝 Produto não encontrado, criando novo...');
+            
+            const novoProdutoResult = await client.query(`
+              INSERT INTO cte_produtos (
+                descricao_produto,
+                ncm_produto,
+                codigo_produto
+              ) VALUES ($1, $2, $3)
+              RETURNING id
+            `, [
+              data.nfe_produto_descricao,
+              data.nfe_produto_ncm,
+              data.nfe_produto_ncm // Usar NCM como código também
+            ]);
+
+            if (novoProdutoResult.rows.length > 0) {
+              produtoPredominanteIdFinal = novoProdutoResult.rows[0].id;
+              console.log('✅ Produto criado automaticamente:', produtoPredominanteIdFinal);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Erro ao buscar/criar produto:', error);
+          // Continuar sem produto se houver erro
+          produtoPredominanteIdFinal = null;
+        }
+      } else {
+        console.log('⚠️ NCM ou descrição do produto não informado na NF-e');
+        produtoPredominanteIdFinal = null;
+      }
 
       console.log('📋 Participantes mapeados:', {
         tomador: tomadorIdFinal,
