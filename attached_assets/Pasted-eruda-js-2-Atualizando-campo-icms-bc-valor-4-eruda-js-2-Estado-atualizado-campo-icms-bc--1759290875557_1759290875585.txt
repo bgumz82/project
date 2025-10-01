@@ -1,0 +1,1735 @@
+eruda.js:2 📝 Atualizando campo icms_bc_valor: 4
+eruda.js:2 📋 Estado atualizado: {campo: 'icms_bc_valor', valor: '4'}
+eruda.js:2 📋 Estado atualizado: {campo: 'icms_bc_valor', valor: '4'}
+eruda.js:2 📝 Atualizando campo icms_bc_valor: 45
+eruda.js:2 📋 Estado atualizado: {campo: 'icms_bc_valor', valor: '45'}
+eruda.js:2 📋 Estado atualizado: {campo: 'icms_bc_valor', valor: '45'}
+eruda.js:2 📝 Atualizando campo icms_bc_valor: 455
+eruda.js:2 📋 Estado atualizado: {campo: 'icms_bc_valor', valor: '455'}
+eruda.js:2 📋 Estado atualizado: {campo: 'icms_bc_valor', valor: '455'}
+eruda.js:2 📝 Atualizando campo icms_bc_valor: 4555
+eruda.js:2 📋 Estado atualizado: {campo: 'icms_bc_valor', valor: '4555'}
+eruda.js:2 📋 Estado atualizado: {campo: 'icms_bc_valor', valor: '4555'}
+eruda.js:2 📝 Atualizando campo icms_bc_valor: 4555.4
+eruda.js:2 📋 Estado atualizado: {campo: 'icms_bc_valor', valor: '4555.4'}
+eruda.js:2 📋 Estado atualizado: {campo: 'icms_bc_valor', valor: '4555.4'}
+eruda.js:2 📝 Atualizando campo icms_bc_valor: 4555.40
+eruda.js:2 📋 Estado atualizado: {campo: 'icms_bc_valor', valor: '4555.40'}
+eruda.js:2 📋 Estado atualizado: {campo: 'icms_bc_valor', valor: '4555.40'}
+eruda.js:2 🧮 Iniciando cálculo de impostos...
+eruda.js:2 📊 Valores para cálculo: {valorICMS: 342.88, valorBaseComICMS: 4898.28, valorPedagio: 205.4, valorSeguro: 0}
+eruda.js:2 💰 Cálculo de impostos concluído:
+eruda.js:2 - Valor base com ICMS: 4898.28
+eruda.js:2 - Valor pedágio: 205.40
+eruda.js:2 - Valor seguro: 0.00
+eruda.js:2 - Valor ICMS: 342.88
+eruda.js:2 - Valor total final: 5103.68
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+eruda.js:2 🔍 Buscando empresas fiscais
+eruda.js:2 🔍 Executando query: 
+      SELECT *
+      FROM empresas_fiscais
+      ORDER BY razao_social
+    
+eruda.js:2 📋 Parâmetros: []
+eruda.js:2 🔍 Executando query: 
+      SELECT id, razao_social, cidade, estado, cep
+      FROM cadastros 
+      WHERE tipo = 'cliente' AND ativo = true
+      ORDER BY razao_social
+    
+eruda.js:2 📋 Parâmetros: []
+eruda.js:2 🔍 Buscando produtos CT-e
+eruda.js:2 🔍 Executando query: 
+      SELECT id, cod_ncm, descricao
+      FROM cte_produtos
+      ORDER BY descricao
+    
+eruda.js:2 📋 Parâmetros: []
+eruda.js:2 🎯 Associações carregadas no componente CT-e: 2
+eruda.js:2 🎯 Primeira associação no componente: {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+eruda.js:2 🎯 Funcionário da primeira associação: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', matricula: '0649', cnh: '01513695482', validade_cnh: '2025-09-10T00:00:00.000Z'}
+eruda.js:2 🎯 Veículo da primeira associação: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T', marca: 'IVECO', tipo: 'caminhao'}
+eruda.js:2 🎯 Estrutura completa da primeira associação: {
+  "id": "75861510-367b-44cc-9dc0-6c379c5755fb",
+  "funcionario_id": "3af7727b-0382-425c-98d2-ffae6a93210f",
+  "veiculo_principal_id": "0761c4af-f13b-4e63-889c-99abefbb4cfc",
+  "veiculo_reboque1_id": "37cb31a7-6fda-4465-8a45-a9ce9b9eeb80",
+  "veiculo_reboque2_id": "f9d46b40-bda8-422b-842c-5bc965044772",
+  "veiculo_implemento_id": null,
+  "data_inicio": "2025-09-22T00:00:00.000Z",
+  "data_fim": null,
+  "ativo": true,
+  "observacoes": null,
+  "created_at": "2025-09-23T00:38:59.109Z",
+  "updated_at": "2025-09-23T00:38:59.109Z",
+  "funcionario": {
+    "nome": "CACIO ROBERTO DE SOUSA DUARTE",
+    "matricula": "0649",
+    "cnh": "01513695482",
+    "validade_cnh": "2025-09-10T00:00:00.000Z"
+  },
+  "veiculo_principal": {
+    "placa": "AWM-3029",
+    "modelo": "STRALIS 600S40T",
+    "marca": "IVECO",
+    "tipo": "caminhao"
+  },
+  "veiculo_reboque1": {
+    "placa": "AON-8409",
+    "modelo": "SRF BT",
+    "marca": "SR FACCHINI",
+    "tipo": "bi_trem_1_reboque"
+  },
+  "veiculo_reboque2": {
+    "placa": "AON-7470",
+    "modelo": "SRF BT",
+    "marca": "SR FACCHINI",
+    "tipo": "bi_trem_2_reboque"
+  }
+}
+eruda.js:2 📝 Modal CT-e aberto - invalidando cache das associações
+eruda.js:2 🔍 Buscando associações ativas para CT-e com dados completos
+eruda.js:2 📝 Carregando documento para edição: fbf6e58c-da2d-4fd2-8196-29601eb0e3d8
+eruda.js:2 ✅ RNTRC carregado para edição: 47424276
+eruda.js:2 🧮 Iniciando cálculo de impostos...
+eruda.js:2 📊 Valores para cálculo: {valorICMS: 368.69, valorBaseComICMS: 5266.97, valorPedagio: 205.4, valorSeguro: 0}
+eruda.js:2 💰 Cálculo de impostos concluído:
+eruda.js:2 - Valor base com ICMS: 5266.97
+eruda.js:2 - Valor pedágio: 205.40
+eruda.js:2 - Valor seguro: 0.00
+eruda.js:2 - Valor ICMS: 368.69
+eruda.js:2 - Valor total final: 5266.97
+eruda.js:2 🚛 Carregando associação de frota do documento: 367cf58b-eda3-4a2d-a75c-95757534675d
+eruda.js:2 🚚 Motorista selecionado: 367cf58b-eda3-4a2d-a75c-95757534675d
+eruda.js:2 🔍 Associação encontrada completa: {id: '367cf58b-eda3-4a2d-a75c-95757534675d', motorista_nome: 'CARLOS UMBERTO RIBEIRO', veiculo_principal_placa: 'TER-4B25', veiculo_implemento_placa: 'TES-9A83', data_inicio: '2025-09-29T00:00:00.000Z'}
+eruda.js:2 🔍 Estrutura completa da associação: {
+  "id": "367cf58b-eda3-4a2d-a75c-95757534675d",
+  "funcionario_id": "b5d85a3e-0819-45ad-8d5d-d5e6afe34744",
+  "veiculo_principal_id": "7dd7d830-1fcd-414a-89e1-579427df6af7",
+  "veiculo_reboque1_id": null,
+  "veiculo_reboque2_id": null,
+  "veiculo_implemento_id": "8ffc8727-7079-4833-9d4d-30920731b846",
+  "data_inicio": "2025-09-29T00:00:00.000Z",
+  "data_fim": null,
+  "ativo": true,
+  "observacoes": null,
+  "created_at": "2025-09-29T04:35:03.466Z",
+  "updated_at": "2025-09-29T04:35:03.466Z",
+  "funcionario": {
+    "nome": "CARLOS UMBERTO RIBEIRO",
+    "matricula": "6620",
+    "cnh": "01120763355",
+    "validade_cnh": "2024-10-25T00:00:00.000Z"
+  },
+  "veiculo_principal": {
+    "placa": "TER-4B25",
+    "modelo": "S-WAY 480-6X2",
+    "marca": "IVECO",
+    "tipo": "caminhao"
+  },
+  "veiculo_implemento": {
+    "placa": "TES-9A83",
+    "modelo": "SR TQ AP 4E",
+    "marca": "RHODOSS",
+    "tipo": "vanderleia_4_eixos"
+  }
+}
+eruda.js:2 👨‍💼 Dados do funcionário na associação: {nome: 'CARLOS UMBERTO RIBEIRO', matricula: '6620', cnh: '01120763355', validade_cnh: '2024-10-25T00:00:00.000Z'}
+eruda.js:2 🚛 Dados do veículo principal na associação: {placa: 'TER-4B25', modelo: 'S-WAY 480-6X2', marca: 'IVECO', tipo: 'caminhao'}
+eruda.js:2 🚛 Placa principal definida: TER-4B25
+eruda.js:2 🚛 Implemento encontrado: TES-9A83
+eruda.js:2 🚛 Placa reboque/implemento definida: TES-9A83
+f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2 👨‍💼 Dados do funcionário recebidos: {nome: 'CARLOS UMBERTO RIBEIRO', matricula: '6620', cnh: '01120763355', validade_cnh: '2024-10-25T00:00:00.000Z'}
+f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2 👨‍💼 Nome do funcionário: CARLOS UMBERTO RIBEIRO
+f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2 👨‍💼 CNH do funcionário: 01120763355
+eruda.js:2 👨‍💼 Matrícula do funcionário: 6620
+eruda.js:2 ✅ Informações do motorista definidas: {nome: 'CARLOS UMBERTO RIBEIRO', cnh: '01120763355', matricula: '6620', validadeCnh: '24/10/2024'}
+eruda.js:2 ✅ Query response: {rows: Array(2), rowCount: 2}
+eruda.js:2 📊 Query rows: (2) [{…}, {…}]
+eruda.js:2 ✅ Empresas fiscais encontradas: 2
+eruda.js:2 ✅ Query response: {rows: Array(212), rowCount: 212}
+eruda.js:2 📊 Query rows: (212) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, …]
+eruda.js:2 📝 Modal CT-e aberto - invalidando cache das associações
+eruda.js:2 🔍 Buscando associações ativas para CT-e com dados completos
+eruda.js:2 📝 Carregando documento para edição: fbf6e58c-da2d-4fd2-8196-29601eb0e3d8
+eruda.js:2 ✅ RNTRC carregado para edição: 47424276
+eruda.js:2 🧮 Iniciando cálculo de impostos...
+eruda.js:2 📊 Valores para cálculo: {valorICMS: 342.88, valorBaseComICMS: 4898.28, valorPedagio: 205.4, valorSeguro: 0}
+eruda.js:2 💰 Cálculo de impostos concluído:
+eruda.js:2 - Valor base com ICMS: 4898.28
+eruda.js:2 - Valor pedágio: 205.40
+eruda.js:2 - Valor seguro: 0.00
+eruda.js:2 - Valor ICMS: 342.88
+eruda.js:2 - Valor total final: 4898.28
+eruda.js:2 🚛 Carregando associação de frota do documento: 367cf58b-eda3-4a2d-a75c-95757534675d
+eruda.js:2 🚚 Motorista selecionado: 367cf58b-eda3-4a2d-a75c-95757534675d
+eruda.js:2 🔍 Associação encontrada completa: {id: '367cf58b-eda3-4a2d-a75c-95757534675d', motorista_nome: 'CARLOS UMBERTO RIBEIRO', veiculo_principal_placa: 'TER-4B25', veiculo_implemento_placa: 'TES-9A83', data_inicio: '2025-09-29T00:00:00.000Z'}
+eruda.js:2 🔍 Estrutura completa da associação: {
+  "id": "367cf58b-eda3-4a2d-a75c-95757534675d",
+  "funcionario_id": "b5d85a3e-0819-45ad-8d5d-d5e6afe34744",
+  "veiculo_principal_id": "7dd7d830-1fcd-414a-89e1-579427df6af7",
+  "veiculo_reboque1_id": null,
+  "veiculo_reboque2_id": null,
+  "veiculo_implemento_id": "8ffc8727-7079-4833-9d4d-30920731b846",
+  "data_inicio": "2025-09-29T00:00:00.000Z",
+  "data_fim": null,
+  "ativo": true,
+  "observacoes": null,
+  "created_at": "2025-09-29T04:35:03.466Z",
+  "updated_at": "2025-09-29T04:35:03.466Z",
+  "funcionario": {
+    "nome": "CARLOS UMBERTO RIBEIRO",
+    "matricula": "6620",
+    "cnh": "01120763355",
+    "validade_cnh": "2024-10-25T00:00:00.000Z"
+  },
+  "veiculo_principal": {
+    "placa": "TER-4B25",
+    "modelo": "S-WAY 480-6X2",
+    "marca": "IVECO",
+    "tipo": "caminhao"
+  },
+  "veiculo_implemento": {
+    "placa": "TES-9A83",
+    "modelo": "SR TQ AP 4E",
+    "marca": "RHODOSS",
+    "tipo": "vanderleia_4_eixos"
+  }
+}
+eruda.js:2 👨‍💼 Dados do funcionário na associação: {nome: 'CARLOS UMBERTO RIBEIRO', matricula: '6620', cnh: '01120763355', validade_cnh: '2024-10-25T00:00:00.000Z'}
+eruda.js:2 🚛 Dados do veículo principal na associação: {placa: 'TER-4B25', modelo: 'S-WAY 480-6X2', marca: 'IVECO', tipo: 'caminhao'}
+eruda.js:2 🚛 Placa principal definida: TER-4B25
+eruda.js:2 🚛 Implemento encontrado: TES-9A83
+eruda.js:2 🚛 Placa reboque/implemento definida: TES-9A83
+eruda.js:2 👨‍💼 Dados do funcionário recebidos: {nome: 'CARLOS UMBERTO RIBEIRO', matricula: '6620', cnh: '01120763355', validade_cnh: '2024-10-25T00:00:00.000Z'}
+eruda.js:2 👨‍💼 Nome do funcionário: CARLOS UMBERTO RIBEIRO
+eruda.js:2 👨‍💼 CNH do funcionário: 01120763355
+eruda.js:2 👨‍💼 Matrícula do funcionário: 6620
+eruda.js:2 ✅ Informações do motorista definidas: {nome: 'CARLOS UMBERTO RIBEIRO', cnh: '01120763355', matricula: '6620', validadeCnh: '24/10/2024'}
+eruda.js:2 ✅ Query response: {rows: Array(38), rowCount: 38}
+eruda.js:2 📊 Query rows: (38) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+eruda.js:2 ✅ Produtos CT-e encontrados: 38
+eruda.js:2 🌐 Status da resposta API: 200
+eruda.js:2 📊 Resultado completo da API: {rows: Array(2), rowCount: 2}
+eruda.js:2 📊 Query rows: (2) [{…}, {…}]
+eruda.js:2 ✅ Associações ativas encontradas para CT-e: 2
+eruda.js:2 📋 Primeira associação encontrada (RAW): {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+eruda.js:2 📋 Dados do funcionário: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', cnh: '01513695482', matricula: '0649', funcao: 'motorista_carreta'}
+eruda.js:2 📋 Dados do veículo principal: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T'}
+eruda.js:2 🔄 Processando associação: 75861510-367b-44cc-9dc0-6c379c5755fb
+eruda.js:2 🔄 Dados do funcionário RAW: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', matricula: '0649', cnh: '01513695482', validade_cnh: '2025-09-10T00:00:00.000Z', funcao: 'motorista_carreta'}
+eruda.js:2 🔄 Dados do veículo principal RAW: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T', marca: 'IVECO', tipo: 'caminhao'}
+eruda.js:2 ✅ Dados mapeados final: {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+eruda.js:2 🔄 Processando associação: 367cf58b-eda3-4a2d-a75c-95757534675d
+eruda.js:2 🔄 Dados do funcionário RAW: {nome: 'CARLOS UMBERTO RIBEIRO', matricula: '6620', cnh: '01120763355', validade_cnh: '2024-10-25T00:00:00.000Z', funcao: 'motorista_carreta'}
+eruda.js:2 🔄 Dados do veículo principal RAW: {placa: 'TER-4B25', modelo: 'S-WAY 480-6X2', marca: 'IVECO', tipo: 'caminhao'}
+eruda.js:2 ✅ Dados mapeados final: {id: '367cf58b-eda3-4a2d-a75c-95757534675d', funcionario_id: 'b5d85a3e-0819-45ad-8d5d-d5e6afe34744', veiculo_principal_id: '7dd7d830-1fcd-414a-89e1-579427df6af7', veiculo_reboque1_id: null, veiculo_reboque2_id: null, …}
+eruda.js:2 ✅ Total de associações processadas: 2
+eruda.js:2 🌐 Status da resposta API: 200
+eruda.js:2 📊 Resultado completo da API: {rows: Array(2), rowCount: 2}
+eruda.js:2 📊 Query rows: (2) [{…}, {…}]
+eruda.js:2 ✅ Associações ativas encontradas para CT-e: 2
+eruda.js:2 📋 Primeira associação encontrada (RAW): {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+eruda.js:2 📋 Dados do funcionário: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', cnh: '01513695482', matricula: '0649', funcao: 'motorista_carreta'}
+eruda.js:2 📋 Dados do veículo principal: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T'}
+eruda.js:2 🔄 Processando associação: 75861510-367b-44cc-9dc0-6c379c5755fb
+eruda.js:2 🔄 Dados do funcionário RAW: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', matricula: '0649', cnh: '01513695482', validade_cnh: '2025-09-10T00:00:00.000Z', funcao: 'motorista_carreta'}
+eruda.js:2 🔄 Dados do veículo principal RAW: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T', marca: 'IVECO', tipo: 'caminhao'}
+eruda.js:2 ✅ Dados mapeados final: {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+eruda.js:2 🔄 Processando associação: 367cf58b-eda3-4a2d-a75c-95757534675d
+eruda.js:2 🔄 Dados do funcionário RAW: {nome: 'CARLOS UMBERTO RIBEIRO', matricula: '6620', cnh: '01120763355', validade_cnh: '2024-10-25T00:00:00.000Z', funcao: 'motorista_carreta'}
+eruda.js:2 🔄 Dados do veículo principal RAW: {placa: 'TER-4B25', modelo: 'S-WAY 480-6X2', marca: 'IVECO', tipo: 'caminhao'}
+eruda.js:2 ✅ Dados mapeados final: {id: '367cf58b-eda3-4a2d-a75c-95757534675d', funcionario_id: 'b5d85a3e-0819-45ad-8d5d-d5e6afe34744', veiculo_principal_id: '7dd7d830-1fcd-414a-89e1-579427df6af7', veiculo_reboque1_id: null, veiculo_reboque2_id: null, …}
+eruda.js:2 ✅ Total de associações processadas: 2
+eruda.js:2 [vite] server connection lost. polling for restart...
+eruda.js:2   GET https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/ 502 (Bad Gateway)
+window.fetch @ eruda.js:2
+apply @ injected.js:278
+ping @ client:484
+waitForSuccessfulPing @ client:497
+(anônimo) @ client:289
+client:290   GET https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/fiscal/cte 502 (Bad Gateway)
+(anônimo) @ client:290
+project-1:1  [GroupMarkerNotSet(crbug.com/242999)!:A0601E00A4590000]Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader (about:flags#enable-unsafe-swiftshader) flag to opt in to lower security guarantees for trusted content.
+project-1:1  [GroupMarkerNotSet(crbug.com/242999)!:A0301E00A4590000]Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader (about:flags#enable-unsafe-swiftshader) flag to opt in to lower security guarantees for trusted content.
+framework-e362ab047c75de78.js:1  Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+framework-e362ab047c75de78.js:1  Unrecognized feature: 'ambient-light-sensor'.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+framework-e362ab047c75de78.js:1  Unrecognized feature: 'battery'.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+framework-e362ab047c75de78.js:1  Unrecognized feature: 'execution-while-not-rendered'.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+framework-e362ab047c75de78.js:1  Unrecognized feature: 'execution-while-out-of-viewport'.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+framework-e362ab047c75de78.js:1  Unrecognized feature: 'layout-animations'.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+framework-e362ab047c75de78.js:1  Unrecognized feature: 'legacy-image-formats'.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+framework-e362ab047c75de78.js:1  Unrecognized feature: 'navigation-override'.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+framework-e362ab047c75de78.js:1  Unrecognized feature: 'oversized-images'.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+framework-e362ab047c75de78.js:1  Unrecognized feature: 'publickey-credentials'.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+  Unrecognized feature: 'speaker-selection'.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+  Unrecognized feature: 'unoptimized-images'.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+  Unrecognized feature: 'unsized-media'.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+  Unrecognized feature: 'pointer-lock'.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+  Allow attribute will take precedence over 'allowfullscreen'.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+  Allow attribute will take precedence over 'allowpaymentrequest'.
+_ @ framework-e362ab047c75de78.js:1
+(anônimo) @ framework-e362ab047c75de78.js:1
+uD @ framework-e362ab047c75de78.js:1
+uI @ framework-e362ab047c75de78.js:1
+uM @ framework-e362ab047c75de78.js:1
+uS @ framework-e362ab047c75de78.js:1
+C @ framework-e362ab047c75de78.js:1
+z @ framework-e362ab047c75de78.js:1
+  The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+e @ framework-e362ab047c75de78.js:1
+e @ framework-e362ab047c75de78.js:1
+e @ framework-e362ab047c75de78.js:1
+oK @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+  The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+e @ framework-e362ab047c75de78.js:1
+e @ framework-e362ab047c75de78.js:1
+e @ framework-e362ab047c75de78.js:1
+oK @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+  The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+e @ framework-e362ab047c75de78.js:1
+e @ framework-e362ab047c75de78.js:1
+e @ framework-e362ab047c75de78.js:1
+oK @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+oQ @ framework-e362ab047c75de78.js:1
+oq @ framework-e362ab047c75de78.js:1
+workspace_iframe.html?initialPath=%2F&id=%3Ar5k0%3A:32  Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5k0%3A:32  Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5k0%3A:32  Unrecognized feature: 'battery'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5k0%3A:32  Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5k0%3A:32  Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5k0%3A:32  Unrecognized feature: 'layout-animations'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5k0%3A:32  Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5k0%3A:32  Unrecognized feature: 'navigation-override'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5k0%3A:32  Unrecognized feature: 'oversized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5k0%3A:32  Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5k0%3A:32  Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5k0%3A:32  Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5k0%3A:32  Unrecognized feature: 'unsized-media'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5k0%3A:32  Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5k0%3A:32  Allow attribute will take precedence over 'allowpaymentrequest'.
+ 🔄 Atualizando estado do usuário: {session: {…}, user: {…}}
+ ✅ Estado do usuário atualizado: {id: '0df69785-ae0b-4703-b671-87efaf5db999', email: 'maicon@gdatransportes.com.br', tipo: 'admin'}
+ 🔄 Atualizando estado do usuário: {session: {…}, user: {…}}
+ ✅ Estado do usuário atualizado: {id: '0df69785-ae0b-4703-b671-87efaf5db999', email: 'maicon@gdatransportes.com.br', tipo: 'admin'}
+ 🔧 Sidebar renderizando. hasPermission disponível: function
+ 🔍 Verificando permissões para construir navegação
+ 🔧 Sidebar renderizando. hasPermission disponível: function
+ 🔍 Verificando permissões para construir navegação
+ 🔧 Sidebar renderizando. hasPermission disponível: function
+ 🔍 Verificando permissões para construir navegação
+ 🔧 Sidebar renderizando. hasPermission disponível: function
+ 🔍 Verificando permissões para construir navegação
+ 🔐 Carregando permissões para usuário: 0df69785-ae0b-4703-b671-87efaf5db999
+ 📡 Buscando permissões do usuário: 0df69785-ae0b-4703-b671-87efaf5db999
+ 🔍 Executando query: 
+      SELECT module, can_access, can_create, can_edit, can_delete
+      FROM user_permissions
+      WHERE user_id = $1
+      ORDER BY module
+    
+ 📋 Parâmetros: ['0df69785-ae0b-4703-b671-87efaf5db999']
+ 🔧 Sidebar renderizando. hasPermission disponível: function
+ 🔍 Verificando permissões para construir navegação
+ 🔧 Sidebar renderizando. hasPermission disponível: function
+ 🔍 Verificando permissões para construir navegação
+ ✅ Query response: {rows: Array(18), rowCount: 18}
+ 📊 Query rows: (18) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ ✅ Permissões carregadas: {abastecimentos: {…}, antt: {…}, associacoes_frota: {…}, cadastros: {…}, checklists: {…}, …}
+ 🔧 Sidebar renderizando. hasPermission disponível: function
+ 🔍 Verificando permissões para construir navegação
+ 🔧 Sidebar renderizando. hasPermission disponível: function
+ 🔍 Verificando permissões para construir navegação
+ 📊 Dashboard renderizando. UserType: admin
+ 📊 Dashboard renderizando. UserType: admin
+ 🔍 Executando query: SELECT COUNT(*) as total FROM veiculos
+ 📋 Parâmetros: []
+ 🔍 Executando query: 
+        SELECT COUNT(*) as total 
+        FROM manutencoes 
+        WHERE data_realizada IS NULL 
+        AND data_prevista <= $1
+      
+ 📋 Parâmetros: ['2025-10-01']
+ 🔍 Executando query: 
+        SELECT COUNT(*) as total 
+        FROM checklists 
+        WHERE DATE(data_checklist) = $1
+      
+ 📋 Parâmetros: ['2025-10-01']
+ 🔍 Executando query: 
+        SELECT COUNT(*) as total 
+        FROM abastecimentos 
+        WHERE DATE(data_abastecimento) = $1
+      
+ 📋 Parâmetros: ['2025-10-01']
+ 🔍 Executando query: 
+        SELECT 
+          COUNT(CASE WHEN tipo = 'cliente' THEN 1 END) as clientes,
+          COUNT(CASE WHEN tipo = 'fornecedor' THEN 1 END) as fornecedores,
+          COUNT(CASE WHEN tipo = 'abastecimento' THEN 1 END) as postos,
+          COUNT(*) as total
+        FROM cadastros 
+        WHERE ativo = true
+      
+ 📋 Parâmetros: []
+ 🔍 Executando query: 
+        SELECT 
+          funcao,
+          COUNT(*) as quantidade
+        FROM funcionarios 
+        WHERE ativo = true
+        GROUP BY funcao
+        ORDER BY funcao
+      
+ 📋 Parâmetros: []
+ 🔍 Executando query: 
+        SELECT COUNT(*) as total 
+        FROM associacoes_frota 
+        WHERE ativo = true AND data_fim IS NULL
+      
+ 📋 Parâmetros: []
+ 🔍 Executando query: 
+      SELECT 
+        m.id,
+        m.tipo,
+        m.data_prevista,
+        v.placa,
+        v.modelo
+      FROM manutencoes m
+      JOIN veiculos v ON m.veiculo_id = v.id
+      WHERE m.data_realizada IS NULL
+      ORDER BY m.data_prevista ASC
+      LIMIT 5
+    
+ 📋 Parâmetros: []
+ 🔍 Executando query: 
+      SELECT 
+        af.id,
+        f.nome as motorista_nome,
+        vp.placa as veiculo_principal_placa,
+        COALESCE(
+          vi.placa,
+          CASE 
+            WHEN vr1.placa IS NOT NULL AND vr2.placa IS NOT NULL THEN vr1.placa || '+' || vr2.placa
+            WHEN vr1.placa IS NOT NULL THEN vr1.placa
+            WHEN vr2.placa IS NOT NULL THEN vr2.placa
+            ELSE NULL
+          END
+        ) as veiculo_implemento_placa,
+        af.data_inicio
+      FROM associacoes_frota af
+      JOIN funcionarios f ON af.funcionario_id = f.id
+      JOIN veiculos vp ON af.veiculo_principal_id = vp.id
+      LEFT JOIN veiculos vr1 ON af.veiculo_reboque1_id = vr1.id
+      LEFT JOIN veiculos vr2 ON af.veiculo_reboque2_id = vr2.id
+      LEFT JOIN veiculos vi ON af.veiculo_implemento_id = vi.id
+      WHERE af.ativo = true AND af.data_fim IS NULL
+      ORDER BY f.nome
+      LIMIT 5
+    
+ 📋 Parâmetros: []
+ ✅ Query response: {rows: Array(1), rowCount: 1}
+ 📊 Query rows: [{…}]
+ ✅ Query response: {rows: Array(1), rowCount: 1}
+ 📊 Query rows: [{…}]
+ ✅ Query response: {rows: Array(1), rowCount: 1}
+ 📊 Query rows: [{…}]
+ ✅ Query response: {rows: Array(1), rowCount: 1}
+ 📊 Query rows: [{…}]
+ ✅ Query response: {rows: Array(1), rowCount: 1}
+ 📊 Query rows: [{…}]
+ ✅ Query response: {rows: Array(2), rowCount: 2}
+ 📊 Query rows: (2) [{…}, {…}]
+ ✅ Query response: {rows: Array(1), rowCount: 1}
+ 📊 Query rows: [{…}]
+ 📊 Dashboard renderizando. UserType: admin
+ 📊 Dashboard renderizando. UserType: admin
+ ✅ Stats do dashboard carregadas: {totalVeiculos: 83, manutencoesPendentes: 1, checklistsHoje: 0, abastecimentosHoje: 0, totalCadastros: {…}, …}
+ ✅ Query response: {rows: Array(1), rowCount: 1}
+ 📊 Query rows: [{…}]
+ 📊 Dashboard renderizando. UserType: admin
+ 📊 Dashboard renderizando. UserType: admin
+ ✅ Query response: {rows: Array(2), rowCount: 2}
+ 📊 Query rows: (2) [{…}, {…}]
+ 📊 Dashboard renderizando. UserType: admin
+ 📊 Dashboard renderizando. UserType: admin
+ 🔧 Sidebar renderizando. hasPermission disponível: function
+ 🔍 Verificando permissões para construir navegação
+ 🔧 Sidebar renderizando. hasPermission disponível: function
+ 🔍 Verificando permissões para construir navegação
+ 🔧 Sidebar renderizando. hasPermission disponível: function
+ 🔍 Verificando permissões para construir navegação
+ 🔧 Sidebar renderizando. hasPermission disponível: function
+ 🔍 Verificando permissões para construir navegação
+ 🔍 Buscando documentos CT-e
+ 🔍 Executando query: 
+      SELECT 
+        c.*,
+        e.razao_social as empresa_razao_social,
+        e.cnpj as empresa_cnpj
+      FROM cte_documentos c
+      JOIN empresas_fiscais e ON c.empresa_id = e.id
+      ORDER BY c.data_emissao DESC, c.numero_cte DESC
+    
+ 📋 Parâmetros: []
+ 🔍 Buscando empresas fiscais
+ 🔍 Executando query: 
+      SELECT *
+      FROM empresas_fiscais
+      ORDER BY razao_social
+    
+ 📋 Parâmetros: []
+ 🔍 Executando query: 
+      SELECT id, razao_social, cidade, estado, cep
+      FROM cadastros 
+      WHERE tipo = 'cliente' AND ativo = true
+      ORDER BY razao_social
+    
+ 📋 Parâmetros: []
+ 🔍 Buscando produtos CT-e
+ 🔍 Executando query: 
+      SELECT id, cod_ncm, descricao
+      FROM cte_produtos
+      ORDER BY descricao
+    
+ 📋 Parâmetros: []
+ 🔍 Buscando associações ativas para CT-e com dados completos
+ ✅ Query response: {rows: Array(2), rowCount: 2}
+ 📊 Query rows: (2) [{…}, {…}]
+ ✅ Empresas fiscais encontradas: 2
+ ✅ Query response: {rows: Array(2), rowCount: 2}
+ 📊 Query rows: (2) [{…}, {…}]
+Console.js:61 ✅ Documentos CT-e encontrados: 2
+Console.js:61 ✅ Query response: {rows: Array(212), rowCount: 212}
+Console.js:61 📊 Query rows: (212) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, …]
+Console.js:61 ✅ Query response: {rows: Array(38), rowCount: 38}
+Console.js:61 📊 Query rows: (38) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Console.js:61 ✅ Produtos CT-e encontrados: 38
+Console.js:61 🌐 Status da resposta API: 200
+Console.js:61 📊 Resultado completo da API: {rows: Array(2), rowCount: 2}
+Console.js:61 📊 Query rows: (2) [{…}, {…}]
+Console.js:61 ✅ Associações ativas encontradas para CT-e: 2
+Console.js:61 📋 Primeira associação encontrada (RAW): {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+Console.js:61 📋 Dados do funcionário: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', cnh: '01513695482', matricula: '0649', funcao: 'motorista_carreta'}
+Console.js:61 📋 Dados do veículo principal: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T'}
+Console.js:61 🔄 Processando associação: 75861510-367b-44cc-9dc0-6c379c5755fb
+Console.js:61 🔄 Dados do funcionário RAW: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', matricula: '0649', cnh: '01513695482', validade_cnh: '2025-09-10T00:00:00.000Z', funcao: 'motorista_carreta'}
+Console.js:61 🔄 Dados do veículo principal RAW: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T', marca: 'IVECO', tipo: 'caminhao'}
+Console.js:61 ✅ Dados mapeados final: {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+Console.js:61 🔄 Processando associação: 367cf58b-eda3-4a2d-a75c-95757534675d
+Console.js:61 🔄 Dados do funcionário RAW: {nome: 'CARLOS UMBERTO RIBEIRO', matricula: '6620', cnh: '01120763355', validade_cnh: '2024-10-25T00:00:00.000Z', funcao: 'motorista_carreta'}
+Console.js:61 🔄 Dados do veículo principal RAW: {placa: 'TER-4B25', modelo: 'S-WAY 480-6X2', marca: 'IVECO', tipo: 'caminhao'}
+Console.js:61 ✅ Dados mapeados final: {id: '367cf58b-eda3-4a2d-a75c-95757534675d', funcionario_id: 'b5d85a3e-0819-45ad-8d5d-d5e6afe34744', veiculo_principal_id: '7dd7d830-1fcd-414a-89e1-579427df6af7', veiculo_reboque1_id: null, veiculo_reboque2_id: null, …}
+Console.js:61 ✅ Total de associações processadas: 2
+Console.js:61 🎯 Associações carregadas no componente CT-e: 2
+Console.js:61 🎯 Primeira associação no componente: {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+Console.js:61 🎯 Funcionário da primeira associação: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', matricula: '0649', cnh: '01513695482', validade_cnh: '2025-09-10T00:00:00.000Z'}
+Console.js:61 🎯 Veículo da primeira associação: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T', marca: 'IVECO', tipo: 'caminhao'}
+Console.js:61 🎯 Estrutura completa da primeira associação: {
+  "id": "75861510-367b-44cc-9dc0-6c379c5755fb",
+  "funcionario_id": "3af7727b-0382-425c-98d2-ffae6a93210f",
+  "veiculo_principal_id": "0761c4af-f13b-4e63-889c-99abefbb4cfc",
+  "veiculo_reboque1_id": "37cb31a7-6fda-4465-8a45-a9ce9b9eeb80",
+  "veiculo_reboque2_id": "f9d46b40-bda8-422b-842c-5bc965044772",
+  "veiculo_implemento_id": null,
+  "data_inicio": "2025-09-22T00:00:00.000Z",
+  "data_fim": null,
+  "ativo": true,
+  "observacoes": null,
+  "created_at": "2025-09-23T00:38:59.109Z",
+  "updated_at": "2025-09-23T00:38:59.109Z",
+  "funcionario": {
+    "nome": "CACIO ROBERTO DE SOUSA DUARTE",
+    "matricula": "0649",
+    "cnh": "01513695482",
+    "validade_cnh": "2025-09-10T00:00:00.000Z"
+  },
+  "veiculo_principal": {
+    "placa": "AWM-3029",
+    "modelo": "STRALIS 600S40T",
+    "marca": "IVECO",
+    "tipo": "caminhao"
+  },
+  "veiculo_reboque1": {
+    "placa": "AON-8409",
+    "modelo": "SRF BT",
+    "marca": "SR FACCHINI",
+    "tipo": "bi_trem_1_reboque"
+  },
+  "veiculo_reboque2": {
+    "placa": "AON-7470",
+    "modelo": "SRF BT",
+    "marca": "SR FACCHINI",
+    "tipo": "bi_trem_2_reboque"
+  }
+}
+Console.js:61 ✅ RNTRC carregado para edição: null
+Console.js:61 📝 Dados do documento para edição: {id: 'fbf6e58c-da2d-4fd2-8196-29601eb0e3d8', empresa_id: 'c4b8f87e-18b5-46b3-9b90-24026b558227', numero_cte: '7', serie: '001', data_emissao: '2025-10-01T00:00:00.000Z', …}
+Console.js:61 ✅ Formulário preenchido com dados do documento
+Console.js:61 📝 Modal CT-e aberto - invalidando cache das associações
+Console.js:61 🔍 Buscando associações ativas para CT-e com dados completos
+Console.js:61 📝 Carregando documento para edição: fbf6e58c-da2d-4fd2-8196-29601eb0e3d8
+Console.js:61 ✅ RNTRC carregado para edição: 47424276
+Console.js:61 🚛 Carregando associação de frota do documento: 367cf58b-eda3-4a2d-a75c-95757534675d
+Console.js:61 🚚 Motorista selecionado: 367cf58b-eda3-4a2d-a75c-95757534675d
+Console.js:61 🔍 Associação encontrada completa: {id: '367cf58b-eda3-4a2d-a75c-95757534675d', motorista_nome: 'CARLOS UMBERTO RIBEIRO', veiculo_principal_placa: 'TER-4B25', veiculo_implemento_placa: 'TES-9A83', data_inicio: '2025-09-29T00:00:00.000Z'}
+Console.js:61 🔍 Estrutura completa da associação: {
+  "id": "367cf58b-eda3-4a2d-a75c-95757534675d",
+  "funcionario_id": "b5d85a3e-0819-45ad-8d5d-d5e6afe34744",
+  "veiculo_principal_id": "7dd7d830-1fcd-414a-89e1-579427df6af7",
+  "veiculo_reboque1_id": null,
+  "veiculo_reboque2_id": null,
+  "veiculo_implemento_id": "8ffc8727-7079-4833-9d4d-30920731b846",
+  "data_inicio": "2025-09-29T00:00:00.000Z",
+  "data_fim": null,
+  "ativo": true,
+  "observacoes": null,
+  "created_at": "2025-09-29T04:35:03.466Z",
+  "updated_at": "2025-09-29T04:35:03.466Z",
+  "funcionario": {
+    "nome": "CARLOS UMBERTO RIBEIRO",
+    "matricula": "6620",
+    "cnh": "01120763355",
+    "validade_cnh": "2024-10-25T00:00:00.000Z"
+  },
+  "veiculo_principal": {
+    "placa": "TER-4B25",
+    "modelo": "S-WAY 480-6X2",
+    "marca": "IVECO",
+    "tipo": "caminhao"
+  },
+  "veiculo_implemento": {
+    "placa": "TES-9A83",
+    "modelo": "SR TQ AP 4E",
+    "marca": "RHODOSS",
+    "tipo": "vanderleia_4_eixos"
+  }
+}
+Console.js:61 👨‍💼 Dados do funcionário na associação: {nome: 'CARLOS UMBERTO RIBEIRO', matricula: '6620', cnh: '01120763355', validade_cnh: '2024-10-25T00:00:00.000Z'}
+Console.js:61 🚛 Dados do veículo principal na associação: {placa: 'TER-4B25', modelo: 'S-WAY 480-6X2', marca: 'IVECO', tipo: 'caminhao'}
+Console.js:61 🚛 Placa principal definida: TER-4B25
+Console.js:61 🚛 Implemento encontrado: TES-9A83
+Console.js:61 🚛 Placa reboque/implemento definida: TES-9A83
+Console.js:61 👨‍💼 Dados do funcionário recebidos: {nome: 'CARLOS UMBERTO RIBEIRO', matricula: '6620', cnh: '01120763355', validade_cnh: '2024-10-25T00:00:00.000Z'}
+Console.js:61 👨‍💼 Nome do funcionário: CARLOS UMBERTO RIBEIRO
+Console.js:61 👨‍💼 CNH do funcionário: 01120763355
+Console.js:61 👨‍💼 Matrícula do funcionário: 6620
+Console.js:61 ✅ Informações do motorista definidas: {nome: 'CARLOS UMBERTO RIBEIRO', cnh: '01120763355', matricula: '6620', validadeCnh: '24/10/2024'}
+Console.js:61 🌐 Status da resposta API: 200
+Console.js:61 📊 Resultado completo da API: {rows: Array(2), rowCount: 2}
+Console.js:61 📊 Query rows: (2) [{…}, {…}]
+Console.js:61 ✅ Associações ativas encontradas para CT-e: 2
+Console.js:61 📋 Primeira associação encontrada (RAW): {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+Console.js:61 📋 Dados do funcionário: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', cnh: '01513695482', matricula: '0649', funcao: 'motorista_carreta'}
+Console.js:61 📋 Dados do veículo principal: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T'}
+Console.js:61 🔄 Processando associação: 75861510-367b-44cc-9dc0-6c379c5755fb
+Console.js:61 🔄 Dados do funcionário RAW: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', matricula: '0649', cnh: '01513695482', validade_cnh: '2025-09-10T00:00:00.000Z', funcao: 'motorista_carreta'}
+Console.js:61 🔄 Dados do veículo principal RAW: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T', marca: 'IVECO', tipo: 'caminhao'}
+Console.js:61 ✅ Dados mapeados final: {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+Console.js:61 🔄 Processando associação: 367cf58b-eda3-4a2d-a75c-95757534675d
+Console.js:61 🔄 Dados do funcionário RAW: {nome: 'CARLOS UMBERTO RIBEIRO', matricula: '6620', cnh: '01120763355', validade_cnh: '2024-10-25T00:00:00.000Z', funcao: 'motorista_carreta'}
+Console.js:61 🔄 Dados do veículo principal RAW: {placa: 'TER-4B25', modelo: 'S-WAY 480-6X2', marca: 'IVECO', tipo: 'caminhao'}
+Console.js:61 ✅ Dados mapeados final: {id: '367cf58b-eda3-4a2d-a75c-95757534675d', funcionario_id: 'b5d85a3e-0819-45ad-8d5d-d5e6afe34744', veiculo_principal_id: '7dd7d830-1fcd-414a-89e1-579427df6af7', veiculo_reboque1_id: null, veiculo_reboque2_id: null, …}
+Console.js:61 ✅ Total de associações processadas: 2
+Console.js:61 🧮 Iniciando cálculo de impostos...
+Console.js:61 📊 Valores para cálculo: {valorICMS: 342.88, valorBaseComICMS: 4898.28, valorPedagio: 205.4, valorSeguro: 0}
+Console.js:61 💰 Cálculo de impostos concluído:
+Console.js:61 - Valor base com ICMS: 4898.28
+Console.js:61 - Valor pedágio: 205.40
+Console.js:61 - Valor seguro: 0.00
+Console.js:61 - Valor ICMS: 342.88
+Console.js:61 - Valor total final: 4898.28
+project-1:1  [GroupMarkerNotSet(crbug.com/242999)!:A0001E00A4590000]Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader (about:flags#enable-unsafe-swiftshader) flag to opt in to lower security guarantees for trusted content.
+project-1:1  [GroupMarkerNotSet(crbug.com/242999)!:A0601E00A4590000]Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader (about:flags#enable-unsafe-swiftshader) flag to opt in to lower security guarantees for trusted content.
+Console.js:61 🗑️ Excluindo documento CT-e: fbf6e58c-da2d-4fd2-8196-29601eb0e3d8
+Console.js:61 🔍 Executando query: DELETE FROM cte_documentos WHERE id = $1
+Console.js:61 📋 Parâmetros: ['fbf6e58c-da2d-4fd2-8196-29601eb0e3d8']
+Console.js:61 ✅ Query response: {rows: Array(0), rowCount: 1}
+Console.js:61 📊 Query rows: []
+Console.js:61 ✅ Documento CT-e excluído com sucesso
+Console.js:61 🔍 Buscando documentos CT-e
+Console.js:61 🔍 Executando query: 
+      SELECT 
+        c.*,
+        e.razao_social as empresa_razao_social,
+        e.cnpj as empresa_cnpj
+      FROM cte_documentos c
+      JOIN empresas_fiscais e ON c.empresa_id = e.id
+      ORDER BY c.data_emissao DESC, c.numero_cte DESC
+    
+Console.js:61 📋 Parâmetros: []
+Console.js:61 ✅ Query response: {rows: Array(1), rowCount: 1}
+Console.js:61 📊 Query rows: [{…}]
+Console.js:61 ✅ Documentos CT-e encontrados: 1
+Console.js:61 🗑️ Excluindo documento CT-e: 54dddc05-7345-4ac0-b74d-d642db4fcc82
+Console.js:61 🔍 Executando query: DELETE FROM cte_documentos WHERE id = $1
+Console.js:61 📋 Parâmetros: ['54dddc05-7345-4ac0-b74d-d642db4fcc82']
+Console.js:61 ✅ Query response: {rows: Array(0), rowCount: 1}
+Console.js:61 📊 Query rows: []
+Console.js:61 ✅ Documento CT-e excluído com sucesso
+Console.js:61 🔍 Buscando documentos CT-e
+Console.js:61 🔍 Executando query: 
+      SELECT 
+        c.*,
+        e.razao_social as empresa_razao_social,
+        e.cnpj as empresa_cnpj
+      FROM cte_documentos c
+      JOIN empresas_fiscais e ON c.empresa_id = e.id
+      ORDER BY c.data_emissao DESC, c.numero_cte DESC
+    
+Console.js:61 📋 Parâmetros: []
+Console.js:61 ✅ Query response: {rows: Array(0), rowCount: 0}
+Console.js:61 📊 Query rows: []
+Console.js:61 ✅ Documentos CT-e encontrados: 0
+Console.js:61 🎯 Navegando para Novo CT-e Auto
+Console.js:61 🔧 Sidebar renderizando. hasPermission disponível: function
+Console.js:61 🔍 Verificando permissões para construir navegação
+Console.js:61 🔧 Sidebar renderizando. hasPermission disponível: function
+Console.js:61 🔍 Verificando permissões para construir navegação
+Console.js:61 🔍 Buscando empresas fiscais
+Console.js:61 🔍 Executando query: 
+      SELECT *
+      FROM empresas_fiscais
+      ORDER BY razao_social
+    
+Console.js:61 📋 Parâmetros: []
+Console.js:61 🔍 Buscando associações de frota
+Console.js:61 ✅ Query response: {rows: Array(2), rowCount: 2}
+Console.js:61 📊 Query rows: (2) [{…}, {…}]
+Console.js:61 ✅ Empresas fiscais encontradas: 2
+Console.js:61 ✅ Associações de frota encontradas: 2
+Console.js:61 🔍 Consultando NF-e via servidor: 31250923153943000907551090001704751870253740
+Console.js:61 ✅ Resposta recebida do servidor: {remetente: {…}, destinatario: {…}, produto: {…}, transporte: {…}, numero_nfe: '170475', …}
+Console.js:61 🔍 Verificando cliente no banco remoto: 23153943000907
+Console.js:61 🔍 Executando query: 
+        SELECT id FROM cadastros 
+        WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
+        LIMIT 1
+      
+Console.js:61 📋 Parâmetros: ['23153943000907']
+Console.js:61 ✅ Query response: {rows: Array(1), rowCount: 1}
+Console.js:61 📊 Query rows: [{…}]
+Console.js:61 ✅ Cliente existe no banco remoto: true
+Console.js:61 🔍 Verificando cliente no banco remoto: 01257995000133
+Console.js:61 🔍 Executando query: 
+        SELECT id FROM cadastros 
+        WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
+        LIMIT 1
+      
+Console.js:61 📋 Parâmetros: ['01257995000133']
+Console.js:61 ✅ Query response: {rows: Array(1), rowCount: 1}
+Console.js:61 📊 Query rows: [{…}]
+Console.js:61 ✅ Cliente existe no banco remoto: true
+Console.js:61 🔍 Buscando valores do frete cadastrado...
+Console.js:61 🔍 Buscando ID do remetente: 23153943000907
+Console.js:61 🔍 Executando query: 
+        SELECT id FROM cadastros 
+        WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
+        LIMIT 1
+      
+Console.js:61 📋 Parâmetros: ['23153943000907']
+Console.js:61 ✅ Query response: {rows: Array(1), rowCount: 1}
+Console.js:61 📊 Query rows: [{…}]
+Console.js:61 🔍 Buscando ID do destinatário: 01257995000133
+Console.js:61 🔍 Executando query: 
+        SELECT id FROM cadastros 
+        WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
+        LIMIT 1
+      
+Console.js:61 📋 Parâmetros: ['01257995000133']
+Console.js:61 ✅ Query response: {rows: Array(1), rowCount: 1}
+Console.js:61 📊 Query rows: [{…}]
+Console.js:61 📋 Remetente encontrado: 7b441388-a422-452b-8fa2-2a636f21c8b8
+Console.js:61 📋 Destinatário encontrado: 8238fd9b-62ce-4f83-afc9-e50123355b75
+Console.js:61 🔍 Buscando frete entre: 7b441388-a422-452b-8fa2-2a636f21c8b8 e 8238fd9b-62ce-4f83-afc9-e50123355b75
+Console.js:61 🔍 Executando query: 
+          SELECT valor_frete, valor_pedagio, valor_seguro 
+          FROM frete_documentos
+          WHERE cliente_origem_id = $1 
+            AND cliente_destino_id = $2
+            AND ativo = true
+          LIMIT 1
+        
+Console.js:61 📋 Parâmetros: (2) ['7b441388-a422-452b-8fa2-2a636f21c8b8', '8238fd9b-62ce-4f83-afc9-e50123355b75']
+Console.js:61 ✅ Query response: {rows: Array(1), rowCount: 1}
+Console.js:61 📊 Query rows: [{…}]
+Console.js:61 📋 Resultado da busca de frete: 1 registros
+Console.js:61 ✅ Valores do frete encontrados: {frete_base: 4350, valor_pedagio: 205.4, valor_seguro: 0}
+Console.js:61 📝 Criando CT-e com mapeamento completo: {empresa_id: 'c4b8f87e-18b5-46b3-9b90-24026b558227', data_emissao: '2025-10-01', chave_acesso_1: '31250923153943000907551090001704751870253740', numero_cte: 'AUTO', serie: '001', …}
+Console.js:61 🔍 Dados NF-e específicos being enviados: {remetente_cnpj: '23153943000907', destinatario_cnpj: '01257995000133', remetente_razao: 'COOPERATIVA AGROPECUARIA DO VALE DO PARACATU LTDA', destinatario_razao: 'GOIASMINAS IND. DE LATICINIOS LTDA'}
+Console.js:61 📝 Criando novo documento CT-e: {empresa_id: 'c4b8f87e-18b5-46b3-9b90-24026b558227', data_emissao: '2025-10-01', chave_acesso_1: '31250923153943000907551090001704751870253740', numero_cte: 'AUTO', serie: '001', …}
+Console.js:61 🔍 Validando empresa_id: {valor: 'c4b8f87e-18b5-46b3-9b90-24026b558227', tipo: 'string', existe: true, temConteudo: true}
+Console.js:61 🔍 Verificando empresa_id: c4b8f87e-18b5-46b3-9b90-24026b558227
+Console.js:61 🔍 Executando query: 
+      SELECT id, serie_padrao_cte, codigo_uf, status FROM empresas_fiscais WHERE id = $1
+    
+Console.js:61 📋 Parâmetros: ['c4b8f87e-18b5-46b3-9b90-24026b558227']
+Console.js:61 ✅ Query response: {rows: Array(1), rowCount: 1}
+Console.js:61 📊 Query rows: [{…}]
+Console.js:61 🏢 Empresa encontrada: {id: 'c4b8f87e-18b5-46b3-9b90-24026b558227', serie_padrao_cte: '001', codigo_uf: '31', status: 'ativo'}
+Console.js:61 🔍 Executando query: 
+        SELECT get_next_cte_number($1) as numero
+      
+Console.js:61 📋 Parâmetros: ['c4b8f87e-18b5-46b3-9b90-24026b558227']
+Console.js:61 ✅ Query response: {rows: Array(1), rowCount: 1}
+Console.js:61 📊 Query rows: [{…}]
+Console.js:61 🔍 Executando query: 
+      SELECT id FROM cte_documentos 
+      WHERE empresa_id = $1 AND numero_cte = $2 AND serie = $3
+    
+Console.js:61 📋 Parâmetros: (3) ['c4b8f87e-18b5-46b3-9b90-24026b558227', '8', '001']
+Console.js:61 ✅ Query response: {rows: Array(0), rowCount: 0}
+Console.js:61 📊 Query rows: []
+Console.js:61 ⚠️ Chave de acesso não gerada, forçando regeneração...
+Console.js:61 🔍 Executando query: 
+        UPDATE cte_documentos 
+        SET chave_acesso = NULL,
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+        
+Console.js:61 📋 Parâmetros: ['3b9451d1-c20f-4ca1-b9cc-24081abdf257']
+Console.js:61 ✅ Query response: {rows: Array(1), rowCount: 1}
+Console.js:61 📊 Query rows: [{…}]
+Console.js:61 ✅ Chave de acesso regenerada: null
+Console.js:61 🔧 Sidebar renderizando. hasPermission disponível: function
+Console.js:61 🔍 Verificando permissões para construir navegação
+Console.js:61 🔧 Sidebar renderizando. hasPermission disponível: function
+Console.js:61 🔍 Verificando permissões para construir navegação
+Console.js:61 🔍 Buscando documentos CT-e
+Console.js:61 🔍 Executando query: 
+      SELECT 
+        c.*,
+        e.razao_social as empresa_razao_social,
+        e.cnpj as empresa_cnpj
+      FROM cte_documentos c
+      JOIN empresas_fiscais e ON c.empresa_id = e.id
+      ORDER BY c.data_emissao DESC, c.numero_cte DESC
+    
+Console.js:61 📋 Parâmetros: []
+Console.js:61 🔍 Executando query: 
+      SELECT id, razao_social, cidade, estado, cep
+      FROM cadastros 
+      WHERE tipo = 'cliente' AND ativo = true
+      ORDER BY razao_social
+    
+Console.js:61 📋 Parâmetros: []
+Console.js:61 🔍 Buscando produtos CT-e
+Console.js:61 🔍 Executando query: 
+      SELECT id, cod_ncm, descricao
+      FROM cte_produtos
+      ORDER BY descricao
+    
+Console.js:61 📋 Parâmetros: []
+Console.js:61 🔍 Buscando associações ativas para CT-e com dados completos
+Console.js:61 🎯 Associações carregadas no componente CT-e: 2
+Console.js:61 🎯 Primeira associação no componente: {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+Console.js:61 🎯 Funcionário da primeira associação: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', matricula: '0649', cnh: '01513695482', validade_cnh: '2025-09-10T00:00:00.000Z'}
+Console.js:61 🎯 Veículo da primeira associação: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T', marca: 'IVECO', tipo: 'caminhao'}
+Console.js:61 🎯 Estrutura completa da primeira associação: {
+  "id": "75861510-367b-44cc-9dc0-6c379c5755fb",
+  "funcionario_id": "3af7727b-0382-425c-98d2-ffae6a93210f",
+  "veiculo_principal_id": "0761c4af-f13b-4e63-889c-99abefbb4cfc",
+  "veiculo_reboque1_id": "37cb31a7-6fda-4465-8a45-a9ce9b9eeb80",
+  "veiculo_reboque2_id": "f9d46b40-bda8-422b-842c-5bc965044772",
+  "veiculo_implemento_id": null,
+  "data_inicio": "2025-09-22T00:00:00.000Z",
+  "data_fim": null,
+  "ativo": true,
+  "observacoes": null,
+  "created_at": "2025-09-23T00:38:59.109Z",
+  "updated_at": "2025-09-23T00:38:59.109Z",
+  "funcionario": {
+    "nome": "CACIO ROBERTO DE SOUSA DUARTE",
+    "matricula": "0649",
+    "cnh": "01513695482",
+    "validade_cnh": "2025-09-10T00:00:00.000Z"
+  },
+  "veiculo_principal": {
+    "placa": "AWM-3029",
+    "modelo": "STRALIS 600S40T",
+    "marca": "IVECO",
+    "tipo": "caminhao"
+  },
+  "veiculo_reboque1": {
+    "placa": "AON-8409",
+    "modelo": "SRF BT",
+    "marca": "SR FACCHINI",
+    "tipo": "bi_trem_1_reboque"
+  },
+  "veiculo_reboque2": {
+    "placa": "AON-7470",
+    "modelo": "SRF BT",
+    "marca": "SR FACCHINI",
+    "tipo": "bi_trem_2_reboque"
+  }
+}
+Console.js:61 🎯 Associações carregadas no componente CT-e: 2
+Console.js:61 🎯 Primeira associação no componente: {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+Console.js:61 🎯 Funcionário da primeira associação: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', matricula: '0649', cnh: '01513695482', validade_cnh: '2025-09-10T00:00:00.000Z'}
+Console.js:61 🎯 Veículo da primeira associação: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T', marca: 'IVECO', tipo: 'caminhao'}
+Console.js:61 🎯 Estrutura completa da primeira associação: {
+  "id": "75861510-367b-44cc-9dc0-6c379c5755fb",
+  "funcionario_id": "3af7727b-0382-425c-98d2-ffae6a93210f",
+  "veiculo_principal_id": "0761c4af-f13b-4e63-889c-99abefbb4cfc",
+  "veiculo_reboque1_id": "37cb31a7-6fda-4465-8a45-a9ce9b9eeb80",
+  "veiculo_reboque2_id": "f9d46b40-bda8-422b-842c-5bc965044772",
+  "veiculo_implemento_id": null,
+  "data_inicio": "2025-09-22T00:00:00.000Z",
+  "data_fim": null,
+  "ativo": true,
+  "observacoes": null,
+  "created_at": "2025-09-23T00:38:59.109Z",
+  "updated_at": "2025-09-23T00:38:59.109Z",
+  "funcionario": {
+    "nome": "CACIO ROBERTO DE SOUSA DUARTE",
+    "matricula": "0649",
+    "cnh": "01513695482",
+    "validade_cnh": "2025-09-10T00:00:00.000Z"
+  },
+  "veiculo_principal": {
+    "placa": "AWM-3029",
+    "modelo": "STRALIS 600S40T",
+    "marca": "IVECO",
+    "tipo": "caminhao"
+  },
+  "veiculo_reboque1": {
+    "placa": "AON-8409",
+    "modelo": "SRF BT",
+    "marca": "SR FACCHINI",
+    "tipo": "bi_trem_1_reboque"
+  },
+  "veiculo_reboque2": {
+    "placa": "AON-7470",
+    "modelo": "SRF BT",
+    "marca": "SR FACCHINI",
+    "tipo": "bi_trem_2_reboque"
+  }
+}
+Console.js:61 ✅ Query response: {rows: Array(1), rowCount: 1}
+Console.js:61 📊 Query rows: [{…}]
+Console.js:61 ✅ Documentos CT-e encontrados: 1
+Console.js:61 ✅ Query response: {rows: Array(38), rowCount: 38}
+Console.js:61 📊 Query rows: (38) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Console.js:61 ✅ Produtos CT-e encontrados: 38
+Console.js:61 🌐 Status da resposta API: 200
+Console.js:61 📊 Resultado completo da API: {rows: Array(2), rowCount: 2}
+Console.js:61 📊 Query rows: (2) [{…}, {…}]
+Console.js:61 ✅ Associações ativas encontradas para CT-e: 2
+Console.js:61 📋 Primeira associação encontrada (RAW): {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+Console.js:61 📋 Dados do funcionário: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', cnh: '01513695482', matricula: '0649', funcao: 'motorista_carreta'}
+Console.js:61 📋 Dados do veículo principal: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T'}
+Console.js:61 🔄 Processando associação: 75861510-367b-44cc-9dc0-6c379c5755fb
+Console.js:61 🔄 Dados do funcionário RAW: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', matricula: '0649', cnh: '01513695482', validade_cnh: '2025-09-10T00:00:00.000Z', funcao: 'motorista_carreta'}
+Console.js:61 🔄 Dados do veículo principal RAW: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T', marca: 'IVECO', tipo: 'caminhao'}
+Console.js:61 ✅ Dados mapeados final: {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+Console.js:61 🔄 Processando associação: 367cf58b-eda3-4a2d-a75c-95757534675d
+Console.js:61 🔄 Dados do funcionário RAW: {nome: 'CARLOS UMBERTO RIBEIRO', matricula: '6620', cnh: '01120763355', validade_cnh: '2024-10-25T00:00:00.000Z', funcao: 'motorista_carreta'}
+Console.js:61 🔄 Dados do veículo principal RAW: {placa: 'TER-4B25', modelo: 'S-WAY 480-6X2', marca: 'IVECO', tipo: 'caminhao'}
+Console.js:61 ✅ Dados mapeados final: {id: '367cf58b-eda3-4a2d-a75c-95757534675d', funcionario_id: 'b5d85a3e-0819-45ad-8d5d-d5e6afe34744', veiculo_principal_id: '7dd7d830-1fcd-414a-89e1-579427df6af7', veiculo_reboque1_id: null, veiculo_reboque2_id: null, …}
+Console.js:61 ✅ Total de associações processadas: 2
+Console.js:61 ✅ Query response: {rows: Array(212), rowCount: 212}
+Console.js:61 📊 Query rows: (212) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, …]
+Console.js:61 ✅ RNTRC carregado para edição: null
+Console.js:61 📝 Dados do documento para edição: {id: '3b9451d1-c20f-4ca1-b9cc-24081abdf257', empresa_id: 'c4b8f87e-18b5-46b3-9b90-24026b558227', numero_cte: '9', serie: '001', data_emissao: '2025-10-01T00:00:00.000Z', …}
+Console.js:61 ✅ Formulário preenchido com dados do documento
+Console.js:61 📝 Modal CT-e aberto - invalidando cache das associações
+Console.js:61 🔍 Buscando associações ativas para CT-e com dados completos
+Console.js:61 📝 Carregando documento para edição: 3b9451d1-c20f-4ca1-b9cc-24081abdf257
+Console.js:61 ✅ RNTRC carregado para edição: 47424276
+Console.js:61 🚛 Carregando associação de frota do documento: 367cf58b-eda3-4a2d-a75c-95757534675d
+Console.js:61 🚚 Motorista selecionado: 367cf58b-eda3-4a2d-a75c-95757534675d
+Console.js:61 🔍 Associação encontrada completa: {id: '367cf58b-eda3-4a2d-a75c-95757534675d', motorista_nome: 'CARLOS UMBERTO RIBEIRO', veiculo_principal_placa: 'TER-4B25', veiculo_implemento_placa: 'TES-9A83', data_inicio: '2025-09-29T00:00:00.000Z'}
+Console.js:61 🔍 Estrutura completa da associação: {
+  "id": "367cf58b-eda3-4a2d-a75c-95757534675d",
+  "funcionario_id": "b5d85a3e-0819-45ad-8d5d-d5e6afe34744",
+  "veiculo_principal_id": "7dd7d830-1fcd-414a-89e1-579427df6af7",
+  "veiculo_reboque1_id": null,
+  "veiculo_reboque2_id": null,
+  "veiculo_implemento_id": "8ffc8727-7079-4833-9d4d-30920731b846",
+  "data_inicio": "2025-09-29T00:00:00.000Z",
+  "data_fim": null,
+  "ativo": true,
+  "observacoes": null,
+  "created_at": "2025-09-29T04:35:03.466Z",
+  "updated_at": "2025-09-29T04:35:03.466Z",
+  "funcionario": {
+    "nome": "CARLOS UMBERTO RIBEIRO",
+    "matricula": "6620",
+    "cnh": "01120763355",
+    "validade_cnh": "2024-10-25T00:00:00.000Z"
+  },
+  "veiculo_principal": {
+    "placa": "TER-4B25",
+    "modelo": "S-WAY 480-6X2",
+    "marca": "IVECO",
+    "tipo": "caminhao"
+  },
+  "veiculo_implemento": {
+    "placa": "TES-9A83",
+    "modelo": "SR TQ AP 4E",
+    "marca": "RHODOSS",
+    "tipo": "vanderleia_4_eixos"
+  }
+}
+Console.js:61 👨‍💼 Dados do funcionário na associação: {nome: 'CARLOS UMBERTO RIBEIRO', matricula: '6620', cnh: '01120763355', validade_cnh: '2024-10-25T00:00:00.000Z'}
+Console.js:61 🚛 Dados do veículo principal na associação: {placa: 'TER-4B25', modelo: 'S-WAY 480-6X2', marca: 'IVECO', tipo: 'caminhao'}
+Console.js:61 🚛 Placa principal definida: TER-4B25
+Console.js:61 🚛 Implemento encontrado: TES-9A83
+Console.js:61 🚛 Placa reboque/implemento definida: TES-9A83
+Console.js:61 👨‍💼 Dados do funcionário recebidos: {nome: 'CARLOS UMBERTO RIBEIRO', matricula: '6620', cnh: '01120763355', validade_cnh: '2024-10-25T00:00:00.000Z'}
+Console.js:61 👨‍💼 Nome do funcionário: CARLOS UMBERTO RIBEIRO
+Console.js:61 👨‍💼 CNH do funcionário: 01120763355
+Console.js:61 👨‍💼 Matrícula do funcionário: 6620
+Console.js:61 ✅ Informações do motorista definidas: {nome: 'CARLOS UMBERTO RIBEIRO', cnh: '01120763355', matricula: '6620', validadeCnh: '24/10/2024'}
+Console.js:61 🌐 Status da resposta API: 200
+Console.js:61 📊 Resultado completo da API: {rows: Array(2), rowCount: 2}
+Console.js:61 📊 Query rows: (2) [{…}, {…}]
+Console.js:61 ✅ Associações ativas encontradas para CT-e: 2
+Console.js:61 📋 Primeira associação encontrada (RAW): {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+Console.js:61 📋 Dados do funcionário: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', cnh: '01513695482', matricula: '0649', funcao: 'motorista_carreta'}
+Console.js:61 📋 Dados do veículo principal: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T'}
+Console.js:61 🔄 Processando associação: 75861510-367b-44cc-9dc0-6c379c5755fb
+Console.js:61 🔄 Dados do funcionário RAW: {nome: 'CACIO ROBERTO DE SOUSA DUARTE', matricula: '0649', cnh: '01513695482', validade_cnh: '2025-09-10T00:00:00.000Z', funcao: 'motorista_carreta'}
+Console.js:61 🔄 Dados do veículo principal RAW: {placa: 'AWM-3029', modelo: 'STRALIS 600S40T', marca: 'IVECO', tipo: 'caminhao'}
+Console.js:61 ✅ Dados mapeados final: {id: '75861510-367b-44cc-9dc0-6c379c5755fb', funcionario_id: '3af7727b-0382-425c-98d2-ffae6a93210f', veiculo_principal_id: '0761c4af-f13b-4e63-889c-99abefbb4cfc', veiculo_reboque1_id: '37cb31a7-6fda-4465-8a45-a9ce9b9eeb80', veiculo_reboque2_id: 'f9d46b40-bda8-422b-842c-5bc965044772', …}
+Console.js:61 🔄 Processando associação: 367cf58b-eda3-4a2d-a75c-95757534675d
+Console.js:61 🔄 Dados do funcionário RAW: {nome: 'CARLOS UMBERTO RIBEIRO', matricula: '6620', cnh: '01120763355', validade_cnh: '2024-10-25T00:00:00.000Z', funcao: 'motorista_carreta'}
+Console.js:61 🔄 Dados do veículo principal RAW: {placa: 'TER-4B25', modelo: 'S-WAY 480-6X2', marca: 'IVECO', tipo: 'caminhao'}
+Console.js:61 ✅ Dados mapeados final: {id: '367cf58b-eda3-4a2d-a75c-95757534675d', funcionario_id: 'b5d85a3e-0819-45ad-8d5d-d5e6afe34744', veiculo_principal_id: '7dd7d830-1fcd-414a-89e1-579427df6af7', veiculo_reboque1_id: null, veiculo_reboque2_id: null, …}
+Console.js:61 ✅ Total de associações processadas: 2
+Console.js:61 🧮 Iniciando cálculo de impostos...
+Console.js:61 📊 Valores para cálculo: {valorICMS: 342.88, valorBaseComICMS: 4898.28, valorPedagio: 205.4, valorSeguro: 0}
+Console.js:61 💰 Cálculo de impostos concluído:
+Console.js:61 - Valor base com ICMS: 4898.28
+Console.js:61 - Valor pedágio: 205.40
+Console.js:61 - Valor seguro: 0.00
+Console.js:61 - Valor ICMS: 342.88
+Console.js:61 - Valor total final: 4898.28

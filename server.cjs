@@ -3226,10 +3226,11 @@ app.post('/api/cte-documentos', (req, res, next) => {
         console.log('📝 Descrição do produto:', data.nfe_produto_descricao);
 
         try {
-          // Buscar produto existente por NCM
+          // Buscar produto existente por NCM (sem cte_documento_id, pois são produtos globais)
           const produtoResult = await client.query(`
             SELECT id FROM cte_produtos
             WHERE ncm_produto = $1
+              AND cte_documento_id IS NULL
             LIMIT 1
           `, [data.nfe_produto_ncm]);
 
