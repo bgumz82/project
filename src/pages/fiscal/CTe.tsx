@@ -1523,6 +1523,15 @@ export default function CTe() {
         console.log('🆓 ICMS Isenção aplicada')
       }
 
+      // Montar observações com as placas dos veículos
+      const placas = []
+      if (associacao.veiculo_principal?.placa) placas.push(associacao.veiculo_principal.placa)
+      if (associacao.veiculo_reboque1?.placa) placas.push(associacao.veiculo_reboque1.placa)
+      if (associacao.veiculo_reboque2?.placa) placas.push(associacao.veiculo_reboque2.placa)
+      if (associacao.veiculo_implemento?.placa) placas.push(associacao.veiculo_implemento.placa)
+
+      const observacoes = placas.length > 0 ? `Placas: ${placas.join(', ')}.` : ''
+
       const documentoData: CTeDocumentoCreate = {
         empresa_id: empresaSelecionada.id,
         data_emissao: format(new Date(), 'yyyy-MM-dd'),
@@ -1570,7 +1579,9 @@ export default function CTe() {
         placa_veiculo: associacao.veiculo_principal?.placa,
         placa_reboque: associacao.veiculo_implemento?.placa ||
           [associacao.veiculo_reboque1?.placa, associacao.veiculo_reboque2?.placa]
-            .filter(Boolean).join(' + ') || null
+            .filter(Boolean).join(' + ') || null,
+        // Observações com as placas
+        observacoes: observacoes || null
       }
 
       // Criar o documento
