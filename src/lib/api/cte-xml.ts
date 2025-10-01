@@ -48,9 +48,11 @@ export async function generateCTeXML(
   produto: ProdutoInfo | null,
 ): Promise<string> {
 
-  // Usar data/hora atual da geração do XML
+  // Usar data/hora atual da geração do XML no fuso horário de Brasília (UTC-3)
   const dataEmissaoAtual = new Date()
-  const dataEmissaoFormatada = dataEmissaoAtual.toISOString().slice(0, 19) + '-03:00'
+  // Converter UTC para horário de Brasília (subtrair 3 horas)
+  const dataEmissaoBrasilia = new Date(dataEmissaoAtual.getTime() - (3 * 60 * 60 * 1000))
+  const dataEmissaoFormatada = dataEmissaoBrasilia.toISOString().slice(0, 19) + '-03:00'
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <CTe xmlns="http://www.portalfiscal.inf.br/cte">
