@@ -334,29 +334,33 @@ export default function NovoCtEAuto() {
     try {
       // Buscar IDs do remetente e destinatário
       console.log('🔍 Buscando ID do remetente:', nfeData.remetente.cnpj)
-      const remetenteQuery = await query(`
+      const remetenteResult = await query(`
         SELECT id FROM cadastros 
         WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
         LIMIT 1
       `, [nfeData.remetente.cnpj])
 
       console.log('🔍 Buscando ID do destinatário:', nfeData.destinatario.cnpj)
-      const destinatarioQuery = await query(`
+      const destinatarioResult = await query(`
         SELECT id FROM cadastros 
         WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
         LIMIT 1
       `, [nfeData.destinatario.cnpj])
 
-      console.log('📋 Remetente encontrado:', remetenteQuery.rows.length > 0 ? remetenteQuery.rows[0].id : 'não encontrado')
-      console.log('📋 Destinatário encontrado:', destinatarioQuery.rows.length > 0 ? destinatarioQuery.rows[0].id : 'não encontrado')
+      // A função query retorna {rows: [...]} no frontend
+      const remetenteData = remetenteResult?.rows || remetenteResult || []
+      const destinatarioData = destinatarioResult?.rows || destinatarioResult || []
 
-      if (remetenteQuery.rows.length > 0 && destinatarioQuery.rows.length > 0) {
-        const remetenteId = remetenteQuery.rows[0].id
-        const destinatarioId = destinatarioQuery.rows[0].id
+      console.log('📋 Remetente encontrado:', remetenteData.length > 0 ? remetenteData[0].id : 'não encontrado')
+      console.log('📋 Destinatário encontrado:', destinatarioData.length > 0 ? destinatarioData[0].id : 'não encontrado')
+
+      if (remetenteData.length > 0 && destinatarioData.length > 0) {
+        const remetenteId = remetenteData[0].id
+        const destinatarioId = destinatarioData[0].id
 
         // Buscar frete cadastrado
         console.log('🔍 Buscando frete entre:', remetenteId, 'e', destinatarioId)
-        const freteQuery = await query(`
+        const freteResult = await query(`
           SELECT valor_frete, valor_pedagio, valor_seguro 
           FROM frete_documentos
           WHERE cliente_origem_id = $1 
@@ -365,10 +369,11 @@ export default function NovoCtEAuto() {
           LIMIT 1
         `, [remetenteId, destinatarioId])
 
-        console.log('📋 Resultado da busca de frete:', freteQuery.rows.length, 'registros')
+        const freteData = freteResult?.rows || freteResult || []
+        console.log('📋 Resultado da busca de frete:', freteData.length, 'registros')
 
-        if (freteQuery.rows.length > 0) {
-          const frete = freteQuery.rows[0]
+        if (freteData.length > 0) {
+          const frete = freteData[0]
           frete_base = parseFloat(frete.valor_frete) || 0
           valor_pedagio = parseFloat(frete.valor_pedagio) || 0
           valor_seguro = parseFloat(frete.valor_seguro) || 0
