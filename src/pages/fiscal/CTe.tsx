@@ -1175,64 +1175,68 @@ export default function CTe() {
       console.log('📄 Consultando NF-e para obter dados do produto...')
       let produtoIdFinal = formRapido.produto_id
 
-      try {
-        const responseNFe = await fetch('/api/consultar-nfe', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
-          },
-          body: JSON.stringify({ chaveNFE: chaveNFeLimpa })
-        })
+      // REGRA: Se o usuário já selecionou um produto manualmente, NÃO buscar/substituir pela NF-e
+      if (!formRapido.produto_id) {
+        try {
+          const responseNFe = await fetch('/api/consultar-nfe', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
+            },
+            body: JSON.stringify({ chaveNFE: chaveNFeLimpa })
+          })
 
-        if (responseNFe.ok) {
-          const dadosNFe = await responseNFe.json()
-          console.log('✅ Dados da NF-e recebidos:', dadosNFe)
+          if (responseNFe.ok) {
+            const dadosNFe = await responseNFe.json()
+            console.log('✅ Dados da NF-e recebidos:', dadosNFe)
 
-          // Se houver produto na NF-e
-          if (dadosNFe.produto && dadosNFe.produto.descricao) {
-            const descricaoProduto = dadosNFe.produto.descricao
-            const codigoNCM = dadosNFe.produto.codigo_ncm
+            // Se houver produto na NF-e
+            if (dadosNFe.produto && dadosNFe.produto.descricao) {
+              const descricaoProduto = dadosNFe.produto.descricao
+              const codigoNCM = dadosNFe.produto.codigo_ncm
 
-            // Buscar se produto já existe
-            const produtosExistentes = await getProdutosCTe()
-            const produtoExistente = produtosExistentes.find(p => 
-              p.descricao.toLowerCase() === descricaoProduto.toLowerCase() ||
-              (codigoNCM && p.cod_ncm === codigoNCM)
-            )
+              // Buscar se produto já existe APENAS pela DESCRIÇÃO exata
+              const produtosExistentes = await getProdutosCTe()
+              const produtoExistente = produtosExistentes.find(p => 
+                p.descricao.toLowerCase() === descricaoProduto.toLowerCase()
+              )
 
-            if (produtoExistente) {
-              produtoIdFinal = produtoExistente.id
-              console.log('✅ Produto predominante encontrado:', produtoExistente.descricao)
-              toast.success(`Produto encontrado: ${produtoExistente.descricao}`)
-            } else if (!formRapido.produto_id) {
-              // Criar novo produto se não existir e não foi selecionado manualmente
-              console.log('📦 Criando novo produto:', descricaoProduto)
-              const novoProdutoQuery = `
-                INSERT INTO cte_produtos (descricao, cod_ncm, unidade_medida)
-                VALUES ($1, $2, $3)
-                RETURNING id, descricao
-              `
-              const resultadoNovoProduto = await query(novoProdutoQuery, [
-                descricaoProduto,
-                codigoNCM || null,
-                'KG'
-              ])
+              if (produtoExistente) {
+                produtoIdFinal = produtoExistente.id
+                console.log('✅ Produto predominante encontrado:', produtoExistente.descricao)
+                toast.success(`Produto encontrado: ${produtoExistente.descricao}`)
+              } else {
+                // Criar novo produto se não existir
+                console.log('📦 Criando novo produto:', descricaoProduto)
+                const novoProdutoQuery = `
+                  INSERT INTO cte_produtos (descricao, cod_ncm, unidade_medida)
+                  VALUES ($1, $2, $3)
+                  RETURNING id, descricao
+                `
+                const resultadoNovoProduto = await query(novoProdutoQuery, [
+                  descricaoProduto,
+                  codigoNCM || null,
+                  'KG'
+                ])
 
-              if (resultadoNovoProduto.rows && resultadoNovoProduto.rows.length > 0) {
-                produtoIdFinal = resultadoNovoProduto.rows[0].id
-                console.log('✅ Novo produto criado com ID:', produtoIdFinal)
-                toast.success(`Produto criado: ${descricaoProduto}`)
-                
-                // Atualizar lista de produtos
-                await queryClient.invalidateQueries({ queryKey: ['produtos-cte'] })
+                if (resultadoNovoProduto.rows && resultadoNovoProduto.rows.length > 0) {
+                  produtoIdFinal = resultadoNovoProduto.rows[0].id
+                  console.log('✅ Novo produto criado com ID:', produtoIdFinal)
+                  toast.success(`Produto criado: ${descricaoProduto}`)
+                  
+                  // Atualizar lista de produtos
+                  await queryClient.invalidateQueries({ queryKey: ['produtos-cte'] })
+                }
               }
             }
           }
+        } catch (error) {
+          console.error('⚠️ Erro ao consultar NF-e para produto:', error)
+          // Continuar mesmo com erro - produto pode ser selecionado manualmente
         }
-      } catch (error) {
-        console.error('⚠️ Erro ao consultar NF-e para produto:', error)
-        // Continuar mesmo com erro - produto pode ser selecionado manualmente
+      } else {
+        console.log('📦 Usando produto selecionado manualmente:', formRapido.produto_id)
       }
 
       // Validar se produto foi definido
