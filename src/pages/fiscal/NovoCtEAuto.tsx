@@ -406,10 +406,6 @@ export default function NovoCtEAuto() {
 
     const valor_outros = valor_seguro // Seguro vai em "outros"
 
-    // VALOR TOTAL DA PRESTAÇÃO = frete base + pedágio
-    const valor_prestacao = Math.round((frete_base + valor_pedagio) * 100) / 100
-    const valor_receber = valor_prestacao
-
     // ICMS - Regras específicas para empresa emitente MG
     let icms_aliquota = 0
     let icms_situacao_tributaria = '40' // Isenção
@@ -428,8 +424,15 @@ export default function NovoCtEAuto() {
       icms_situacao_tributaria = '40'
     }
 
-    const icms_bc_valor = icms_aliquota > 0 ? valor_prestacao : 0
+    // BC ICMS = Frete + Pedágio + Seguro
+    const icms_bc_valor = Math.round((frete_base + valor_pedagio + valor_seguro) * 100) / 100
+    
+    // Valor ICMS = BC × Alíquota
     const icms_valor = icms_aliquota > 0 ? Math.round(icms_bc_valor * (icms_aliquota / 100) * 100) / 100 : 0
+    
+    // Valor Prestação = BC ICMS (já inclui frete + pedágio + seguro)
+    const valor_prestacao = icms_bc_valor
+    const valor_receber = icms_bc_valor
 
     // 6. DADOS FISCAIS - Produto predominante baseado na NF-e
     const produto_predominante_id = null // Será criado automaticamente baseado no NCM da NF-e
