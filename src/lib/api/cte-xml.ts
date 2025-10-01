@@ -63,9 +63,9 @@ export async function generateCTeXML(
 <tpCTe>${documento.finalidade_cte || '0'}</tpCTe>
 <procEmi>0</procEmi>
 <verProc>4.00</verProc>
-${documento.cidade_inicio_ibge ? `<cMunEnv>${documento.cidade_inicio_ibge}</cMunEnv>` : ''}
-<xMunEnv>${removeAccents(documento.cidade_inicio_nome || 'NAO INFORMADO').toUpperCase()}</xMunEnv>
-<UFEnv>${documento.uf_inicio || await getUFFromCityCode(documento.cidade_inicio_ibge || '3550308')}</UFEnv>
+<cMunEnv>${await getCityCode(parseEndereco(empresa.endereco_completo, empresa.cidade, empresa.estado, empresa.cep).cidade, parseEndereco(empresa.endereco_completo, empresa.cidade, empresa.estado, empresa.cep).uf)}</cMunEnv>
+<xMunEnv>${removeAccents(parseEndereco(empresa.endereco_completo, empresa.cidade, empresa.estado, empresa.cep).cidade).toUpperCase()}</xMunEnv>
+<UFEnv>${parseEndereco(empresa.endereco_completo, empresa.cidade, empresa.estado, empresa.cep).uf.toUpperCase()}</UFEnv>
 <modal>01</modal>
 <tpServ>${documento.tipo_servico || '0'}</tpServ>
 ${documento.cidade_inicio_ibge ? `<cMunIni>${documento.cidade_inicio_ibge}</cMunIni>` : ''}
