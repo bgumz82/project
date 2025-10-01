@@ -273,7 +273,7 @@ export default function NovoCtEAuto() {
     consultarNFEMutation.mutate(chaveNFE)
   }
 
-  const handleCriarCTE = () => {
+  const handleCriarCTE = async () => {
     if (!nfeData || !associacaoSelecionada || !empresaSelecionada) {
       toast.error('Consulte a NF-e, selecione a empresa emitente e o motorista/reboque')
       return
@@ -321,17 +321,68 @@ export default function NovoCtEAuto() {
     const remetente_id = null // Será mapeado pelo backend baseado no CNPJ do remetente
     const destinatario_id = null // Será mapeado pelo backend baseado no CNPJ do destinatário
 
-    // 5. SERVIÇOS E IMPOSTOS - Valor do frete baseado na carga
+    // 5. SERVIÇOS E IMPOSTOS - Buscar valores do cadastro de frete
     const valor_carga = nfeData.produto.valor_total
     const quantidade_carga = nfeData.produto.quantidade_total
 
-    // Calcular frete como percentual da carga (3% padrão para combustível)
-    const percentual_frete = 0.03 // 3% do valor da carga
-    const frete_base = Math.round(valor_carga * percentual_frete * 100) / 100
+    // BUSCAR VALORES DO FRETE CADASTRADO
+    console.log('🔍 Buscando valores do frete cadastrado...')
+    let frete_base = 0
+    let valor_pedagio = 0
+    let valor_seguro = 0
 
-    // PEDÁGIO E SEGURO - Regras do CT-e Rápido
-    const valor_pedagio = Math.round(frete_base * 0.15 * 100) / 100 // 15% do frete base
-    const valor_seguro = Math.round(valor_carga * 0.001 * 100) / 100 // 0.1% do valor da carga
+    try {
+      // Buscar IDs do remetente e destinatário
+      const remetenteQuery = await query(`
+        SELECT id FROM cadastros 
+        WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
+        LIMIT 1
+      `, [nfeData.remetente.cnpj])
+
+      const destinatarioQuery = await query(`
+        SELECT id FROM cadastros 
+        WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
+        LIMIT 1
+      `, [nfeData.destinatario.cnpj])
+
+      if (remetenteQuery.rows.length > 0 && destinatarioQuery.rows.length > 0) {
+        const remetenteId = remetenteQuery.rows[0].id
+        const destinatarioId = destinatarioQuery.rows[0].id
+
+        // Buscar frete cadastrado
+        const freteQuery = await query(`
+          SELECT valor_frete, valor_pedagio, valor_seguro 
+          FROM frete_documentos
+          WHERE cliente_origem_id = $1 
+            AND cliente_destino_id = $2
+            AND ativo = true
+          LIMIT 1
+        `, [remetenteId, destinatarioId])
+
+        if (freteQuery.rows.length > 0) {
+          const frete = freteQuery.rows[0]
+          frete_base = parseFloat(frete.valor_frete) || 0
+          valor_pedagio = parseFloat(frete.valor_pedagio) || 0
+          valor_seguro = parseFloat(frete.valor_seguro) || 0
+          console.log('✅ Valores do frete encontrados:', { frete_base, valor_pedagio, valor_seguro })
+        } else {
+          console.log('⚠️ Frete não encontrado, usando cálculo padrão')
+          // Fallback: calcular valores caso o frete não esteja cadastrado
+          const percentual_frete = 0.03
+          frete_base = Math.round(valor_carga * percentual_frete * 100) / 100
+          valor_pedagio = Math.round(frete_base * 0.15 * 100) / 100
+          valor_seguro = Math.round(valor_carga * 0.001 * 100) / 100
+        }
+      }
+    } catch (error) {
+      console.error('❌ Erro ao buscar frete:', error)
+      // Fallback: usar cálculo padrão
+      const percentual_frete = 0.03
+      frete_base = Math.round(valor_carga * percentual_frete * 100) / 100
+      valor_pedagio = Math.round(frete_base * 0.15 * 100) / 100
+      valor_seguro = Math.round(valor_carga * 0.001 * 100) / 100
+    }
+
     const valor_outros = valor_seguro // Seguro vai em "outros"
 
     // VALOR TOTAL DA PRESTAÇÃO = frete base + pedágio
