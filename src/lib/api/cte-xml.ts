@@ -63,17 +63,17 @@ export async function generateCTeXML(
 <tpCTe>${documento.finalidade_cte || '0'}</tpCTe>
 <procEmi>0</procEmi>
 <verProc>4.00</verProc>
-<cMunEnv>${documento.cidade_inicio_ibge}</cMunEnv>
+${documento.cidade_inicio_ibge ? `<cMunEnv>${documento.cidade_inicio_ibge}</cMunEnv>` : ''}
 <xMunEnv>${removeAccents(documento.cidade_inicio_nome || 'NAO INFORMADO').toUpperCase()}</xMunEnv>
-<UFEnv>${await getUFFromCityCode(documento.cidade_inicio_ibge || '3550308')}</UFEnv>
+<UFEnv>${documento.uf_inicio || await getUFFromCityCode(documento.cidade_inicio_ibge || '3550308')}</UFEnv>
 <modal>01</modal>
 <tpServ>${documento.tipo_servico || '0'}</tpServ>
-<cMunIni>${documento.cidade_inicio_ibge}</cMunIni>
+${documento.cidade_inicio_ibge ? `<cMunIni>${documento.cidade_inicio_ibge}</cMunIni>` : ''}
 <xMunIni>${removeAccents(documento.cidade_inicio_nome || 'NAO INFORMADO').toUpperCase()}</xMunIni>
-<UFIni>${await getUFFromCityCode(documento.cidade_inicio_ibge || '3550308')}</UFIni>
-<cMunFim>${documento.cidade_termino_ibge}</cMunFim>
+<UFIni>${documento.uf_inicio || await getUFFromCityCode(documento.cidade_inicio_ibge || '3550308')}</UFIni>
+${documento.cidade_termino_ibge ? `<cMunFim>${documento.cidade_termino_ibge}</cMunFim>` : ''}
 <xMunFim>${removeAccents(documento.cidade_termino_nome || 'NAO INFORMADO').toUpperCase()}</xMunFim>
-<UFFim>${await getUFFromCityCode(documento.cidade_termino_ibge || '3550308')}</UFFim>
+<UFFim>${documento.uf_termino || await getUFFromCityCode(documento.cidade_termino_ibge || '3550308')}</UFFim>
 <retira>1</retira>
 <xDetRetira>CONFORME SOLICITACAO</xDetRetira>
 <indIEToma>1</indIEToma>
