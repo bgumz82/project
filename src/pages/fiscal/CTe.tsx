@@ -605,8 +605,8 @@ export default function CTe() {
         valorSeguro
       })
 
-      // Valor Total da Prestação = Valor base com ICMS + Pedágio + Seguro
-      const valorTotalPrestacao = valorBaseComICMS + valorPedagio + valorSeguro
+      // Valor Total da Prestação = Valor base com ICMS (já inclui frete + pedágio + seguro)
+      const valorTotalPrestacao = valorBaseComICMS
 
       // Atualizar campos e estado com validação
       const valorPrestacaoFormatado = valorTotalPrestacao.toFixed(2)
