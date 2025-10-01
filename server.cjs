@@ -3220,26 +3220,27 @@ app.post('/api/cte-documentos', (req, res, next) => {
         }
       }
 
-      // 4. MAPEAR/CRIAR PRODUTO PREDOMINANTE PELO NCM DA NF-E
-      if (data.nfe_produto_ncm && data.nfe_produto_descricao) {
-        console.log('🔍 Buscando produto por NCM:', data.nfe_produto_ncm);
-        console.log('📝 Descrição do produto:', data.nfe_produto_descricao);
+      // 4. MAPEAR/CRIAR PRODUTO PREDOMINANTE PELA DESCRIÇÃO DA NF-E
+      if (data.nfe_produto_descricao) {
+        console.log('🔍 Buscando produto por descrição:', data.nfe_produto_descricao);
+        console.log('📝 NCM do produto:', data.nfe_produto_ncm);
 
         try {
-          // Buscar produto existente por NCM (sem cte_documento_id, pois são produtos globais)
+          // Buscar produto existente pela DESCRIÇÃO (sem cte_documento_id, pois são produtos globais)
+          // NCM é genérico, mas a descrição é específica
           const produtoResult = await client.query(`
             SELECT id FROM cte_produtos
-            WHERE cod_ncm = $1
+            WHERE UPPER(descricao) = UPPER($1)
               AND cte_documento_id IS NULL
             LIMIT 1
-          `, [data.nfe_produto_ncm]);
+          `, [data.nfe_produto_descricao]);
 
           if (produtoResult.rows.length > 0) {
             produtoPredominanteIdFinal = produtoResult.rows[0].id;
-            console.log('✅ Produto existente encontrado:', produtoPredominanteIdFinal);
+            console.log('✅ Produto existente encontrado por descrição:', produtoPredominanteIdFinal);
           } else {
             // Criar novo produto se não existir
-            console.log('📝 Produto não encontrado, criando novo...');
+            console.log('📝 Produto não encontrado, criando novo com descrição da NF-e...');
             
             const novoProdutoResult = await client.query(`
               INSERT INTO cte_produtos (
@@ -3249,7 +3250,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
               RETURNING id
             `, [
               data.nfe_produto_descricao,
-              data.nfe_produto_ncm
+              data.nfe_produto_ncm || null
             ]);
 
             if (novoProdutoResult.rows.length > 0) {
@@ -3263,7 +3264,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
           produtoPredominanteIdFinal = null;
         }
       } else {
-        console.log('⚠️ NCM ou descrição do produto não informado na NF-e');
+        console.log('⚠️ Descrição do produto não informada na NF-e');
         produtoPredominanteIdFinal = null;
       }
 
