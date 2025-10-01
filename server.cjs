@@ -3009,8 +3009,12 @@ app.post('/api/cte-documentos', (req, res, next) => {
           // Continuar sem produto se houver erro
           produtoPredominanteIdFinal = null;
         }
+      } else if (data.produto_predominante_id) {
+        // CT-e RÁPIDO - produto selecionado manualmente pelo usuário
+        console.log('📦 Usando produto selecionado manualmente:', data.produto_predominante_id);
+        produtoPredominanteIdFinal = data.produto_predominante_id;
       } else {
-        console.log('⚠️ Descrição do produto não informada na NF-e');
+        console.log('⚠️ Nenhum produto informado (nem NF-e, nem seleção manual)');
         produtoPredominanteIdFinal = null;
       }
 
@@ -3120,7 +3124,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
           $12, $13, $14, $15, $16, $17, $18, $19, $20, $21,
           $22, $23, $24, $25, $26, $27, $28, $29, $30, $31,
           $32, $33, $34, $35, $36, $37, $38, $39, $40, $41,
-          $42, $43, $44, NOW(), NOW()
+          $42, $43, $44, $45, $46, NOW(), NOW()
         ) RETURNING *
       `, [
         data.empresa_id,
