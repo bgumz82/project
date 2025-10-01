@@ -333,23 +333,29 @@ export default function NovoCtEAuto() {
 
     try {
       // Buscar IDs do remetente e destinatário
+      console.log('🔍 Buscando ID do remetente:', nfeData.remetente.cnpj)
       const remetenteQuery = await query(`
         SELECT id FROM cadastros 
         WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
         LIMIT 1
       `, [nfeData.remetente.cnpj])
 
+      console.log('🔍 Buscando ID do destinatário:', nfeData.destinatario.cnpj)
       const destinatarioQuery = await query(`
         SELECT id FROM cadastros 
         WHERE cnpj = $1 AND tipo = 'cliente' AND ativo = true
         LIMIT 1
       `, [nfeData.destinatario.cnpj])
 
+      console.log('📋 Remetente encontrado:', remetenteQuery.rows.length > 0 ? remetenteQuery.rows[0].id : 'não encontrado')
+      console.log('📋 Destinatário encontrado:', destinatarioQuery.rows.length > 0 ? destinatarioQuery.rows[0].id : 'não encontrado')
+
       if (remetenteQuery.rows.length > 0 && destinatarioQuery.rows.length > 0) {
         const remetenteId = remetenteQuery.rows[0].id
         const destinatarioId = destinatarioQuery.rows[0].id
 
         // Buscar frete cadastrado
+        console.log('🔍 Buscando frete entre:', remetenteId, 'e', destinatarioId)
         const freteQuery = await query(`
           SELECT valor_frete, valor_pedagio, valor_seguro 
           FROM frete_documentos
@@ -359,6 +365,8 @@ export default function NovoCtEAuto() {
           LIMIT 1
         `, [remetenteId, destinatarioId])
 
+        console.log('📋 Resultado da busca de frete:', freteQuery.rows.length, 'registros')
+
         if (freteQuery.rows.length > 0) {
           const frete = freteQuery.rows[0]
           frete_base = parseFloat(frete.valor_frete) || 0
@@ -366,16 +374,24 @@ export default function NovoCtEAuto() {
           valor_seguro = parseFloat(frete.valor_seguro) || 0
           console.log('✅ Valores do frete encontrados:', { frete_base, valor_pedagio, valor_seguro })
         } else {
-          console.log('⚠️ Frete não encontrado, usando cálculo padrão')
+          console.log('⚠️ Frete não encontrado na tabela, usando cálculo padrão')
           // Fallback: calcular valores caso o frete não esteja cadastrado
           const percentual_frete = 0.03
           frete_base = Math.round(valor_carga * percentual_frete * 100) / 100
           valor_pedagio = Math.round(frete_base * 0.15 * 100) / 100
           valor_seguro = Math.round(valor_carga * 0.001 * 100) / 100
         }
+      } else {
+        console.log('⚠️ Remetente ou destinatário não encontrado no cadastro')
+        // Fallback: usar cálculo padrão
+        const percentual_frete = 0.03
+        frete_base = Math.round(valor_carga * percentual_frete * 100) / 100
+        valor_pedagio = Math.round(frete_base * 0.15 * 100) / 100
+        valor_seguro = Math.round(valor_carga * 0.001 * 100) / 100
       }
     } catch (error) {
       console.error('❌ Erro ao buscar frete:', error)
+      console.error('❌ Detalhes do erro:', JSON.stringify(error))
       // Fallback: usar cálculo padrão
       const percentual_frete = 0.03
       frete_base = Math.round(valor_carga * percentual_frete * 100) / 100
