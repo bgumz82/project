@@ -1,0 +1,105 @@
+Console.js:61 📝 Criando CT-e com mapeamento completo: {empresa_id: 'c4b8f87e-18b5-46b3-9b90-24026b558227', data_emissao: '2025-10-01', chave_acesso_1: '31250923153943000907551090001704751870253740', numero_cte: 'AUTO', serie: '001', …}
+Console.js:61 🔍 Dados NF-e específicos being enviados: {remetente_cnpj: '23153943000907', destinatario_cnpj: '01257995000133', remetente_razao: 'COOPERATIVA AGROPECUARIA DO VALE DO PARACATU LTDA', destinatario_razao: 'GOIASMINAS IND. DE LATICINIOS LTDA'}
+Console.js:61 📝 Criando novo documento CT-e: {empresa_id: 'c4b8f87e-18b5-46b3-9b90-24026b558227', data_emissao: '2025-10-01', chave_acesso_1: '31250923153943000907551090001704751870253740', numero_cte: 'AUTO', serie: '001', …}
+Console.js:61 🔍 Validando empresa_id: {valor: 'c4b8f87e-18b5-46b3-9b90-24026b558227', tipo: 'string', existe: true, temConteudo: true}
+Console.js:61 🔍 Verificando empresa_id: c4b8f87e-18b5-46b3-9b90-24026b558227
+Console.js:61 🔍 Executando query: 
+      SELECT id, serie_padrao_cte, codigo_uf, status FROM empresas_fiscais WHERE id = $1
+    
+Console.js:61 📋 Parâmetros: ['c4b8f87e-18b5-46b3-9b90-24026b558227']
+Console.js:61 ✅ Query response: {rows: Array(1), rowCount: 1}
+Console.js:61 📊 Query rows: [{…}]
+Console.js:61 🏢 Empresa encontrada: {id: 'c4b8f87e-18b5-46b3-9b90-24026b558227', serie_padrao_cte: '001', codigo_uf: '31', status: 'ativo'}
+Console.js:61 🔍 Executando query: 
+        SELECT get_next_cte_number($1) as numero
+      
+Console.js:61 📋 Parâmetros: ['c4b8f87e-18b5-46b3-9b90-24026b558227']
+Console.js:61 ✅ Query response: {rows: Array(1), rowCount: 1}
+Console.js:61 📊 Query rows: [{…}]
+Console.js:61 🔍 Executando query: 
+      SELECT id FROM cte_documentos 
+      WHERE empresa_id = $1 AND numero_cte = $2 AND serie = $3
+    
+Console.js:61 📋 Parâmetros: (3) ['c4b8f87e-18b5-46b3-9b90-24026b558227', '4', '001']
+Console.js:61 ✅ Query response: {rows: Array(0), rowCount: 0}
+Console.js:61 📊 Query rows: []
+injected.js:278   POST https://f101d9ab-4ff3-46ab-9fa9-18bb30b605c1-00-1sxlu3wmswnmt.spock.replit.dev/api/cte-documentos 400 (Bad Request)
+window.fetch @ Network.js:219
+apply @ injected.js:278
+createCTeDocumento @ fiscal.ts:693
+await in createCTeDocumento
+fn @ mutation.ts:174
+run @ retryer.ts:153
+start @ retryer.ts:218
+execute @ mutation.ts:213
+await in execute
+mutate @ mutationObserver.ts:125
+(anônimo) @ useMutation.ts:56
+handleCriarCTE @ NovoCtEAuto.tsx:470
+callCallback2 @ react-dom.development.js:4164
+invokeGuardedCallbackDev @ react-dom.development.js:4213
+invokeGuardedCallback @ react-dom.development.js:4277
+invokeGuardedCallbackAndCatchFirstError @ react-dom.development.js:4291
+executeDispatch @ react-dom.development.js:9041
+processDispatchQueueItemsInOrder @ react-dom.development.js:9073
+processDispatchQueue @ react-dom.development.js:9086
+dispatchEventsForPlugins @ react-dom.development.js:9097
+(anônimo) @ react-dom.development.js:9288
+batchedUpdates$1 @ react-dom.development.js:26179
+batchedUpdates @ react-dom.development.js:3991
+dispatchEventForPluginEventSystem @ react-dom.development.js:9287
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom.development.js:6465
+dispatchEvent @ react-dom.development.js:6457
+dispatchDiscreteEvent @ react-dom.development.js:6430
+Console.js:61  ❌ Erro ao criar documento CT-e: Error: Frete não cadastrado. É necessário cadastrar o frete para a rota: COOPERATIVA AGROPECUARIA DO VALE DO PARACATU LTDA → GOIASMINAS IND. DE LATICINIOS LTDA. Acesse o módulo de Controle de Frete para cadastrar esta rota antes de criar o CT-e.
+    at Object.createCTeDocumento [as mutationFn] (fiscal.ts:704:13)
+Mt.forEach.n.<computed> @ Console.js:61
+createCTeDocumento @ fiscal.ts:735
+await in createCTeDocumento
+fn @ mutation.ts:174
+run @ retryer.ts:153
+start @ retryer.ts:218
+execute @ mutation.ts:213
+await in execute
+mutate @ mutationObserver.ts:125
+(anônimo) @ useMutation.ts:56
+handleCriarCTE @ NovoCtEAuto.tsx:470
+callCallback2 @ react-dom.development.js:4164
+invokeGuardedCallbackDev @ react-dom.development.js:4213
+invokeGuardedCallback @ react-dom.development.js:4277
+invokeGuardedCallbackAndCatchFirstError @ react-dom.development.js:4291
+executeDispatch @ react-dom.development.js:9041
+processDispatchQueueItemsInOrder @ react-dom.development.js:9073
+processDispatchQueue @ react-dom.development.js:9086
+dispatchEventsForPlugins @ react-dom.development.js:9097
+(anônimo) @ react-dom.development.js:9288
+batchedUpdates$1 @ react-dom.development.js:26179
+batchedUpdates @ react-dom.development.js:3991
+dispatchEventForPluginEventSystem @ react-dom.development.js:9287
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom.development.js:6465
+dispatchEvent @ react-dom.development.js:6457
+dispatchDiscreteEvent @ react-dom.development.js:6430
+Console.js:61  Erro ao criar CT-e: Error: Frete não cadastrado. É necessário cadastrar o frete para a rota: COOPERATIVA AGROPECUARIA DO VALE DO PARACATU LTDA → GOIASMINAS IND. DE LATICINIOS LTDA. Acesse o módulo de Controle de Frete para cadastrar esta rota antes de criar o CT-e.
+    at Object.createCTeDocumento [as mutationFn] (fiscal.ts:704:13)
+Mt.forEach.n.<computed> @ Console.js:61
+onError @ NovoCtEAuto.tsx:241
+execute @ mutation.ts:248
+await in execute
+mutate @ mutationObserver.ts:125
+(anônimo) @ useMutation.ts:56
+handleCriarCTE @ NovoCtEAuto.tsx:470
+callCallback2 @ react-dom.development.js:4164
+invokeGuardedCallbackDev @ react-dom.development.js:4213
+invokeGuardedCallback @ react-dom.development.js:4277
+invokeGuardedCallbackAndCatchFirstError @ react-dom.development.js:4291
+executeDispatch @ react-dom.development.js:9041
+processDispatchQueueItemsInOrder @ react-dom.development.js:9073
+processDispatchQueue @ react-dom.development.js:9086
+dispatchEventsForPlugins @ react-dom.development.js:9097
+(anônimo) @ react-dom.development.js:9288
+batchedUpdates$1 @ react-dom.development.js:26179
+batchedUpdates @ react-dom.development.js:3991
+dispatchEventForPluginEventSystem @ react-dom.development.js:9287
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom.development.js:6465
+dispatchEvent @ react-dom.development.js:6457
+dispatchDiscreteEvent @ react-dom.development.js:6430
