@@ -3169,7 +3169,7 @@ app.post('/api/cte-documentos', (req, res, next) => {
         data.placa_veiculo || null,
         data.placa_reboque || null,
         data.associacao_frota_id || null
-      ].filter(param => param !== undefined)); // Filtrar parâmetros undefined
+      ]);
 
       console.log('✅ Documento CT-e criado com sucesso:', result.rows[0].id);
 
