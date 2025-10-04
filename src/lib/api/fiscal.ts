@@ -1395,8 +1395,6 @@ export async function createMDFeDocumento(
         numero_mdfe,
         serie,
         data_emissao,
-        data_saida,
-        data_encerramento,
         codigo_uf,
         forma_emissao,
         codigo_numerico,
@@ -1404,7 +1402,7 @@ export async function createMDFeDocumento(
         observacoes,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
       RETURNING *
     `,
       [
@@ -1412,8 +1410,6 @@ export async function createMDFeDocumento(
         numeroFinal,
         serieFinal,
         documento.data_emissao,
-        null, // data_saida
-        null, // data_encerramento
         codigoUFFinal,
         documento.forma_emissao || 1,
         codigoNumerico.toString(),
