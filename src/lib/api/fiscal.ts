@@ -1388,6 +1388,14 @@ export async function createMDFeDocumento(
     // Gerar código numérico aleatório (8 dígitos) - usado na chave de acesso
     const codigoNumerico = Math.floor(Math.random() * 90000000) + 10000000;
 
+    // Buscar dados de início/término dos CT-es selecionados
+    const primeiroCtE = await queryOne(`
+      SELECT cidade_inicio_ibge, cidade_inicio_nome, uf_inicio,
+             cidade_termino_ibge, cidade_termino_nome, uf_termino
+      FROM cte_documentos
+      WHERE id = $1
+    `, [documento.cte_ids[0]]);
+
     const result = await queryOne(
       `
       INSERT INTO mdfe_documentos (
@@ -1400,9 +1408,15 @@ export async function createMDFeDocumento(
         codigo_numerico,
         status,
         observacoes,
+        cidade_inicio_ibge,
+        cidade_inicio_nome,
+        uf_inicio,
+        cidade_termino_ibge,
+        cidade_termino_nome,
+        uf_termino,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
       RETURNING *
     `,
       [
@@ -1415,6 +1429,12 @@ export async function createMDFeDocumento(
         codigoNumerico.toString(),
         documento.status || "pendente",
         documento.observacoes,
+        primeiroCtE?.cidade_inicio_ibge || null,
+        primeiroCtE?.cidade_inicio_nome || null,
+        primeiroCtE?.uf_inicio || null,
+        primeiroCtE?.cidade_termino_ibge || null,
+        primeiroCtE?.cidade_termino_nome || null,
+        primeiroCtE?.uf_termino || null,
       ],
     );
 
@@ -1906,24 +1926,34 @@ export async function generateMDFeFiles(documentoId: string): Promise<void> {
 
     console.log("✅ Documento MDF-e encontrado:", documento.numero_mdfe);
 
-    // Simular CT-es relacionados (dados estáticos até que CT-es reais sejam criados)
-    const ctesRelacionados = [
-      {
-        id: '1',
-        numero_cte: '30028',
-        chave_acesso: '31250919660324000184570010000300281385205660',
-        placa_veiculo: 'AWQ8I09',
-        placa_reboque: 'QXE9B72', 
-        motorista_nome: 'CICERO JOSE DA SILVA',
-        valor_carga: '98000.00',
-        quantidade_carga: '35000.000',
-        produto_nome: 'LEITE CRU REFRIGERADO',
-        cidade_termino_ibge: '3132404',
-        cidade_termino_nome: 'Iraí de Minas'
-      }
-    ];
+    // Buscar CT-es vinculados ao MDF-e com todos os dados necessários
+    console.log("🔍 Buscando CT-es vinculados ao MDF-e...");
+    const ctesRelacionados = await query(`
+      SELECT 
+        c.id,
+        c.numero_cte,
+        c.chave_acesso,
+        c.placa_veiculo,
+        c.placa_reboque,
+        c.motorista_nome,
+        c.valor_carga,
+        c.quantidade_carga,
+        c.cidade_termino_ibge,
+        c.cidade_termino_nome,
+        p.descricao as produto_nome
+      FROM mdfe_cte_relacionados mcr
+      JOIN cte_documentos c ON mcr.cte_documento_id = c.id
+      LEFT JOIN cte_produtos p ON c.produto_predominante_id = p.id
+      WHERE mcr.mdfe_documento_id = $1
+      ORDER BY c.numero_cte
+    `, [documentoId]);
+
+    if (!ctesRelacionados || ctesRelacionados.length === 0) {
+      throw new Error("Nenhum CT-e vinculado encontrado para este MDF-e");
+    }
 
     console.log("📋 CT-es relacionados encontrados:", ctesRelacionados.length);
+    console.log("📋 Primeiro CT-e:", ctesRelacionados[0]);
 
     // Construir caminhos dos arquivos
     const basePath = documento.empresa_path || `uploads/fiscal/${documento.empresa_cnpj}`;
@@ -2011,6 +2041,22 @@ function generateMDFeXML(documento: any, ctesRelacionados: any[]): string {
   const primeiroCtE = ctesRelacionados[0] || {};
   const produtoPredominante = ctesRelacionados.find(cte => cte.produto_nome) || {};
 
+  // Extrair UF início e término dos CT-es
+  const ufInicio = documento.uf_inicio || 'MG';
+  const ufTermino = documento.uf_termino || 'MG';
+  const cidadeInicioIbge = documento.cidade_inicio_ibge || '3132404';
+  const cidadeInicioNome = documento.cidade_inicio_nome || 'Iraí de Minas';
+
+  // Agrupar CT-es por município de descarga
+  const municipiosDescarga = new Map<string, any[]>();
+  ctesRelacionados.forEach(cte => {
+    const chave = `${cte.cidade_termino_ibge}|${cte.cidade_termino_nome}`;
+    if (!municipiosDescarga.has(chave)) {
+      municipiosDescarga.set(chave, []);
+    }
+    municipiosDescarga.get(chave)!.push(cte);
+  });
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <MDFe xmlns="http://www.portalfiscal.inf.br/mdfe">
   <infMDFe versao="3.00" Id="MDFe${documento.chave_acesso}">
@@ -2029,16 +2075,19 @@ function generateMDFeXML(documento: any, ctesRelacionados: any[]): string {
       <tpEmis>1</tpEmis>
       <procEmi>0</procEmi>
       <verProc>1.0</verProc>
-      <UFIni>${documento.uf_inicio || 'MG'}</UFIni>
-      <UFFim>${documento.uf_termino || 'MG'}</UFFim>
+      <UFIni>${ufInicio}</UFIni>
+      <UFFim>${ufTermino}</UFFim>
       <infMunCarrega>
-        <cMunCarrega>${documento.cidade_inicio_ibge || '3132404'}</cMunCarrega>
-        <xMunCarrega>${documento.cidade_inicio_nome || 'Iraí de Minas'}</xMunCarrega>
+        <cMunCarrega>${cidadeInicioIbge}</cMunCarrega>
+        <xMunCarrega>${cidadeInicioNome}</xMunCarrega>
       </infMunCarrega>
-      <infMunDescarga>
-        <cMunDescarga>${documento.cidade_termino_ibge || '3132404'}</cMunDescarga>
-        <xMunDescarga>${documento.cidade_termino_nome || 'Iraí de Minas'}</xMunDescarga>
-      </infMunDescarga>
+${Array.from(municipiosDescarga.entries()).map(([chave, ctes]) => {
+  const [codigoIbge, nomeCidade] = chave.split('|');
+  return `      <infMunDescarga>
+        <cMunDescarga>${codigoIbge}</cMunDescarga>
+        <xMunDescarga>${nomeCidade}</xMunDescarga>
+      </infMunDescarga>`;
+}).join('\n')}
     </ide>
     <emit>
       <CNPJ>${documento.empresa_cnpj}</CNPJ>
@@ -2100,13 +2149,16 @@ function generateMDFeXML(documento: any, ctesRelacionados: any[]): string {
       </infLotacao>
     </prodPred>
     <infDoc>
-${ctesRelacionados.map(cte => `      <infMunDescarga>
-        <cMunDescarga>${cte.cidade_termino_ibge || '3132404'}</cMunDescarga>
-        <xMunDescarga>${cte.cidade_termino_nome || 'Iraí de Minas'}</xMunDescarga>
-        <infCTe>
+${Array.from(municipiosDescarga.entries()).map(([chave, ctes]) => {
+  const [codigoIbge, nomeCidade] = chave.split('|');
+  return `      <infMunDescarga>
+        <cMunDescarga>${codigoIbge}</cMunDescarga>
+        <xMunDescarga>${nomeCidade}</xMunDescarga>
+${ctes.map(cte => `        <infCTe>
           <chCTe>${cte.chave_acesso}</chCTe>
-        </infCTe>
-      </infMunDescarga>`).join('\n')}
+        </infCTe>`).join('\n')}
+      </infMunDescarga>`;
+}).join('\n')}
     </infDoc>
     <tot>
       <qCTe>${ctesRelacionados.length}</qCTe>
