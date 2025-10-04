@@ -2047,7 +2047,7 @@ function parseEnderecoMDFe(enderecoCompleto: string): {
 } {
   // Formato esperado: "LOGRADOURO, NUMERO, BAIRRO, CIDADE, UF, CEP"
   const partes = enderecoCompleto.split(',').map(p => p.trim());
-  
+
   return {
     logradouro: partes[0] || 'NAO INFORMADO',
     numero: partes[1] || 'SN',
@@ -2094,7 +2094,7 @@ async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise
   // Buscar dados completos dos veículos do primeiro CT-e
   let veiculoTracao: any = null;
   let veiculoReboque: any = null;
-  
+
   if (primeiroCtE.placa_veiculo) {
     veiculoTracao = await queryOne(`
       SELECT placa, renavam, marca, modelo, ano, tara_kg, carga_kg, uf_registro, cor
@@ -2102,7 +2102,7 @@ async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise
       WHERE placa = $1
     `, [primeiroCtE.placa_veiculo]);
   }
-  
+
   if (primeiroCtE.placa_reboque) {
     veiculoReboque = await queryOne(`
       SELECT placa, renavam, marca, modelo, ano, tara_kg, carga_kg, uf_registro, cor
@@ -2113,15 +2113,13 @@ async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise
 
   // Parsear endereço da empresa
   const enderecoEmpresa = parseEnderecoMDFe(documento.empresa_endereco || '');
-  
-  // Buscar código IBGE e CEP da cidade da empresa (removendo acentos para busca)
+
+  // Buscar código IBGE da cidade da empresa usando função helper
   let codigoMunEmpresa = '3132404'; // Padrão Iraí de Minas
   let cepCarregamento = enderecoEmpresa.cep || '00000000';
   try {
     const cidadeEmpresa = await queryOne(`
-      SELECT cod_city FROM cities 
-      WHERE LOWER(UNACCENT(name)) = LOWER(UNACCENT($1))
-      LIMIT 1
+      SELECT * FROM buscar_cidade_por_nome($1)
     `, [enderecoEmpresa.cidade]);
     if (cidadeEmpresa) {
       codigoMunEmpresa = cidadeEmpresa.cod_city;
@@ -2138,11 +2136,11 @@ async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise
 
   // Agrupar CT-es por município de descarga com busca correta do código IBGE
   const municipiosDescarga = new Map<string, any[]>();
-  
+
   for (const cte of ctesRelacionados) {
     let codigoIbge = cte.cidade_termino_ibge;
     const nomeCidade = cte.cidade_termino_nome || 'NAO INFORMADO';
-    
+
     // Se não tem código IBGE ou está inválido, buscar no banco
     if (!codigoIbge || codigoIbge === '0000000' || codigoIbge.length !== 7) {
       try {
@@ -2151,7 +2149,7 @@ async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise
           WHERE LOWER(UNACCENT(name)) = LOWER(UNACCENT($1))
           LIMIT 1
         `, [nomeCidade]);
-        
+
         if (cidadeResult) {
           codigoIbge = cidadeResult.cod_city;
           console.log(`✅ Código IBGE encontrado para ${nomeCidade}: ${codigoIbge}`);
@@ -2164,9 +2162,9 @@ async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise
         codigoIbge = '0000000';
       }
     }
-    
+
     const chave = `${codigoIbge}|${nomeCidade}`;
-    
+
     if (!municipiosDescarga.has(chave)) {
       municipiosDescarga.set(chave, []);
     }
@@ -2178,7 +2176,7 @@ async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise
   if (ctesRelacionados.length > 0) {
     const ultimoCte = ctesRelacionados[ctesRelacionados.length - 1];
     const cidadeDescarregamento = ultimoCte.cidade_termino_nome;
-    
+
     if (cidadeDescarregamento) {
       try {
         const cadastroResult = await queryOne(`
@@ -2187,7 +2185,7 @@ async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise
           AND cep IS NOT NULL
           LIMIT 1
         `, [cidadeDescarregamento]);
-        
+
         if (cadastroResult && cadastroResult.cep) {
           cepDescarregamento = cadastroResult.cep.replace(/\D/g, '');
         }
@@ -2594,7 +2592,7 @@ export async function createApoliceSeguro(
     // Validar datas
     const dataInicial = new Date(apolice.data_inicial);
     const dataFinal = new Date(apolice.data_final);
-    
+
     if (dataFinal <= dataInicial) {
       throw new Error("Data final deve ser maior que a data inicial");
     }
@@ -2627,7 +2625,7 @@ export async function createApoliceSeguro(
     // Determinar status baseado nas datas
     const hoje = new Date();
     let status = apolice.status || "ativa";
-    
+
     if (dataFinal < hoje) {
       status = "vencida";
     } else if (dataInicial > hoje) {
@@ -2701,7 +2699,7 @@ export async function updateApoliceSeguro(
       if (!empresa) {
         throw new Error("Empresa fiscal não encontrada ou inativa");
       }
-      
+
       updates.push(`empresa_id = $${paramIndex}`);
       values.push(apolice.empresa_id);
       paramIndex++;
