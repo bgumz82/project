@@ -1385,6 +1385,9 @@ export async function createMDFeDocumento(
     // SEMPRE usar código UF da empresa (não permitir override)
     const codigoUFFinal = empresa.codigo_uf || "35";
 
+    // Gerar código numérico aleatório (8 dígitos) - usado na chave de acesso
+    const codigoNumerico = Math.floor(Math.random() * 90000000) + 10000000;
+
     const result = await queryOne(
       `
       INSERT INTO mdfe_documentos (
@@ -1392,13 +1395,16 @@ export async function createMDFeDocumento(
         numero_mdfe,
         serie,
         data_emissao,
+        data_saida,
+        data_encerramento,
         codigo_uf,
         forma_emissao,
+        codigo_numerico,
         status,
         observacoes,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
       RETURNING *
     `,
       [
@@ -1406,8 +1412,11 @@ export async function createMDFeDocumento(
         numeroFinal,
         serieFinal,
         documento.data_emissao,
+        null, // data_saida
+        null, // data_encerramento
         codigoUFFinal,
         documento.forma_emissao || 1,
+        codigoNumerico.toString(),
         documento.status || "pendente",
         documento.observacoes,
       ],
