@@ -11,6 +11,7 @@ import {
   XMarkIcon,
   EyeIcon,
   DocumentArrowDownIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline'
 import {
   getCTeDocumentos,
@@ -1198,7 +1199,7 @@ export default function CTe() {
 
               // Buscar se produto já existe APENAS pela DESCRIÇÃO exata
               const produtosExistentes = await getProdutosCTe()
-              const produtoExistente = produtosExistentes.find(p => 
+              const produtoExistente = produtosExistentes.find(p =>
                 p.descricao.toLowerCase() === descricaoProduto.toLowerCase()
               )
 
@@ -1224,7 +1225,7 @@ export default function CTe() {
                   produtoIdFinal = resultadoNovoProduto.rows[0].id
                   console.log('✅ Novo produto criado com ID:', produtoIdFinal)
                   toast.success(`Produto criado: ${descricaoProduto}`)
-                  
+
                   // Atualizar lista de produtos
                   await queryClient.invalidateQueries({ queryKey: ['produtos-cte'] })
                 }
@@ -2415,10 +2416,15 @@ export default function CTe() {
                               {documento.status === 'pendente' && (
                                 <button
                                   onClick={() => handleStatusChange(documento.id, 'emitido')}
-                                  className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-800 hover:bg-green-200"
-                                  title="Emitir CT-e"
+                                  disabled={!documento.xml_gerado}
+                                  className={`${
+                                    documento.xml_gerado
+                                      ? 'text-green-600 hover:text-green-900'
+                                      : 'text-gray-400 cursor-not-allowed'
+                                  }`}
+                                  title={documento.xml_gerado ? 'Marcar como emitido' : 'Gere o XML primeiro para emitir'}
                                 >
-                                  ✓ Emitir
+                                  <CheckCircleIcon className="h-5 w-5" />
                                 </button>
                               )}
                               {(documento.status === 'emitido' || documento.status === 'pendente') && (
