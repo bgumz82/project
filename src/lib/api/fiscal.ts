@@ -1971,7 +1971,7 @@ export async function generateMDFeFiles(documentoId: string): Promise<void> {
     });
 
     // Gerar conteúdo XML do MDF-e
-    const xmlContent = generateMDFeXML(documento, ctesRelacionados);
+    const xmlContent = await generateMDFeXML(documento, ctesRelacionados);
 
     // Salvar arquivo XML fisicamente
     try {
@@ -2028,29 +2028,101 @@ export async function generateMDFeFiles(documentoId: string): Promise<void> {
   }
 }
 
+// Função auxiliar para remover hífens da placa
+function formatPlacaParaCInt(placa: string): string {
+  if (!placa) return '0001';
+  // Remove hífen e retorna apenas os números/letras finais (últimos 4 caracteres sem hífen)
+  const placaSemHifen = placa.replace(/-/g, '');
+  return placaSemHifen.substring(3); // Pega do 4º caractere em diante
+}
+
+// Função auxiliar para parsear endereço
+function parseEnderecoMDFe(enderecoCompleto: string): {
+  logradouro: string;
+  numero: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  cep: string;
+} {
+  // Formato esperado: "LOGRADOURO, NUMERO, BAIRRO, CIDADE, UF, CEP"
+  const partes = enderecoCompleto.split(',').map(p => p.trim());
+  
+  return {
+    logradouro: partes[0] || 'NAO INFORMADO',
+    numero: partes[1] || 'SN',
+    bairro: partes[2] || 'CENTRO',
+    cidade: partes[3] || 'NAO INFORMADO',
+    uf: partes[4] || 'MG',
+    cep: (partes[5] || '00000000').replace(/\D/g, '')
+  };
+}
+
 // Função para gerar conteúdo XML do MDF-e
-function generateMDFeXML(documento: any, ctesRelacionados: any[]): string {
-  const dataEmissao = new Date(documento.data_emissao).toISOString().split('T')[0];
-  const horaEmissao = new Date(documento.data_emissao).toTimeString().split(' ')[0];
+async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise<string> {
+  // Usar a data/hora atual para dhEmi (momento da geração do XML)
+  const agora = new Date();
+  const dataEmissao = agora.toISOString().split('T')[0].replace(/-/g, '').substring(2); // AAMMDD
+  const horaEmissao = agora.toTimeString().split(' ')[0]; // HH:MM:SS
+  const dhEmi = `20${dataEmissao.substring(0,2)}-${dataEmissao.substring(2,4)}-${dataEmissao.substring(4,6)}T${horaEmissao}-03:00`;
 
   // Calcular totais dos CT-es relacionados
   const totalValorCarga = ctesRelacionados.reduce((sum, cte) => sum + parseFloat(cte.valor_carga || 0), 0);
   const totalQuantidadeCarga = ctesRelacionados.reduce((sum, cte) => sum + parseFloat(cte.quantidade_carga || 0), 0);
 
-  // Pegar dados do primeiro CT-e para veículos e motorista (assumindo mesmo conjunto)
+  // Pegar dados do primeiro CT-e para veículos e motorista
   const primeiroCtE = ctesRelacionados[0] || {};
   const produtoPredominante = ctesRelacionados.find(cte => cte.produto_nome) || {};
+
+  // Buscar dados completos dos veículos do primeiro CT-e
+  let veiculoTracao: any = null;
+  let veiculoReboque: any = null;
+  
+  if (primeiroCtE.placa_veiculo) {
+    veiculoTracao = await queryOne(`
+      SELECT placa, renavam, marca, modelo, ano, tara_kg, carga_kg, uf_registro, cor
+      FROM veiculos
+      WHERE placa = $1
+    `, [primeiroCtE.placa_veiculo]);
+  }
+  
+  if (primeiroCtE.placa_reboque) {
+    veiculoReboque = await queryOne(`
+      SELECT placa, renavam, marca, modelo, ano, tara_kg, carga_kg, uf_registro, cor
+      FROM veiculos
+      WHERE placa = $1
+    `, [primeiroCtE.placa_reboque]);
+  }
+
+  // Parsear endereço da empresa
+  const enderecoEmpresa = parseEnderecoMDFe(documento.empresa_endereco || '');
+  
+  // Buscar código IBGE da cidade da empresa
+  let codigoMunEmpresa = '3132404'; // Padrão Iraí de Minas
+  try {
+    const cidadeEmpresa = await queryOne(`
+      SELECT cod_city FROM cities WHERE LOWER(name) = LOWER($1)
+    `, [enderecoEmpresa.cidade]);
+    if (cidadeEmpresa) {
+      codigoMunEmpresa = cidadeEmpresa.cod_city;
+    }
+  } catch (error) {
+    console.warn('⚠️ Não foi possível buscar código IBGE da cidade da empresa:', error);
+  }
 
   // Extrair UF início e término dos CT-es
   const ufInicio = documento.uf_inicio || 'MG';
   const ufTermino = documento.uf_termino || 'MG';
-  const cidadeInicioIbge = documento.cidade_inicio_ibge || '3132404';
-  const cidadeInicioNome = documento.cidade_inicio_nome || 'Iraí de Minas';
+  const cidadeInicioIbge = documento.cidade_inicio_ibge || codigoMunEmpresa;
+  const cidadeInicioNome = documento.cidade_inicio_nome || enderecoEmpresa.cidade;
 
-  // Agrupar CT-es por município de descarga
+  // Agrupar CT-es por município de descarga (validar código IBGE)
   const municipiosDescarga = new Map<string, any[]>();
   ctesRelacionados.forEach(cte => {
-    const chave = `${cte.cidade_termino_ibge}|${cte.cidade_termino_nome}`;
+    const codigoIbge = cte.cidade_termino_ibge || '0000000';
+    const nomeCidade = cte.cidade_termino_nome || 'NAO INFORMADO';
+    const chave = `${codigoIbge}|${nomeCidade}`;
+    
     if (!municipiosDescarga.has(chave)) {
       municipiosDescarga.set(chave, []);
     }
@@ -2071,7 +2143,7 @@ function generateMDFeXML(documento: any, ctesRelacionados: any[]): string {
       <cMDF>${documento.codigo_numerico || '00000000'}</cMDF>
       <cDV>${documento.dv}</cDV>
       <modal>1</modal>
-      <dhEmi>${dataEmissao}T${horaEmissao}-03:00</dhEmi>
+      <dhEmi>${dhEmi}</dhEmi>
       <tpEmis>1</tpEmis>
       <procEmi>0</procEmi>
       <verProc>1.0</verProc>
@@ -2090,49 +2162,49 @@ ${Array.from(municipiosDescarga.entries()).map(([chave, ctes]) => {
 }).join('\n')}
     </ide>
     <emit>
-      <CNPJ>${documento.empresa_cnpj}</CNPJ>
-      <IE>${documento.empresa_ie}</IE>
+      <CNPJ>${documento.empresa_cnpj.replace(/\D/g, '')}</CNPJ>
+      <IE>${documento.empresa_ie || 'ISENTO'}</IE>
       <xNome>${documento.empresa_razao_social}</xNome>
       <enderEmit>
-        <xLgr>Rua Exemplo</xLgr>
-        <nro>123</nro>
-        <xBairro>Centro</xBairro>
-        <cMun>3132404</cMun>
-        <xMun>Iraí de Minas</xMun>
-        <CEP>38950000</CEP>
-        <UF>MG</UF>
+        <xLgr>${enderecoEmpresa.logradouro}</xLgr>
+        <nro>${enderecoEmpresa.numero}</nro>
+        <xBairro>${enderecoEmpresa.bairro}</xBairro>
+        <cMun>${codigoMunEmpresa}</cMun>
+        <xMun>${enderecoEmpresa.cidade}</xMun>
+        <CEP>${enderecoEmpresa.cep}</CEP>
+        <UF>${enderecoEmpresa.uf}</UF>
       </enderEmit>
     </emit>
     <infModal versaoModal="3.00">
       <rodo>
         <infANTT>
-          <RNTRC>${documento.empresa_rntrc || '47424276'}</RNTRC>
+          <RNTRC>${documento.empresa_rntrc || '00000000'}</RNTRC>
           <infContratante>
-            <CNPJ>${documento.empresa_cnpj}</CNPJ>
+            <CNPJ>${documento.empresa_cnpj.replace(/\D/g, '')}</CNPJ>
           </infContratante>
         </infANTT>
         <veicTracao>
-          <cInt>${primeiroCtE.placa_veiculo ? primeiroCtE.placa_veiculo.substring(3) : '0001'}</cInt>
-          <placa>${primeiroCtE.placa_veiculo || 'ABC1234'}</placa>
-          <RENAVAM>00000000000</RENAVAM>
-          <tara>9000</tara>
-          <capKG>21000</capKG>
+          <cInt>${formatPlacaParaCInt(veiculoTracao?.placa || primeiroCtE.placa_veiculo || 'ABC1234')}</cInt>
+          <placa>${veiculoTracao?.placa || primeiroCtE.placa_veiculo || 'ABC1234'}</placa>
+          <RENAVAM>${veiculoTracao?.renavam || '00000000000'}</RENAVAM>
+          <tara>${veiculoTracao?.tara_kg || 9000}</tara>
+          <capKG>${veiculoTracao?.carga_kg || 21000}</capKG>
           ${primeiroCtE.motorista_nome ? `<condutor>
             <xNome>${primeiroCtE.motorista_nome}</xNome>
             <CPF>00000000000</CPF>
           </condutor>` : ''}
           <tpRod>01</tpRod>
           <tpCar>00</tpCar>
-          <UF>MG</UF>
+          <UF>${veiculoTracao?.uf_registro || 'MG'}</UF>
         </veicTracao>
-        ${primeiroCtE.placa_reboque ? `<veicReboque>
-          <cInt>${primeiroCtE.placa_reboque.substring(3)}</cInt>
-          <placa>${primeiroCtE.placa_reboque}</placa>
-          <RENAVAM>00000000000</RENAVAM>
-          <tara>9500</tara>
-          <capKG>35000</capKG>
+        ${veiculoReboque ? `<veicReboque>
+          <cInt>${formatPlacaParaCInt(veiculoReboque.placa)}</cInt>
+          <placa>${veiculoReboque.placa}</placa>
+          <RENAVAM>${veiculoReboque.renavam || '00000000000'}</RENAVAM>
+          <tara>${veiculoReboque.tara_kg || 9500}</tara>
+          <capKG>${veiculoReboque.carga_kg || 35000}</capKG>
           <tpCar>00</tpCar>
-          <UF>MG</UF>
+          <UF>${veiculoReboque.uf_registro || 'MG'}</UF>
         </veicReboque>` : ''}
       </rodo>
     </infModal>
@@ -2141,10 +2213,10 @@ ${Array.from(municipiosDescarga.entries()).map(([chave, ctes]) => {
       <xProd>${produtoPredominante.produto_nome || 'MERCADORIAS EM GERAL'}</xProd>
       <infLotacao>
         <infLocalCarrega>
-          <CEP>38510000</CEP>
+          <CEP>${enderecoEmpresa.cep}</CEP>
         </infLocalCarrega>
         <infLocalDescarrega>
-          <CEP>75240000</CEP>
+          <CEP>${enderecoEmpresa.cep}</CEP>
         </infLocalDescarrega>
       </infLotacao>
     </prodPred>
