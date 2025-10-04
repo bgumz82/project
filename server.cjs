@@ -1811,11 +1811,17 @@ async function createTables(client) {
           data_emissao timestamptz NOT NULL DEFAULT now(),
           data_saida timestamptz,
           data_encerramento timestamptz,
+          chave_acesso varchar(44),
           codigo_uf varchar(2),
           forma_emissao integer DEFAULT 1 CHECK (forma_emissao IN (1, 2, 3)),
+          codigo_numerico varchar(8),
+          dv varchar(1),
           status varchar(20) DEFAULT 'pendente' CHECK (status IN ('pendente', 'emitido', 'encerrado', 'cancelado', 'inutilizado')),
           observacoes text,
           xml_gerado boolean DEFAULT false,
+          xml_proc_path text,
+          xml_path text,
+          pdf_path text,
           created_at timestamptz DEFAULT now(),
           updated_at timestamptz DEFAULT now()
         )
@@ -3460,6 +3466,9 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
     const serieFinal = data.serie || empresaData.serie_padrao_mdfe || "001";
     const codigoUFFinal = data.codigo_uf || empresaData.codigo_uf || "31"; // Default para MG
 
+    // Gerar código numérico aleatório (8 dígitos) - usado na chave de acesso
+    const codigoNumerico = data.codigo_numerico || Math.floor(Math.random() * 90000000) + 10000000;
+
     // Criar o documento MDF-e
     const result = await client.query(`
       INSERT INTO mdfe_documentos (
@@ -3471,11 +3480,12 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
         data_encerramento,
         codigo_uf,
         forma_emissao,
+        codigo_numerico,
         status,
         observacoes,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
       RETURNING *
     `, [
       data.empresa_id,
@@ -3486,6 +3496,7 @@ app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
       data.data_encerramento,
       codigoUFFinal,
       data.forma_emissao || 1,
+      codigoNumerico.toString(),
       data.status || "pendente",
       data.observacoes
     ]);
