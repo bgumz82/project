@@ -2058,6 +2058,11 @@ function parseEnderecoMDFe(enderecoCompleto: string): {
   };
 }
 
+// Função auxiliar para normalizar texto removendo acentos
+function removeAccents(str: string): string {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 // Função para gerar conteúdo XML do MDF-e
 async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise<string> {
   // Usar a data/hora atual para dhEmi (momento da geração do XML)
@@ -2073,6 +2078,18 @@ async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise
   // Pegar dados do primeiro CT-e para veículos e motorista
   const primeiroCtE = ctesRelacionados[0] || {};
   const produtoPredominante = ctesRelacionados.find(cte => cte.produto_nome) || {};
+
+  // Buscar dados completos do motorista (incluindo CPF)
+  let motoristaData: any = null;
+  if (primeiroCtE.motorista_nome) {
+    motoristaData = await queryOne(`
+      SELECT nome, cpf, cnh, matricula
+      FROM funcionarios
+      WHERE nome = $1
+      ORDER BY created_at DESC
+      LIMIT 1
+    `, [primeiroCtE.motorista_nome]);
+  }
 
   // Buscar dados completos dos veículos do primeiro CT-e
   let veiculoTracao: any = null;
@@ -2097,11 +2114,14 @@ async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise
   // Parsear endereço da empresa
   const enderecoEmpresa = parseEnderecoMDFe(documento.empresa_endereco || '');
   
-  // Buscar código IBGE da cidade da empresa
+  // Buscar código IBGE e CEP da cidade da empresa (removendo acentos para busca)
   let codigoMunEmpresa = '3132404'; // Padrão Iraí de Minas
+  let cepCarregamento = enderecoEmpresa.cep || '00000000';
   try {
     const cidadeEmpresa = await queryOne(`
-      SELECT cod_city FROM cities WHERE LOWER(name) = LOWER($1)
+      SELECT cod_city FROM cities 
+      WHERE LOWER(UNACCENT(name)) = LOWER(UNACCENT($1))
+      LIMIT 1
     `, [enderecoEmpresa.cidade]);
     if (cidadeEmpresa) {
       codigoMunEmpresa = cidadeEmpresa.cod_city;
@@ -2116,18 +2136,66 @@ async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise
   const cidadeInicioIbge = documento.cidade_inicio_ibge || codigoMunEmpresa;
   const cidadeInicioNome = documento.cidade_inicio_nome || enderecoEmpresa.cidade;
 
-  // Agrupar CT-es por município de descarga (validar código IBGE)
+  // Agrupar CT-es por município de descarga com busca correta do código IBGE
   const municipiosDescarga = new Map<string, any[]>();
-  ctesRelacionados.forEach(cte => {
-    const codigoIbge = cte.cidade_termino_ibge || '0000000';
+  
+  for (const cte of ctesRelacionados) {
+    let codigoIbge = cte.cidade_termino_ibge;
     const nomeCidade = cte.cidade_termino_nome || 'NAO INFORMADO';
+    
+    // Se não tem código IBGE ou está inválido, buscar no banco
+    if (!codigoIbge || codigoIbge === '0000000' || codigoIbge.length !== 7) {
+      try {
+        const cidadeResult = await queryOne(`
+          SELECT cod_city FROM cities 
+          WHERE LOWER(UNACCENT(name)) = LOWER(UNACCENT($1))
+          LIMIT 1
+        `, [nomeCidade]);
+        
+        if (cidadeResult) {
+          codigoIbge = cidadeResult.cod_city;
+          console.log(`✅ Código IBGE encontrado para ${nomeCidade}: ${codigoIbge}`);
+        } else {
+          console.warn(`⚠️ Código IBGE não encontrado para: ${nomeCidade}`);
+          codigoIbge = '0000000';
+        }
+      } catch (error) {
+        console.error(`❌ Erro ao buscar código IBGE para ${nomeCidade}:`, error);
+        codigoIbge = '0000000';
+      }
+    }
+    
     const chave = `${codigoIbge}|${nomeCidade}`;
     
     if (!municipiosDescarga.has(chave)) {
       municipiosDescarga.set(chave, []);
     }
     municipiosDescarga.get(chave)!.push(cte);
-  });
+  }
+
+  // Buscar CEP da cidade de descarregamento (última cidade dos CT-es)
+  let cepDescarregamento = '00000000';
+  if (ctesRelacionados.length > 0) {
+    const ultimoCte = ctesRelacionados[ctesRelacionados.length - 1];
+    const cidadeDescarregamento = ultimoCte.cidade_termino_nome;
+    
+    if (cidadeDescarregamento) {
+      try {
+        const cadastroResult = await queryOne(`
+          SELECT cep FROM cadastros 
+          WHERE LOWER(UNACCENT(cidade)) = LOWER(UNACCENT($1))
+          AND cep IS NOT NULL
+          LIMIT 1
+        `, [cidadeDescarregamento]);
+        
+        if (cadastroResult && cadastroResult.cep) {
+          cepDescarregamento = cadastroResult.cep.replace(/\D/g, '');
+        }
+      } catch (error) {
+        console.warn('⚠️ Não foi possível buscar CEP de descarregamento:', error);
+      }
+    }
+  }
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <MDFe xmlns="http://www.portalfiscal.inf.br/mdfe">
@@ -2189,9 +2257,9 @@ ${Array.from(municipiosDescarga.entries()).map(([chave, ctes]) => {
           <RENAVAM>${veiculoTracao?.renavam || '00000000000'}</RENAVAM>
           <tara>${veiculoTracao?.tara_kg || 9000}</tara>
           <capKG>${veiculoTracao?.carga_kg || 21000}</capKG>
-          ${primeiroCtE.motorista_nome ? `<condutor>
-            <xNome>${primeiroCtE.motorista_nome}</xNome>
-            <CPF>00000000000</CPF>
+          ${motoristaData ? `<condutor>
+            <xNome>${motoristaData.nome}</xNome>
+            <CPF>${motoristaData.cpf.replace(/\D/g, '')}</CPF>
           </condutor>` : ''}
           <tpRod>01</tpRod>
           <tpCar>00</tpCar>
@@ -2213,10 +2281,10 @@ ${Array.from(municipiosDescarga.entries()).map(([chave, ctes]) => {
       <xProd>${produtoPredominante.produto_nome || 'MERCADORIAS EM GERAL'}</xProd>
       <infLotacao>
         <infLocalCarrega>
-          <CEP>${enderecoEmpresa.cep}</CEP>
+          <CEP>${cepCarregamento}</CEP>
         </infLocalCarrega>
         <infLocalDescarrega>
-          <CEP>${enderecoEmpresa.cep}</CEP>
+          <CEP>${cepDescarregamento}</CEP>
         </infLocalDescarrega>
       </infLotacao>
     </prodPred>
