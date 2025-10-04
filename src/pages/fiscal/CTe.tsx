@@ -2390,21 +2390,25 @@ export default function CTe() {
                                 <EyeIcon className="h-5 w-5" />
                               </button>
                             )}
-                            <button
-                              onClick={() => handleGenerateFiles(documento.id)}
-                              className="text-green-600 hover:text-green-900"
-                              title="Gerar arquivos"
-                              disabled={isGeneratingFiles}
-                            >
-                              <DocumentArrowDownIcon className="h-5 w-5" />
-                            </button>
-                            <button
-                              onClick={() => handleEdit(documento)}
-                              className="text-indigo-600 hover:text-indigo-900"
-                              title="Editar"
-                            >
-                              <PencilIcon className="h-5 w-5" />
-                            </button>
+                            {documento.status !== 'emitido' && (
+                              <>
+                                <button
+                                  onClick={() => handleGenerateFiles(documento.id)}
+                                  className="text-green-600 hover:text-green-900"
+                                  title="Gerar arquivos"
+                                  disabled={isGeneratingFiles}
+                                >
+                                  <DocumentArrowDownIcon className="h-5 w-5" />
+                                </button>
+                                <button
+                                  onClick={() => handleEdit(documento)}
+                                  className="text-indigo-600 hover:text-indigo-900"
+                                  title="Editar"
+                                >
+                                  <PencilIcon className="h-5 w-5" />
+                                </button>
+                              </>
+                            )}
 
                             {/* Status Change Buttons */}
                             <div className="flex items-center gap-1 ml-2 border-l pl-2">
