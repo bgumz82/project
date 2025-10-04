@@ -12,6 +12,7 @@ import {
   EyeIcon,
   DocumentArrowDownIcon,
   ClipboardDocumentIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline'
 import {
   getMDFeDocumentos,
@@ -166,6 +167,17 @@ export default function MDFe() {
   const handleEdit = (documento: MDFeDocumento) => {
     setSelectedDocumento(documento)
     setIsModalOpen(true)
+  }
+
+  const handleStatusChange = async (id: string, newStatus: 'pendente' | 'emitido' | 'cancelado' | 'encerrado') => {
+    try {
+      await updateMDFeDocumento(id, { status: newStatus })
+      queryClient.invalidateQueries({ queryKey: ['mdfe-documentos'] })
+      toast.success(`Status alterado para ${STATUS_LABELS[newStatus]}`)
+    } catch (error) {
+      console.error('Erro ao alterar status:', error)
+      toast.error('Erro ao alterar status do MDF-e')
+    }
   }
 
   const handleDelete = async (documento: MDFeDocumento) => {
@@ -550,21 +562,61 @@ export default function MDFe() {
                               <EyeIcon className="h-5 w-5" />
                             </button>
                           )}
-                          <button
-                            onClick={() => handleGenerateFiles(documento.id)}
-                            className="text-green-600 hover:text-green-900 mr-4"
-                            title="Gerar arquivos"
-                            disabled={isGeneratingFiles}
-                          >
-                            <DocumentArrowDownIcon className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={() => handleEdit(documento)}
-                            className="text-indigo-600 hover:text-indigo-900 mr-4"
-                            title="Editar"
-                          >
-                            <PencilIcon className="h-5 w-5" />
-                          </button>
+                          {documento.status !== 'emitido' && documento.status !== 'encerrado' && (
+                            <>
+                              <button
+                                onClick={() => handleGenerateFiles(documento.id)}
+                                className="text-green-600 hover:text-green-900 mr-4"
+                                title="Gerar arquivos"
+                                disabled={isGeneratingFiles}
+                              >
+                                <DocumentArrowDownIcon className="h-5 w-5" />
+                              </button>
+                              <button
+                                onClick={() => handleEdit(documento)}
+                                className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                title="Editar"
+                              >
+                                <PencilIcon className="h-5 w-5" />
+                              </button>
+                            </>
+                          )}
+                          {/* Status Change Buttons */}
+                          <div className="flex items-center gap-1 mr-4 border-l pl-2">
+                            {documento.status === 'pendente' && (
+                              <button
+                                onClick={() => handleStatusChange(documento.id, 'emitido')}
+                                disabled={!documento.xml_gerado}
+                                className={`${
+                                  documento.xml_gerado
+                                    ? 'text-green-600 hover:text-green-900'
+                                    : 'text-gray-400 cursor-not-allowed'
+                                }`}
+                                title={documento.xml_gerado ? 'Marcar como emitido' : 'Gere o XML primeiro para emitir'}
+                              >
+                                <CheckCircleIcon className="h-5 w-5" />
+                              </button>
+                            )}
+                            {(documento.status === 'emitido' || documento.status === 'pendente') && (
+                              <button
+                                onClick={() => handleStatusChange(documento.id, 'cancelado')}
+                                className="text-red-600 hover:text-red-900"
+                                title="Cancelar"
+                              >
+                                <XMarkIcon className="h-5 w-5" />
+                              </button>
+                            )}
+                            {documento.status === 'emitido' && (
+                              <button
+                                onClick={() => handleStatusChange(documento.id, 'encerrado')}
+                                className="text-blue-600 hover:text-blue-900"
+                                title="Encerrar"
+                              >
+                                <CheckCircleIcon className="h-5 w-5" />
+                              </button>
+                            )}
+                          </div>
+
                           <button
                             onClick={() => handleDelete(documento)}
                             className={`${
