@@ -2251,7 +2251,7 @@ ${Array.from(municipiosDescarga.entries()).map(([chave, ctes]) => {
         </infANTT>
         <veicTracao>
           <cInt>${formatPlacaParaCInt(veiculoTracao?.placa || primeiroCtE.placa_veiculo || 'ABC1234')}</cInt>
-          <placa>${(veiculoTracao?.placa || primeiroCtE.placa_veiculo || 'ABC1234').replace(/\D/g, '')}</placa>
+          <placa>${(veiculoTracao?.placa || primeiroCtE.placa_veiculo || 'ABC1234').replace(/-/g, '')}</placa>
           <RENAVAM>${veiculoTracao?.renavam || '00000000000'}</RENAVAM>
           <tara>${veiculoTracao?.tara_kg || 9000}</tara>
           <capKG>${veiculoTracao?.carga_kg || 21000}</capKG>
@@ -2265,7 +2265,7 @@ ${Array.from(municipiosDescarga.entries()).map(([chave, ctes]) => {
         </veicTracao>
         ${veiculoReboque ? `<veicReboque>
           <cInt>${formatPlacaParaCInt(veiculoReboque.placa)}</cInt>
-          <placa>${veiculoReboque.placa.replace(/\D/g, '')}</placa>
+          <placa>${veiculoReboque.placa.replace(/-/g, '')}</placa>
           <RENAVAM>${veiculoReboque.renavam || '00000000000'}</RENAVAM>
           <tara>${veiculoReboque.tara_kg || 9500}</tara>
           <capKG>${veiculoReboque.carga_kg || 35000}</capKG>
