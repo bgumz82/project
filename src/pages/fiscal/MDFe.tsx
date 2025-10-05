@@ -444,7 +444,7 @@ export default function MDFe() {
                 <table className="min-w-full divide-y divide-gray-300">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                      <th className="px-2 py-3.5 text-left text-sm font-semibold text-gray-900 w-32">
                         Número MDF-e
                       </th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
@@ -452,9 +452,6 @@ export default function MDFe() {
                       </th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                         Empresa
-                      </th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        Chave de Acesso
                       </th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                         Data Emissão
@@ -473,7 +470,7 @@ export default function MDFe() {
                   <tbody className="divide-y divide-gray-200 bg-white">
                     {paginatedDocumentos?.map((documento) => (
                       <tr key={documento.id}>
-                        <td className="px-3 py-4 text-sm">
+                        <td className="px-2 py-4 text-sm">
                           <div className="font-mono font-medium text-gray-900">
                             {documento.numero_mdfe.padStart(9, '0')}
                           </div>
@@ -500,24 +497,6 @@ export default function MDFe() {
                             <div className="font-medium">{documento.empresa?.razao_social}</div>
                             <div className="text-xs text-gray-400 font-mono">{formatCNPJ(documento.empresa?.cnpj || '')}</div>
                           </div>
-                        </td>
-                        <td className="px-3 py-4 text-sm">
-                          {documento.chave_acesso ? (
-                            <div className="group">
-                              <button
-                                onClick={() => handleCopyChaveAcesso(documento.chave_acesso!)}
-                                className="font-mono text-xs text-gray-600 hover:text-indigo-600 cursor-pointer break-all"
-                                title="Clique para copiar"
-                              >
-                                {formatChaveAcesso(documento.chave_acesso)}
-                              </button>
-                              <div className="text-xs text-gray-400 mt-1">
-                                DV: {documento.dv}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400 text-xs">Chave não gerada</span>
-                          )}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           {format(parseISO(documento.data_emissao), 'dd/MM/yyyy')}
@@ -548,91 +527,113 @@ export default function MDFe() {
                           </div>
                           {documento.xml_gerado && documento.xml_gerado_em && (
                             <div className="text-xs text-gray-400 mt-1">
-                              {format(parseISO(documento.xml_gerado_em), 'dd/MM HH:mm')}
+                              {format(parseISO(documento.xml_gerado_em), 'dd/MM/ HH:mm')}
+                            </div>
+                          )}
+                          {documento.xml_gerado && documento.xml_path && (
+                            <div className="flex space-x-1 mt-1">
+                              <a
+                                href={`/${documento.xml_path}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:text-blue-800 underline"
+                              >
+                                Ver XML
+                              </a>
+                              <a
+                                href={`/${documento.xml_path}`}
+                                download={`${documento.numero_mdfe}-mdfe.xml`}
+                                className="text-xs text-green-600 hover:text-green-800 underline"
+                              >
+                                Baixar
+                              </a>
                             </div>
                           )}
                         </td>
                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                          {documento.pdf_gerado && documento.pdf_path && (
-                            <button
-                              onClick={() => handleViewPDF(documento)}
-                              className="text-blue-600 hover:text-blue-900 mr-4"
-                              title="Visualizar PDF"
-                            >
-                              <EyeIcon className="h-5 w-5" />
-                            </button>
-                          )}
-                          {documento.status !== 'emitido' && documento.status !== 'encerrado' && (
-                            <>
+                          <div className="flex items-center justify-end gap-2">
+                            {documento.pdf_gerado && documento.pdf_path && (
                               <button
-                                onClick={() => handleGenerateFiles(documento.id)}
-                                className="text-green-600 hover:text-green-900 mr-4"
-                                title="Gerar arquivos"
-                                disabled={isGeneratingFiles}
-                              >
-                                <DocumentArrowDownIcon className="h-5 w-5" />
-                              </button>
-                              <button
-                                onClick={() => handleEdit(documento)}
-                                className="text-indigo-600 hover:text-indigo-900 mr-4"
-                                title="Editar"
-                              >
-                                <PencilIcon className="h-5 w-5" />
-                              </button>
-                            </>
-                          )}
-                          {/* Status Change Buttons */}
-                          <div className="flex items-center gap-1 mr-4 border-l pl-2">
-                            {documento.status === 'pendente' && (
-                              <button
-                                onClick={() => handleStatusChange(documento.id, 'emitido')}
-                                disabled={!documento.xml_gerado}
-                                className={`${
-                                  documento.xml_gerado
-                                    ? 'text-green-600 hover:text-green-900'
-                                    : 'text-gray-400 cursor-not-allowed'
-                                }`}
-                                title={documento.xml_gerado ? 'Marcar como emitido' : 'Gere o XML primeiro para emitir'}
-                              >
-                                <CheckCircleIcon className="h-5 w-5" />
-                              </button>
-                            )}
-                            {(documento.status === 'emitido' || documento.status === 'pendente') && (
-                              <button
-                                onClick={() => handleStatusChange(documento.id, 'cancelado')}
-                                className="text-red-600 hover:text-red-900"
-                                title="Cancelar"
-                              >
-                                <XMarkIcon className="h-5 w-5" />
-                              </button>
-                            )}
-                            {documento.status === 'emitido' && (
-                              <button
-                                onClick={() => handleStatusChange(documento.id, 'encerrado')}
+                                onClick={() => handleViewPDF(documento)}
                                 className="text-blue-600 hover:text-blue-900"
-                                title="Encerrar"
+                                title="Visualizar PDF"
                               >
-                                <CheckCircleIcon className="h-5 w-5" />
+                                <EyeIcon className="h-5 w-5" />
                               </button>
                             )}
-                          </div>
+                            {documento.status !== 'emitido' && documento.status !== 'encerrado' && (
+                              <>
+                                <button
+                                  onClick={() => handleGenerateFiles(documento.id)}
+                                  className="text-green-600 hover:text-green-900"
+                                  title="Gerar arquivos"
+                                  disabled={isGeneratingFiles}
+                                >
+                                  <DocumentArrowDownIcon className="h-5 w-5" />
+                                </button>
+                                <button
+                                  onClick={() => handleEdit(documento)}
+                                  className="text-indigo-600 hover:text-indigo-900"
+                                  title="Editar"
+                                >
+                                  <PencilIcon className="h-5 w-5" />
+                                </button>
+                              </>
+                            )}
 
-                          <button
-                            onClick={() => handleDelete(documento)}
-                            className={`${
-                              documento.status === 'emitido' || documento.status === 'encerrado'
-                                ? 'text-gray-400 cursor-not-allowed'
-                                : 'text-red-600 hover:text-red-900'
-                            }`}
-                            title={
-                              documento.status === 'emitido' || documento.status === 'encerrado'
-                                ? `Não é possível excluir MDF-e ${documento.numero_mdfe.padStart(9, '0')} pois está ${documento.status}`
-                                : 'Excluir'
-                            }
-                            disabled={documento.status === 'emitido' || documento.status === 'encerrado'}
-                          >
-                            <TrashIcon className="h-5 w-5" />
-                          </button>
+                            {/* Status Change Buttons */}
+                            <div className="flex items-center gap-1 ml-2 border-l pl-2">
+                              {documento.status === 'pendente' && (
+                                <button
+                                  onClick={() => handleStatusChange(documento.id, 'emitido')}
+                                  disabled={!documento.xml_gerado}
+                                  className={`${
+                                    documento.xml_gerado
+                                      ? 'text-green-600 hover:text-green-900'
+                                      : 'text-gray-400 cursor-not-allowed'
+                                  }`}
+                                  title={documento.xml_gerado ? 'Marcar como emitido' : 'Gere o XML primeiro para emitir'}
+                                >
+                                  <CheckCircleIcon className="h-5 w-5" />
+                                </button>
+                              )}
+                              {(documento.status === 'emitido' || documento.status === 'pendente') && (
+                                <button
+                                  onClick={() => handleStatusChange(documento.id, 'cancelado')}
+                                  className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-800 hover:bg-red-200"
+                                  title="Cancelar MDF-e"
+                                >
+                                  ❌
+                                </button>
+                              )}
+                              {(documento.status === 'cancelado' || documento.status === 'emitido') && (
+                                <button
+                                  onClick={() => handleStatusChange(documento.id, 'pendente')}
+                                  className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                                  title="Marcar como pendente"
+                                >
+                                  ⚠️
+                                </button>
+                              )}
+                              {documento.status === 'emitido' && (
+                                <button
+                                  onClick={() => handleStatusChange(documento.id, 'encerrado')}
+                                  className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800 hover:bg-blue-200"
+                                  title="Encerrar MDF-e"
+                                >
+                                  ✅
+                                </button>
+                              )}
+                            </div>
+
+                            <button
+                              onClick={() => handleDelete(documento)}
+                              className="text-red-600 hover:text-red-900 ml-2"
+                              title="Excluir"
+                            >
+                              <TrashIcon className="h-5 w-5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
