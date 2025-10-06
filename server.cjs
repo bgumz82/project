@@ -3369,6 +3369,105 @@ app.delete('/api/mdfe-documentos/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Rota para verificar arquivos de MDF-es em aguardando e atualizar automaticamente
+app.post('/api/mdfe-documentos/verificar-arquivos', authenticateToken, async (req, res) => {
+  console.log('🔍 Verificando arquivos de MDF-es em aguardando...');
+  console.log('👤 Requisição do usuário:', req.user.email);
+  
+  let client;
+  
+  try {
+    const userId = req.user.id;
+    
+    // Buscar configuração de banco do usuário
+    const userConfigResult = await mainPool.query(`
+      SELECT dc.*
+      FROM usuarios u
+      JOIN database_configurations dc ON u.database_config_id = dc.id
+      WHERE u.id = $1 AND dc.ativo = true
+    `, [userId]);
+    
+    if (userConfigResult.rows.length === 0) {
+      console.log('⚠️ Usuário sem configuração específica, usando pool padrão');
+      client = await pool.connect();
+    } else {
+      const dbConfig = userConfigResult.rows[0];
+      console.log('🔗 Conectando ao banco do usuário:', dbConfig.nome_empresa);
+      
+      const userPool = new Pool({
+        host: dbConfig.host,
+        port: dbConfig.port,
+        database: dbConfig.database_name,
+        user: dbConfig.username,
+        password: dbConfig.password,
+        ssl: dbConfig.ssl_enabled ? { rejectUnauthorized: false } : false,
+        max: dbConfig.max_connections || 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: (dbConfig.timeout_seconds || 30) * 1000,
+      });
+      
+      client = await userPool.connect();
+    }
+    
+    // Buscar todos os MDF-es em status "aguardando"
+    const result = await client.query(`
+      SELECT m.id, m.chave_acesso, e.path_arquivos
+      FROM mdfe_documentos m
+      JOIN empresas_fiscais e ON m.empresa_id = e.id
+      WHERE m.status = 'aguardando' AND m.chave_acesso IS NOT NULL
+    `);
+    
+    const fs = require('fs');
+    const path = require('path');
+    let atualizados = 0;
+    
+    for (const mdfe of result.rows) {
+      const xmlProcPath = path.join(mdfe.path_arquivos, 'mdfe', `${mdfe.chave_acesso}-procMDFe.xml`);
+      const pdfPath = path.join(mdfe.path_arquivos, 'mdfe', `${mdfe.chave_acesso}-damdfe.pdf`);
+      
+      const xmlExists = fs.existsSync(xmlProcPath);
+      const pdfExists = fs.existsSync(pdfPath);
+      
+      if (xmlExists && pdfExists) {
+        console.log(`✅ Arquivos encontrados para MDF-e ${mdfe.chave_acesso} - Atualizando para "emitido"`);
+        
+        await client.query(`
+          UPDATE mdfe_documentos
+          SET 
+            status = 'emitido',
+            xml_proc_path = $1,
+            pdf_path = $2,
+            pdf_gerado = true,
+            pdf_gerado_em = NOW(),
+            updated_at = NOW()
+          WHERE id = $3
+        `, [xmlProcPath, pdfPath, mdfe.id]);
+        
+        atualizados++;
+      }
+    }
+    
+    console.log(`📊 Verificação concluída: ${atualizados} MDF-e(s) atualizado(s)`);
+    
+    res.json({
+      message: `Verificação concluída: ${atualizados} documento(s) atualizado(s)`,
+      atualizados,
+      total: result.rows.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao verificar arquivos:', error);
+    res.status(500).json({
+      error: 'Erro ao verificar arquivos',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
 // Rota para atualizar status do MDF-e com verificação de arquivos
 app.put('/api/mdfe-documentos/:id/status', authenticateToken, async (req, res) => {
   const { id } = req.params;

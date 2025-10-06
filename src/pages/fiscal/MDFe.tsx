@@ -20,6 +20,7 @@ import {
   updateMDFeDocumento,
   deleteMDFeDocumento,
   generateMDFeFiles,
+  verificarArquivosMDFe,
   getEmpresasFiscais,
   getCTeEmitidosParaMDFe,
   formatCNPJ,
@@ -197,9 +198,13 @@ export default function MDFe() {
   }
 
   const handleViewPDF = (documento: MDFeDocumento) => {
-    if (documento.pdf_path && documento.pdf_gerado) {
-      // Abrir PDF em nova aba
+    // Tentar abrir o PDF se o path existir
+    if (documento.pdf_path) {
       window.open(documento.pdf_path, '_blank')
+    } else if (documento.chave_acesso && documento.empresa?.cnpj) {
+      // Se não tiver pdf_path mas tiver chave de acesso e CNPJ, construir o caminho
+      const pdfPath = `uploads/fiscal/${documento.empresa.cnpj}/mdfe/${documento.chave_acesso}-damdfe.pdf`
+      window.open(pdfPath, '_blank')
     } else {
       toast.error('PDF não disponível para este documento')
     }
@@ -308,10 +313,22 @@ export default function MDFe() {
           </div>
           <div className="flex space-x-2">
             <button
-              onClick={() => {
-                console.log('🔄 Atualizando lista de MDF-e manualmente')
-                queryClient.invalidateQueries({ queryKey: ['mdfe-documentos'] })
-                toast.success('Lista de MDF-e atualizada!')
+              onClick={async () => {
+                console.log('🔄 Verificando arquivos e atualizando lista de MDF-e')
+                try {
+                  const result = await verificarArquivosMDFe()
+                  queryClient.invalidateQueries({ queryKey: ['mdfe-documentos'] })
+                  
+                  if (result.atualizados > 0) {
+                    toast.success(`${result.atualizados} documento(s) atualizado(s) para "Emitido"`)
+                  } else {
+                    toast.success('Lista atualizada. Nenhum arquivo novo encontrado.')
+                  }
+                } catch (error) {
+                  console.error('Erro ao verificar arquivos:', error)
+                  toast.error('Erro ao verificar arquivos')
+                  queryClient.invalidateQueries({ queryKey: ['mdfe-documentos'] })
+                }
               }}
               className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
@@ -554,11 +571,13 @@ export default function MDFe() {
                         </td>
                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                           <div className="flex items-center justify-end gap-2">
-                            {documento.pdf_gerado && documento.pdf_path && (
+                            {((documento.pdf_gerado && documento.pdf_path) || 
+                              (documento.status === 'emitido' && documento.chave_acesso) ||
+                              (documento.status === 'aguardando' && documento.chave_acesso)) && (
                               <button
                                 onClick={() => handleViewPDF(documento)}
                                 className="text-blue-600 hover:text-blue-900"
-                                title="Visualizar PDF"
+                                title="Visualizar PDF (DAMDFE)"
                               >
                                 <EyeIcon className="h-5 w-5" />
                               </button>

@@ -170,7 +170,7 @@ export interface MDFeDocumento {
   forma_emissao: number;
   codigo_numerico: string | null;
   dv: string | null;
-  status: "pendente" | "emitido" | "cancelado" | "encerrado";
+  status: "pendente" | "aguardando" | "emitido" | "cancelado" | "encerrado";
   observacoes: string | null;
   xml_proc_path: string | null;
   xml_path: string | null;
@@ -199,7 +199,7 @@ export interface MDFeDocumentoCreate {
   data_emissao: string;
   codigo_uf?: string;
   forma_emissao?: number;
-  status?: "pendente" | "emitido" | "cancelado" | "encerrado";
+  status?: "pendente" | "aguardando" | "emitido" | "cancelado" | "encerrado";
   observacoes?: string | null;
   // CT-es relacionados
   cte_ids?: string[];
@@ -1592,6 +1592,32 @@ export async function updateMDFeDocumento(
     return result;
   } catch (error) {
     console.error("❌ Erro ao atualizar documento MDF-e:", error);
+    throw error;
+  }
+}
+
+export async function verificarArquivosMDFe(): Promise<{ atualizados: number; total: number; message: string }> {
+  try {
+    console.log("🔍 Verificando arquivos de MDF-es em aguardando...");
+
+    const response = await fetch('/api/mdfe-documentos/verificar-arquivos', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erro ao verificar arquivos');
+    }
+
+    const result = await response.json();
+    console.log("✅ Verificação concluída:", result);
+    return result;
+  } catch (error) {
+    console.error("❌ Erro ao verificar arquivos:", error);
     throw error;
   }
 }
