@@ -20,11 +20,15 @@ localPort = 5173
 externalPort = 8000
 exposeLocalhost = true
 
+[[ports]]
+localPort = 41505
+externalPort = 3000
+
 [agent]
 expertMode = true
 
 [workflows]
-runButton = "Project"
+runButton = "Start Application"
 
 [[workflows.workflow]]
 name = "Run"
@@ -70,3 +74,16 @@ args = "node server.cjs"
 
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow]]
+name = "Start Application"
+author = 46653913
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pkill -f \"vite|node.*server.cjs\" || true"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev & node server.cjs"

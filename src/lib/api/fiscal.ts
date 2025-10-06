@@ -1481,7 +1481,36 @@ export async function updateMDFeDocumento(
   try {
     console.log("📝 Atualizando documento MDF-e:", id, documento);
 
-    // Construir query dinamicamente
+    // Se estiver atualizando apenas o status, usar endpoint específico
+    const keys = Object.keys(documento);
+    if (keys.length === 1 && keys[0] === 'status') {
+      const response = await fetch(`/api/mdfe-documentos/${id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
+        },
+        body: JSON.stringify({ status: documento.status })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao atualizar status do MDF-e');
+      }
+
+      const result = await response.json();
+      console.log("✅ Status atualizado:", result.status);
+      
+      // Buscar documento atualizado
+      const mdfeDocumentos = await getMDFeDocumentos();
+      const updatedDoc = mdfeDocumentos.find((doc: MDFeDocumento) => doc.id === id);
+      if (!updatedDoc) {
+        throw new Error("Documento não encontrado após atualização");
+      }
+      return updatedDoc;
+    }
+
+    // Atualização normal via query
     const updates: string[] = [];
     const values: any[] = [];
     let paramIndex = 1;

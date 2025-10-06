@@ -30,6 +30,7 @@ import {
 
 const STATUS_LABELS = {
   pendente: 'Pendente',
+  aguardando: 'Aguardando Arquivos',
   emitido: 'Emitido',
   cancelado: 'Cancelado',
   encerrado: 'Encerrado'
@@ -37,6 +38,7 @@ const STATUS_LABELS = {
 
 const STATUS_COLORS = {
   pendente: 'bg-yellow-100 text-yellow-800',
+  aguardando: 'bg-orange-100 text-orange-800',
   emitido: 'bg-green-100 text-green-800',
   cancelado: 'bg-red-100 text-red-800',
   encerrado: 'bg-blue-100 text-blue-800'
@@ -169,7 +171,7 @@ export default function MDFe() {
     setIsModalOpen(true)
   }
 
-  const handleStatusChange = async (id: string, newStatus: 'pendente' | 'emitido' | 'cancelado' | 'encerrado') => {
+  const handleStatusChange = async (id: string, newStatus: 'pendente' | 'aguardando' | 'emitido' | 'cancelado' | 'encerrado') => {
     try {
       await updateMDFeDocumento(id, { status: newStatus })
       queryClient.invalidateQueries({ queryKey: ['mdfe-documentos'] })
@@ -585,14 +587,14 @@ export default function MDFe() {
                             <div className="flex items-center gap-1 ml-2 border-l pl-2">
                               {documento.status === 'pendente' && (
                                 <button
-                                  onClick={() => handleStatusChange(documento.id, 'emitido')}
+                                  onClick={() => handleStatusChange(documento.id, 'aguardando')}
                                   disabled={!documento.xml_gerado}
                                   className={`${
                                     documento.xml_gerado
-                                      ? 'text-green-600 hover:text-green-900'
+                                      ? 'text-orange-600 hover:text-orange-900'
                                       : 'text-gray-400 cursor-not-allowed'
                                   }`}
-                                  title={documento.xml_gerado ? 'Marcar como emitido' : 'Gere o XML primeiro para emitir'}
+                                  title={documento.xml_gerado ? 'Aguardar arquivos do emissor' : 'Gere o XML primeiro para emitir'}
                                 >
                                   <CheckCircleIcon className="h-5 w-5" />
                                 </button>

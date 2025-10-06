@@ -3369,6 +3369,130 @@ app.delete('/api/mdfe-documentos/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Rota para atualizar status do MDF-e com verificação de arquivos
+app.put('/api/mdfe-documentos/:id/status', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  console.log(`📝 Atualizando status do MDF-e ${id} para: ${status}`);
+  console.log('👤 Requisição do usuário:', req.user.email);
+
+  let client;
+
+  try {
+    const userId = req.user.id;
+
+    // Buscar configuração de banco do usuário
+    const userConfigResult = await mainPool.query(`
+      SELECT dc.*
+      FROM usuarios u
+      JOIN database_configurations dc ON u.database_config_id = dc.id
+      WHERE u.id = $1 AND dc.ativo = true
+    `, [userId]);
+
+    if (userConfigResult.rows.length === 0) {
+      console.log('⚠️ Usuário sem configuração específica, usando pool padrão');
+      client = await pool.connect();
+    } else {
+      const dbConfig = userConfigResult.rows[0];
+      console.log('🔗 Conectando ao banco do usuário:', dbConfig.nome_empresa);
+
+      const userPool = new Pool({
+        host: dbConfig.host,
+        port: dbConfig.port,
+        database: dbConfig.database_name,
+        user: dbConfig.username,
+        password: dbConfig.password,
+      });
+
+      client = await userPool.connect();
+    }
+
+    // Buscar documento MDF-e com informações da empresa
+    const mdfeResult = await client.query(`
+      SELECT m.*, e.path_arquivos, e.cnpj
+      FROM mdfe_documentos m
+      JOIN empresas_fiscais e ON m.empresa_id = e.id
+      WHERE m.id = $1
+    `, [id]);
+
+    if (mdfeResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Documento MDF-e não encontrado' });
+    }
+
+    const mdfe = mdfeResult.rows[0];
+    let finalStatus = status;
+
+    // Se o status for "aguardando", verificar se os arquivos existem
+    if (status === 'aguardando' && mdfe.chave_acesso) {
+      const fs = require('fs');
+      const path = require('path');
+      
+      // Caminhos dos arquivos esperados
+      const xmlProcPath = path.join(mdfe.path_arquivos, 'mdfe', `${mdfe.chave_acesso}-procMDFe.xml`);
+      const pdfPath = path.join(mdfe.path_arquivos, 'mdfe', `${mdfe.chave_acesso}-damdfe.pdf`);
+
+      console.log('🔍 Verificando arquivos:');
+      console.log('  XML Proc:', xmlProcPath);
+      console.log('  PDF:', pdfPath);
+
+      const xmlExists = fs.existsSync(xmlProcPath);
+      const pdfExists = fs.existsSync(pdfPath);
+
+      console.log(`  XML existe: ${xmlExists}`);
+      console.log(`  PDF existe: ${pdfExists}`);
+
+      // Se ambos arquivos existirem, mudar diretamente para "emitido"
+      if (xmlExists && pdfExists) {
+        console.log('✅ Ambos arquivos encontrados! Mudando status para "emitido"');
+        finalStatus = 'emitido';
+        
+        // Atualizar os paths dos arquivos no banco
+        await client.query(`
+          UPDATE mdfe_documentos
+          SET 
+            status = $1,
+            xml_proc_path = $2,
+            pdf_path = $3,
+            updated_at = NOW()
+          WHERE id = $4
+        `, [finalStatus, xmlProcPath, pdfPath, id]);
+      } else {
+        console.log('⏳ Arquivos ainda não encontrados. Status permanece "aguardando"');
+        await client.query(`
+          UPDATE mdfe_documentos
+          SET status = $1, updated_at = NOW()
+          WHERE id = $2
+        `, [finalStatus, id]);
+      }
+    } else {
+      // Atualização normal de status
+      await client.query(`
+        UPDATE mdfe_documentos
+        SET status = $1, updated_at = NOW()
+        WHERE id = $2
+      `, [finalStatus, id]);
+    }
+
+    console.log(`✅ Status atualizado para: ${finalStatus}`);
+
+    res.json({ 
+      message: `Status atualizado para ${finalStatus}`,
+      status: finalStatus 
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao atualizar status do MDF-e:', error);
+    res.status(500).json({
+      error: 'Erro ao atualizar status do MDF-e',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
 // Rota para criar documento MDF-e - USAR BANCO DO USUÁRIO
 app.post('/api/mdfe-documentos', authenticateToken, async (req, res) => {
   const data = req.body;
