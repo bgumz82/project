@@ -170,7 +170,7 @@ export interface MDFeDocumento {
   forma_emissao: number;
   codigo_numerico: string | null;
   dv: string | null;
-  status: "pendente" | "emitido" | "cancelado" | "encerrado";
+  status: "pendente" | "aguardando" | "emitido" | "cancelado" | "encerrado";
   observacoes: string | null;
   xml_proc_path: string | null;
   xml_path: string | null;
@@ -199,7 +199,7 @@ export interface MDFeDocumentoCreate {
   data_emissao: string;
   codigo_uf?: string;
   forma_emissao?: number;
-  status?: "pendente" | "emitido" | "cancelado" | "encerrado";
+  status?: "pendente" | "aguardando" | "emitido" | "cancelado" | "encerrado";
   observacoes?: string | null;
   // CT-es relacionados
   cte_ids?: string[];
@@ -2006,12 +2006,13 @@ export async function generateMDFeFiles(documentoId: string): Promise<void> {
       console.log("📄 Conteúdo XML gerado:", xmlContent.substring(0, 200) + "...");
     }
 
-    // Atualizar status dos arquivos no banco
+    // Atualizar status dos arquivos no banco e mudar status para "aguardando"
     await query(`
       UPDATE mdfe_documentos 
       SET xml_path = $1, pdf_path = $2, xml_proc_path = $3,
           xml_gerado = true, pdf_gerado = false,
           xml_gerado_em = NOW(), pdf_gerado_em = NULL,
+          status = 'aguardando',
           updated_at = NOW()
       WHERE id = $4
     `, [xmlPath, pdfPath, xmlProcPath, documentoId]);
@@ -2020,7 +2021,8 @@ export async function generateMDFeFiles(documentoId: string): Promise<void> {
       xml: xmlPath,
       pdf: pdfPath,
       xmlProc: xmlProcPath,
-      xmlGerado: true
+      xmlGerado: true,
+      status: 'aguardando'
     });
 
   } catch (error) {

@@ -30,6 +30,7 @@ import {
 
 const STATUS_LABELS = {
   pendente: 'Pendente',
+  aguardando: 'Aguardando',
   emitido: 'Emitido',
   cancelado: 'Cancelado',
   encerrado: 'Encerrado'
@@ -37,6 +38,7 @@ const STATUS_LABELS = {
 
 const STATUS_COLORS = {
   pendente: 'bg-yellow-100 text-yellow-800',
+  aguardando: 'bg-orange-100 text-orange-800',
   emitido: 'bg-green-100 text-green-800',
   cancelado: 'bg-red-100 text-red-800',
   encerrado: 'bg-blue-100 text-blue-800'
@@ -45,7 +47,7 @@ const STATUS_COLORS = {
 export default function MDFe() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedDocumento, setSelectedDocumento] = useState<MDFeDocumento | null>(null)
-  const [filterStatus, setFilterStatus] = useState<'todos' | 'pendente' | 'emitido' | 'cancelado' | 'encerrado'>('todos')
+  const [filterStatus, setFilterStatus] = useState<'todos' | 'pendente' | 'aguardando' | 'emitido' | 'cancelado' | 'encerrado'>('todos')
   const [selectedCTes, setSelectedCTes] = useState<string[]>([])
   const [showCTeSelection, setShowCTeSelection] = useState(false)
   const [isGeneratingFiles, setIsGeneratingFiles] = useState(false)
@@ -222,9 +224,17 @@ export default function MDFe() {
 
       // Chama a função para gerar os arquivos
       await generateMDFeFiles(id)
+      
+      // Aguardar um pouco para os arquivos serem salvos
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Importar e executar verificação de arquivos
+      const { checkMDFeFilesAndUpdateStatus } = await import('@/lib/api/fiscal-file-checker')
+      await checkMDFeFilesAndUpdateStatus(id)
+      
       // Invalida a query para atualizar a lista de documentos com os novos status
       queryClient.invalidateQueries({ queryKey: ['mdfe-documentos'] })
-      toast.success('Arquivos XML e PDF gerados com sucesso!')
+      toast.success('Arquivos gerados! Status: Aguardando confirmação dos arquivos...')
     } catch (error) {
       console.error('❌ Erro ao gerar arquivos MDF-e:', error)
       console.error('❌ Detalhes do erro:', {
@@ -345,6 +355,7 @@ export default function MDFe() {
               >
                 <option value="todos">Todos</option>
                 <option value="pendente">Pendentes</option>
+                <option value="aguardando">Aguardando</option>
                 <option value="emitido">Emitidos</option>
                 <option value="encerrado">Encerrados</option>
                 <option value="cancelado">Cancelados</option>
@@ -571,33 +582,30 @@ export default function MDFe() {
                                 >
                                   <DocumentArrowDownIcon className="h-5 w-5" />
                                 </button>
-                                <button
-                                  onClick={() => handleEdit(documento)}
-                                  className="text-indigo-600 hover:text-indigo-900"
-                                  title="Editar"
-                                >
-                                  <PencilIcon className="h-5 w-5" />
-                                </button>
+                                {documento.status !== 'aguardando' && (
+                                  <button
+                                    onClick={() => handleEdit(documento)}
+                                    className="text-indigo-600 hover:text-indigo-900"
+                                    title="Editar"
+                                  >
+                                    <PencilIcon className="h-5 w-5" />
+                                  </button>
+                                )}
                               </>
                             )}
 
                             {/* Status Change Buttons */}
                             <div className="flex items-center gap-1 ml-2 border-l pl-2">
-                              {documento.status === 'pendente' && (
+                              {documento.status === 'aguardando' && (
                                 <button
                                   onClick={() => handleStatusChange(documento.id, 'emitido')}
-                                  disabled={!documento.xml_gerado}
-                                  className={`${
-                                    documento.xml_gerado
-                                      ? 'text-green-600 hover:text-green-900'
-                                      : 'text-gray-400 cursor-not-allowed'
-                                  }`}
-                                  title={documento.xml_gerado ? 'Marcar como emitido' : 'Gere o XML primeiro para emitir'}
+                                  className="text-green-600 hover:text-green-900"
+                                  title="Marcar como emitido"
                                 >
                                   <CheckCircleIcon className="h-5 w-5" />
                                 </button>
                               )}
-                              {(documento.status === 'emitido' || documento.status === 'pendente') && (
+                              {(documento.status === 'emitido' || documento.status === 'pendente' || documento.status === 'aguardando') && (
                                 <button
                                   onClick={() => handleStatusChange(documento.id, 'cancelado')}
                                   className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-800 hover:bg-red-200"
@@ -606,7 +614,7 @@ export default function MDFe() {
                                   ❌
                                 </button>
                               )}
-                              {(documento.status === 'cancelado' || documento.status === 'emitido') && (
+                              {(documento.status === 'cancelado' || documento.status === 'emitido' || documento.status === 'aguardando') && (
                                 <button
                                   onClick={() => handleStatusChange(documento.id, 'pendente')}
                                   className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
@@ -815,6 +823,7 @@ export default function MDFe() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   >
                     <option value="pendente">Pendente</option>
+                    <option value="aguardando">Aguardando</option>
                     <option value="emitido">Emitido</option>
                     <option value="encerrado">Encerrado</option>
                     <option value="cancelado">Cancelado</option>
