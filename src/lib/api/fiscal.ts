@@ -1957,12 +1957,12 @@ export async function generateMDFeFiles(documentoId: string): Promise<void> {
 
     // Construir caminhos dos arquivos
     const basePath = documento.empresa_path || `uploads/fiscal/${documento.empresa_cnpj}`;
-    const fileName = `${documento.chave_acesso}-mdfe`;
+    const chaveAcesso = documento.chave_acesso;
 
     // Estrutura de pastas: {empresa_path}/mdfe/
-    const xmlPath = `${basePath}/mdfe/${fileName}.xml`;
-    const pdfPath = `${basePath}/mdfe/${fileName}-damdfe.pdf`;
-    const xmlProcPath = `${basePath}/mdfe/${fileName}-procMDFe.xml`;
+    const xmlPath = `${basePath}/mdfe/${chaveAcesso}-mdfe.xml`;
+    const pdfPath = `${basePath}/mdfe/${chaveAcesso}-damdfe.pdf`;
+    const xmlProcPath = `${basePath}/mdfe/${chaveAcesso}-procMDFe.xml`;
 
     console.log("📁 Caminhos dos arquivos:", {
       xml: xmlPath,
@@ -1975,7 +1975,8 @@ export async function generateMDFeFiles(documentoId: string): Promise<void> {
 
     // Salvar arquivo XML fisicamente
     try {
-      const fullXmlPath = `${basePath}/mdfe/${fileName}.xml`;
+      const xmlFileName = `${chaveAcesso}-mdfe.xml`;
+      const fullXmlPath = `${basePath}/mdfe/${xmlFileName}`;
 
       console.log("💾 Salvando arquivo XML...");
       console.log("📁 Salvando arquivo em:", fullXmlPath);
@@ -1987,7 +1988,7 @@ export async function generateMDFeFiles(documentoId: string): Promise<void> {
         body: JSON.stringify({
           content: xmlContent,
           path: fullXmlPath,
-          filename: fileName + '.xml'
+          filename: xmlFileName
         })
       });
 
