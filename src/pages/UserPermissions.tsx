@@ -155,7 +155,7 @@ export default function UserPermissions() {
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             >
               <option value="">Todos os usuários</option>
-              {users?.map((user) => (
+              {users?.map((user: any) => (
                 <option key={user.id} value={user.id}>
                   {user.nome} ({user.email})
                 </option>

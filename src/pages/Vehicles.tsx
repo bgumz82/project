@@ -380,7 +380,7 @@ export default function Vehicles() {
                           {vehicle.placa}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {TIPO_LABELS[vehicle.tipo] || vehicle.tipo}
+                          {TIPO_LABELS[vehicle.tipo as keyof typeof TIPO_LABELS] || vehicle.tipo}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           <div>

@@ -197,9 +197,6 @@ export default function RegistrosANTT() {
     setCurrentPage(1)
   }, [filterStatus, filterUF, filterEmpresaProprietario, searchPlaca, searchRazaoSocial, searchCNPJ, searchANTT, itemsPerPage])
 
-  // Obter UFs únicas para o filtro
-  const ufsUnicas = [...new Set(registros?.map(r => r.uf_registro) || [])].sort()
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
