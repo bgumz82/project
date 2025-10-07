@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // Helper function for queries
-export async function query<T = any>(text: string, params: any[] = [], useMainDb: boolean = false): Promise<any[]> {
+export async function query(text: string, params: any[] = [], useMainDb: boolean = false): Promise<any[]> {
   try {
     const endpoint = useMainDb ? '/api/db/query-main' : '/api/db/query'
     console.log('🔍 Executando query:', text)
@@ -56,9 +56,9 @@ export async function query<T = any>(text: string, params: any[] = [], useMainDb
 }
 
 // Get single row or null
-export async function queryOne<T = any>(text: string, params?: any[], useMainDatabase?: boolean): Promise<T | null> {
+export async function queryOne(text: string, params?: any[], useMainDatabase?: boolean): Promise<any | null> {
   try {
-    const rows = await query<T>(text, params, useMainDatabase)
+    const rows = await query(text, params, useMainDatabase)
     return rows[0] || null
   } catch (error) {
     console.error('Erro na consulta ao banco de dados:', error)
