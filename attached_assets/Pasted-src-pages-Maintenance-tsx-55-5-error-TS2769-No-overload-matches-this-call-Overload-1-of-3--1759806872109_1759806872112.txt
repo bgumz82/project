@@ -1,0 +1,54 @@
+src/pages/Maintenance.tsx:55:5 - error TS2769: No overload matches this call.
+  Overload 1 of 3, '(options: DefinedInitialDataOptions<unknown, Error, unknown, (string | number)[]>, queryClient?: QueryClient | undefined): DefinedUseQueryResult<unknown, Error>', gave the following error.
+    Object literal may only specify known properties, and 'keepPreviousData' does not exist in type 'DefinedInitialDataOptions<unknown, Error, unknown, (string | number)[]>'.
+  Overload 2 of 3, '(options: UndefinedInitialDataOptions<MaintenancesResponse, Error, MaintenancesResponse, (string | number)[]>, queryClient?: QueryClient | undefined): UseQueryResult<...>', gave the following error.
+    Object literal may only specify known properties, and 'keepPreviousData' does not exist in type 'UndefinedInitialDataOptions<MaintenancesResponse, Error, MaintenancesResponse, (string | number)[]>'.
+  Overload 3 of 3, '(options: UseQueryOptions<MaintenancesResponse, Error, MaintenancesResponse, (string | number)[]>, queryClient?: QueryClient | undefined): UseQueryResult<...>', gave the following error.
+    Object literal may only specify known properties, and 'keepPreviousData' does not exist in type 'UseQueryOptions<MaintenancesResponse, Error, MaintenancesResponse, (string | number)[]>'.
+
+55     keepPreviousData: true
+       ~~~~~~~~~~~~~~~~
+
+
+src/pages/Maintenance.tsx:169:42 - error TS2339: Property 'maintenances' does not exist on type '{}'.
+
+169   const maintenances = maintenancesData?.maintenances || []
+                                             ~~~~~~~~~~~~
+
+src/pages/Maintenance.tsx:170:35 - error TS2339: Property 'total' does not exist on type '{}'.
+
+170   const total = maintenancesData?.total || 0
+                                      ~~~~~
+
+src/pages/Maintenance.tsx:171:40 - error TS2339: Property 'totalPages' does not exist on type '{}'.
+
+171   const totalPages = maintenancesData?.totalPages || 0
+                                           ~~~~~~~~~~
+
+src/pages/Maintenance.tsx:298:37 - error TS7006: Parameter 'maintenance' implicitly has an 'any' type.
+
+298                   maintenances.map((maintenance) => (
+                                        ~~~~~~~~~~~
+
+src/pages/Maintenance.tsx:561:44 - error TS2339: Property 'isLoading' does not exist on type 'UseMutationResult<Maintenance, Error, MaintenanceCreate, unknown>'.
+  Property 'isLoading' does not exist on type 'Override<MutationObserverIdleResult<Maintenance, Error, MaintenanceCreate, unknown>, { mutate: UseMutateFunction<Maintenance, Error, MaintenanceCreate, unknown>; }> & { ...; }'.
+
+561                   disabled={createMutation.isLoading || updateMutation.isLoading}
+                                               ~~~~~~~~~
+
+src/pages/Maintenance.tsx:561:72 - error TS2339: Property 'isLoading' does not exist on type 'UseMutationResult<Maintenance, Error, { id: string; data: Partial<Maintenance>; }, unknown>'.
+  Property 'isLoading' does not exist on type 'Override<MutationObserverIdleResult<Maintenance, Error, { id: string; data: Partial<Maintenance>; }, unknown>, { ...; }> & { ...; }'.
+
+561                   disabled={createMutation.isLoading || updateMutation.isLoading}
+                                                                           ~~~~~~~~~
+
+src/pages/Maintenance.tsx:564:35 - error TS2339: Property 'isLoading' does not exist on type 'UseMutationResult<Maintenance, Error, MaintenanceCreate, unknown>'.
+  Property 'isLoading' does not exist on type 'Override<MutationObserverIdleResult<Maintenance, Error, MaintenanceCreate, unknown>, { mutate: UseMutateFunction<Maintenance, Error, MaintenanceCreate, unknown>; }> & { ...; }'.
+
+564                   {createMutation.isLoading || updateMutation.isLoading ? 'Salvando...' : (selectedMaintenance ? 'Atualizar' : 'Cadastrar')}
+                                      ~~~~~~~~~
+
+src/pages/Maintenance.tsx:564:63 - error TS2339: Property 'isLoading' does not exist on type 'UseMutationResult<Maintenance, Error, { id: string; data: Partial<Maintenance>; }, unknown>'.
+  Property 'isLoading' does not exist on type 'Override<MutationObserverIdleResult<Maintenance, Error, { id: string; data: Partial<Maintenance>; }, unknown>, { ...; }> & { ...; }'.
+
+564                   {createMutation.isLoading || updateMutation.isLoading ? 'Salvando...' : (selectedMaintenance ? 'Atualizar' : 'Cadastrar')}
