@@ -347,9 +347,9 @@ export default function NovoCtEAuto() {
         LIMIT 1
       `, [nfeData.destinatario.cnpj])
 
-      // A função query retorna {rows: [...]} no frontend
-      const remetenteData = remetenteResult?.rows || remetenteResult || []
-      const destinatarioData = destinatarioResult?.rows || destinatarioResult || []
+      // A função query já retorna o array diretamente
+      const remetenteData = remetenteResult || []
+      const destinatarioData = destinatarioResult || []
 
       console.log('📋 Remetente encontrado:', remetenteData.length > 0 ? remetenteData[0].id : 'não encontrado')
       console.log('📋 Destinatário encontrado:', destinatarioData.length > 0 ? destinatarioData[0].id : 'não encontrado')
@@ -369,7 +369,7 @@ export default function NovoCtEAuto() {
           LIMIT 1
         `, [remetenteId, destinatarioId])
 
-        const freteData = freteResult?.rows || freteResult || []
+        const freteData = freteResult || []
         console.log('📋 Resultado da busca de frete:', freteData.length, 'registros')
 
         if (freteData.length > 0) {
