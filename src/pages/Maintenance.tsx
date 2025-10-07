@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format, parseISO } from 'date-fns'
@@ -44,15 +43,15 @@ export default function MaintenancePage() {
     setCurrentPage(1)
   }, [debouncedSearchTerm, filterType, filterStatus])
 
-  const { 
-    data: maintenancesData, 
-    isLoading, 
+  const {
+    data: maintenancesData,
+    isLoading: isLoadingMaintenances, // Renamed to avoid conflict with mutation loading state
     error,
-    refetch 
+    refetch
   } = useQuery({
     queryKey: ['maintenances', currentPage, debouncedSearchTerm, filterType, filterStatus],
     queryFn: () => getMaintenances(currentPage, itemsPerPage, debouncedSearchTerm, filterType, filterStatus),
-    keepPreviousData: true
+    placeholderData: (previousData) => previousData
   })
 
   const { data: vehicles } = useQuery({
@@ -99,7 +98,7 @@ export default function MaintenancePage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
-    
+
     const maintenanceData = {
       veiculo_id: formData.get('veiculo_id') as string,
       tipo: formData.get('tipo') as string,
@@ -142,7 +141,7 @@ export default function MaintenancePage() {
     setCurrentPage(1)
   }
 
-  if (isLoading && !maintenancesData) {
+  if (isLoadingMaintenances && !maintenancesData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -251,10 +250,10 @@ export default function MaintenancePage() {
               </button>
               <button
                 onClick={() => refetch()}
-                disabled={isLoading}
+                disabled={isLoadingMaintenances}
                 className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
               >
-                <ArrowPathIcon className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+                <ArrowPathIcon className={`h-4 w-4 mr-1 ${isLoadingMaintenances ? 'animate-spin' : ''}`} />
                 Atualizar
               </button>
             </div>
@@ -295,7 +294,7 @@ export default function MaintenancePage() {
                     </td>
                   </tr>
                 ) : (
-                  maintenances.map((maintenance) => (
+                  maintenances.map((maintenance: Maintenance) => (
                     <tr key={maintenance.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {maintenance.veiculo.placa} - {maintenance.veiculo.modelo}
@@ -408,7 +407,7 @@ export default function MaintenancePage() {
                       <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </button>
-                  
+
                   {/* Números das páginas */}
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum
@@ -421,7 +420,7 @@ export default function MaintenancePage() {
                     } else {
                       pageNum = currentPage - 2 + i
                     }
-                    
+
                     return (
                       <button
                         key={pageNum}
@@ -436,7 +435,7 @@ export default function MaintenancePage() {
                       </button>
                     )
                   })}
-                  
+
                   <button
                     onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
@@ -558,10 +557,10 @@ export default function MaintenancePage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={createMutation.isLoading || updateMutation.isLoading}
+                  disabled={createMutation.isPending || updateMutation.isPending}
                   className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  {createMutation.isLoading || updateMutation.isLoading ? 'Salvando...' : (selectedMaintenance ? 'Atualizar' : 'Cadastrar')}
+                  {createMutation.isPending || updateMutation.isPending ? 'Salvando...' : (selectedMaintenance ? 'Atualizar' : 'Cadastrar')}
                 </button>
               </div>
             </form>
