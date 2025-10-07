@@ -2114,11 +2114,6 @@ function parseEnderecoMDFe(enderecoCompleto: string): {
   };
 }
 
-// Função auxiliar para normalizar texto removendo acentos
-function removeAccents(str: string): string {
-  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-}
-
 // Função para gerar conteúdo XML do MDF-e
 async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise<string> {
   // Usar a data/hora atual para dhEmi (momento da geração do XML)
@@ -2275,7 +2270,7 @@ async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise
         <cMunCarrega>${cidadeInicioIbge}</cMunCarrega>
         <xMunCarrega>${cidadeInicioNome}</xMunCarrega>
       </infMunCarrega>
-${Array.from(municipiosDescarga.entries()).map(([chave, ctes]) => {
+${Array.from(municipiosDescarga.entries()).map(([chave]) => {
   const [codigoIbge, nomeCidade] = chave.split('|');
   return `      <infMunDescarga>
         <cMunDescarga>${codigoIbge}</cMunDescarga>
