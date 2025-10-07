@@ -210,11 +210,6 @@ export default function MDFe() {
     }
   }
 
-  const handleCopyChaveAcesso = (chave: string) => {
-    navigator.clipboard.writeText(chave)
-    toast.success('Chave de acesso copiada!')
-  }
-
   const handleGenerateFiles = async (id: string) => {
     setIsGeneratingFiles(true)
     try {
