@@ -9,7 +9,6 @@ import {
   XMarkIcon,
   CalendarIcon,
   CurrencyDollarIcon,
-  DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 import {
   getApolicesSeguro,
