@@ -1,10 +1,71 @@
 import { CTeDocumento } from './fiscal'
 import { query } from '@/lib/db'
 import { getCityCodeFromFallback } from './cities-fallback'
+import { getXmlTagsControle, getXmlTagValores } from './xml-tags'
 
 // Função para remover acentuação
 function removeAccents(str: string): string {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+// Função para aplicar tags customizadas no XML
+async function aplicarTagsCustomizadas(
+  xml: string,
+  empresaId: string,
+  documentoId: string
+): Promise<string> {
+  try {
+    // Buscar tags de controle para CT-e desta empresa
+    const tagsControle = await getXmlTagsControle(empresaId, 'cte')
+    
+    // Buscar valores customizados para este documento específico
+    const valoresCustomizados = await getXmlTagValores(documentoId, 'cte')
+    
+    let xmlModificado = xml
+    
+    // Aplicar tags customizadas
+    for (const tagControle of tagsControle) {
+      if (!tagControle.ativo) continue
+      
+      // Verificar se existe valor customizado para este documento
+      const valorCustomizado = valoresCustomizados.find(
+        v => v.tag_controle_id === tagControle.id
+      )
+      
+      const valorFinal = valorCustomizado?.valor || tagControle.valor_padrao
+      
+      if (valorFinal) {
+        // Inserir ou substituir tag no XML usando o path
+        const pathParts = tagControle.tag_path.split('/')
+        const tagName = pathParts[pathParts.length - 1]
+        const tagRegex = new RegExp(`<${tagName}>.*?</${tagName}>`, 'g')
+        
+        if (xmlModificado.match(tagRegex)) {
+          // Tag já existe, substituir valor
+          xmlModificado = xmlModificado.replace(
+            tagRegex,
+            `<${tagName}>${valorFinal}</${tagName}>`
+          )
+        } else {
+          // Tag não existe, inserir no caminho correto
+          const parentPath = pathParts.slice(0, -1).join('/')
+          if (parentPath) {
+            const parentTag = pathParts[pathParts.length - 2]
+            const insertPoint = `</${parentTag}>`
+            xmlModificado = xmlModificado.replace(
+              insertPoint,
+              `<${tagName}>${valorFinal}</${tagName}>\n${insertPoint}`
+            )
+          }
+        }
+      }
+    }
+    
+    return xmlModificado
+  } catch (error) {
+    console.error('❌ Erro ao aplicar tags customizadas:', error)
+    return xml // Retornar XML original em caso de erro
+  }
 }
 
 interface ClienteInfo {
@@ -54,7 +115,7 @@ export async function generateCTeXML(
   const dataEmissaoBrasilia = new Date(dataEmissaoAtual.getTime() - (3 * 60 * 60 * 1000))
   const dataEmissaoFormatada = dataEmissaoBrasilia.toISOString().slice(0, 19) + '-03:00'
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <CTe xmlns="http://www.portalfiscal.inf.br/cte">
 <infCte versao="4.00" Id="CTe${documento.chave_acesso}">
 <ide>
@@ -258,7 +319,14 @@ ${documento.chave_acesso_4 ? `<infNFe>
 </infCTeSupl>
 </CTe>`
 
-  return xml
+  // Aplicar tags customizadas antes de retornar
+  const xmlComTagsCustomizadas = await aplicarTagsCustomizadas(
+    xml,
+    empresa.id,
+    documento.id
+  )
+
+  return xmlComTagsCustomizadas
 }
 
 function parseEndereco(enderecoCompleto: string | undefined | null, cidade?: string, estado?: string, cep?: string) {

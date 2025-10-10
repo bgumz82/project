@@ -1,3 +1,4 @@
+replit_final_file>
 import { query, queryOne } from "@/lib/db";
 
 // Tipos para Empresas Fiscais
@@ -1500,7 +1501,7 @@ export async function updateMDFeDocumento(
 
       const result = await response.json();
       console.log("✅ Status atualizado:", result.status);
-      
+
       // Buscar documento atualizado
       const mdfeDocumentos = await getMDFeDocumentos();
       const updatedDoc = mdfeDocumentos.find((doc: MDFeDocumento) => doc.id === id);
@@ -2246,7 +2247,7 @@ async function generateMDFeXML(documento: any, ctesRelacionados: any[]): Promise
     }
   }
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <MDFe xmlns="http://www.portalfiscal.inf.br/mdfe">
   <infMDFe versao="3.00" Id="MDFe${documento.chave_acesso}">
     <ide>
@@ -2357,6 +2358,15 @@ ${ctes.map(cte => `        <infCTe>
     </tot>
   </infMDFe>
 </MDFe>`;
+
+  // Aplicar tags customizadas antes de retornar
+  const xmlComTagsCustomizadas = await aplicarTagsCustomizadasMDFe(
+    xml,
+    documento.empresa_id,
+    documento.id
+  )
+
+  return xmlComTagsCustomizadas
 }
 
 // Função para gerar arquivos XML e PDF do CT-e
@@ -3517,3 +3527,74 @@ export function validarChaveAcesso(chave: string): boolean {
     return false;
   }
 }
+
+// --- FUNÇÃO DE INTEGRAÇÃO DE TAGS CUSTOMIZADAS ---
+// Esta função será chamada para aplicar tags customizadas antes de retornar o XML.
+// Ela deve buscar as tags customizadas associadas à empresa e ao documento e inseri-las no XML.
+async function aplicarTagsCustomizadasMDFe(xmlContent: string, empresaId: string, documentoId: string): Promise<string> {
+  try {
+    console.log("✨ Aplicando tags customizadas ao XML do MDF-e...");
+
+    // Buscar tags customizadas do banco de dados
+    const tagsCustomizadas = await query(`
+      SELECT nome_tag, valor_tag, tipo
+      FROM mdfe_tags_customizadas
+      WHERE empresa_id = $1 AND documento_id = $2
+      ORDER BY ordem
+    `, [empresaId, documentoId]);
+
+    if (tagsCustomizadas.length === 0) {
+      console.log("ℹ️ Nenhuma tag customizada encontrada para este MDF-e.");
+      return xmlContent;
+    }
+
+    console.log(`ℹ️ Encontradas ${tagsCustomizadas.length} tags customizadas.`);
+
+    let xmlModificado = xmlContent;
+
+    // Inserir as tags customizadas no local apropriado do XML.
+    // A lógica exata de inserção dependerá da estrutura do XML e de onde as tags devem ser adicionadas.
+    // Por exemplo, se as tags devem ir dentro de <infMDFe> ou em um local específico.
+    // Para este exemplo, vamos assumir que elas devem ser inseridas antes da tag de fechamento </infMDFe>.
+
+    const insertionPoint = xmlModificado.lastIndexOf('</infMDFe>');
+    if (insertionPoint === -1) {
+      console.warn("⚠️ Ponto de inserção para tags customizadas não encontrado (</infMDFe>). Tags não serão aplicadas.");
+      return xmlContent;
+    }
+
+    let tagsString = '';
+    tagsCustomizadas.forEach(tag => {
+      // Tratar tipos diferentes de tags (texto, número, boolean, etc.)
+      let valorParaXml = tag.valor_tag;
+      if (tag.tipo === 'boolean') {
+        valorParaXml = valorParaXml ? 'true' : 'false';
+      } else if (tag.tipo === 'number') {
+        // Formatar número conforme necessário, mas geralmente string é aceitável
+        valorParaXml = valorParaXml.toString();
+      }
+      // Escapar caracteres especiais se necessário, mas para XML, geralmente é feito automaticamente se o parser for robusto.
+      // No entanto, para garantir, podemos escapar alguns caracteres comuns:
+      valorParaXml = String(valorParaXml)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+
+      tagsString += `    <tagCustomizada nome="${tag.nome_tag}">${valorParaXml}</tagCustomizada>\n`;
+    });
+
+    // Inserir as tags antes do fechamento de </infMDFe>
+    xmlModificado = xmlModificado.substring(0, insertionPoint) + tagsString + xmlModificado.substring(insertionPoint);
+
+    console.log("✨ Tags customizadas aplicadas com sucesso.");
+    return xmlModificado;
+
+  } catch (error) {
+    console.error("❌ Erro ao aplicar tags customizadas:", error);
+    // Se houver erro, retornar o XML original para não falhar a geração do arquivo
+    return xmlContent;
+  }
+}
+</replit_final_file>
