@@ -8,6 +8,16 @@ This is a comprehensive fleet management system built for Brazilian transportati
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### October 10, 2025
+- **CRITICAL FIX: Database Connection Pool Memory Leak** - Fixed severe memory leak in `server.cjs` that was causing repeated application crashes. The issue was caused by creating new PostgreSQL connection pools on every request without caching, leading to memory exhaustion (exit code 137) and 500 errors during authentication. Implemented a `tenantPools` Map cache to reuse database connections, eliminating the memory leak and stabilizing the application.
+
+- **MDF-e File Verification and PDF Viewing** - Added functionality to verify MDF-e files and display PDF documents:
+  - "Atualizar Dados" button now checks for `-procMDFe.xml` and `-damdfe.pdf` files and auto-updates status to "emitido" when both exist
+  - Added PDF viewer button (eye icon) to open DAMDFE in new tab when status is "emitido" or "aguardando"
+  - Fixed CNPJ path access in MDFe.tsx to use `documento.empresa.cnpj` correctly
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -22,6 +32,7 @@ Preferred communication style: Simple, everyday language.
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js server
 - **Database**: PostgreSQL with raw SQL queries (no ORM)
+- **Connection Pooling**: Cached tenant-specific database pools to prevent memory exhaustion
 - **Authentication**: JWT-based authentication with bcrypt for password hashing
 - **File Uploads**: Multipart form handling for images and documents
 - **Security**: Helmet for security headers, CORS enabled, compression middleware

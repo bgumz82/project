@@ -38,6 +38,9 @@ console.log('🔍 FORÇADO DATABASE_URL:', FORCE_DATABASE_URL);
 // Pool principal para usuários e permissões (sempre frota_management)
 const mainPool = pool; // O pool principal já está configurado para frota_management
 
+// Cache de pools por tenant (evita criar novo pool a cada requisição)
+const tenantPools = new Map();
+
 // Testar conexão com o banco
 pool.query('SELECT NOW()', (err) => {
   if (err) {
@@ -182,7 +185,7 @@ function generateRequestId() {
   return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-// Função para obter pool de banco específico do usuário
+// Função para obter pool de banco específico do usuário (com cache)
 async function getUserDatabasePool(userId) {
   try {
     console.log('🔍 Buscando configuração de banco para usuário:', userId);
@@ -200,7 +203,15 @@ async function getUserDatabasePool(userId) {
     }
 
     const config = userResult.rows[0];
-    console.log('✅ Configuração encontrada:', config.nome_empresa);
+    const poolKey = `${config.host}:${config.port}/${config.database_name}`;
+    
+    // Verificar se já existe pool no cache
+    if (tenantPools.has(poolKey)) {
+      console.log('♻️ Reutilizando pool existente para:', config.nome_empresa);
+      return tenantPools.get(poolKey);
+    }
+
+    console.log('✅ Configuração encontrada, criando novo pool:', config.nome_empresa);
 
     // Criar pool específico para este usuário
     const { Pool } = require('pg');
@@ -215,7 +226,10 @@ async function getUserDatabasePool(userId) {
       idleTimeoutMillis: (config.timeout_seconds || 30) * 1000,
     });
 
-    console.log('🔗 Pool específico criado para:', config.nome_empresa);
+    // Armazenar no cache
+    tenantPools.set(poolKey, userPool);
+    console.log('🔗 Novo pool criado e cacheado para:', config.nome_empresa, '| Total pools:', tenantPools.size);
+    
     return userPool;
 
   } catch (error) {
@@ -2396,50 +2410,6 @@ async function insertInitialData(client) {
     }
   } catch (error) {
     console.log('⚠️ Erro ao criar empresa fiscal de exemplo:', error.message);
-  }
-}
-
-// Função para obter pool de conexão baseado no usuário
-async function getUserDatabasePool(userId) {
-  try {
-    console.log('🔍 Buscando configuração de banco para usuário:', userId);
-
-    // Buscar configuração de banco do usuário
-    const userConfigResult = await mainPool.query(`
-      SELECT dc.*
-      FROM usuarios u
-      JOIN database_configurations dc ON u.database_config_id = dc.id
-      WHERE u.id = $1 AND dc.ativo = true
-    `, [userId]);
-
-    if (userConfigResult.rows.length === 0) {
-      console.log('⚠️ Usuário sem configuração específica, usando pool padrão');
-      // Se não tem configuração específica, usar pool padrão
-      return pool;
-    }
-
-    const config = userConfigResult.rows[0];
-    console.log('✅ Configuração encontrada:', config.nome_empresa);
-
-    // Criar pool específico para este usuário
-    const userPool = new Pool({
-      host: config.host,
-      port: config.port,
-      database: config.database_name,
-      user: config.username,
-      password: config.password,
-      ssl: config.ssl_enabled ? { rejectUnauthorized: false } : false,
-      max: config.max_connections || 10,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: (config.timeout_seconds || 30) * 1000,
-    });
-
-    console.log('🔗 Pool específico criado para:', config.nome_empresa);
-    return userPool;
-  } catch (error) {
-    console.error('❌ Erro ao obter pool do usuário:', error);
-    console.log('🔄 Retornando pool padrão como fallback');
-    return pool; // Fallback para pool padrão
   }
 }
 
