@@ -9,7 +9,8 @@ import {
   DocumentTextIcon,
   CheckCircleIcon,
   XMarkIcon,
-  FolderIcon
+  FolderIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline'
 import {
   getXmlTagsControle,
@@ -31,6 +32,7 @@ export default function XmlTagsControle() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedTag, setSelectedTag] = useState<XmlTagControle | null>(null)
   const [showTemplates, setShowTemplates] = useState(false)
+  const [showXmlPreview, setShowXmlPreview] = useState(false)
 
   const queryClient = useQueryClient()
 
@@ -140,6 +142,77 @@ export default function XmlTagsControle() {
     return acc
   }, {} as Record<string, XmlTagControle[]>)
 
+  // Função para gerar preview da estrutura XML
+  const gerarPreviewXML = () => {
+    if (!tags || tags.length === 0) {
+      return tipoDocumento === 'cte' 
+        ? `<?xml version="1.0" encoding="UTF-8"?>
+<CTe xmlns="http://www.portalfiscal.inf.br/cte">
+  <infCte versao="4.00" Id="CTe{chave_acesso}">
+    <!-- Nenhuma tag customizada configurada -->
+  </infCte>
+</CTe>`
+        : `<?xml version="1.0" encoding="UTF-8"?>
+<MDFe xmlns="http://www.portalfiscal.inf.br/mdfe">
+  <infMDFe versao="3.00" Id="MDFe{chave_acesso}">
+    <!-- Nenhuma tag customizada configurada -->
+  </infMDFe>
+</MDFe>`
+    }
+
+    // Organizar tags por path para criar estrutura hierárquica
+    const tagsOrdenadas = [...tags].sort((a, b) => a.ordem - b.ordem)
+    
+    let xmlPreview = tipoDocumento === 'cte'
+      ? '<?xml version="1.0" encoding="UTF-8"?>\n<CTe xmlns="http://www.portalfiscal.inf.br/cte">\n  <infCte versao="4.00" Id="CTe{chave_acesso}">\n'
+      : '<?xml version="1.0" encoding="UTF-8"?>\n<MDFe xmlns="http://www.portalfiscal.inf.br/mdfe">\n  <infMDFe versao="3.00" Id="MDFe{chave_acesso}">\n'
+
+    // Agrupar por path para criar estrutura
+    const pathsProcessados = new Set<string>()
+    
+    tagsOrdenadas.forEach(tag => {
+      const pathParts = tag.tag_path.split('/')
+      let currentPath = ''
+      let indent = '    '
+
+      pathParts.forEach((part, index) => {
+        currentPath += (currentPath ? '/' : '') + part
+        
+        if (!pathsProcessados.has(currentPath)) {
+          pathsProcessados.add(currentPath)
+          
+          if (index === pathParts.length - 1) {
+            // Tag final - mostrar com valor
+            const valor = tag.valor_padrao || '{valor_dinamico}'
+            const obrigatoriaTag = tag.obrigatoria ? ' <!-- OBRIGATÓRIA -->' : ''
+            xmlPreview += `${indent}<${part}>${valor}</${part}>${obrigatoriaTag}\n`
+          } else {
+            // Tag intermediária - abrir tag
+            xmlPreview += `${indent}<${part}>\n`
+            indent += '  '
+          }
+        }
+      })
+    })
+
+    // Fechar tags intermediárias abertas
+    const tagsAbertas = new Set<string>()
+    tagsOrdenadas.forEach(tag => {
+      const pathParts = tag.tag_path.split('/')
+      pathParts.slice(0, -1).forEach(part => tagsAbertas.add(part))
+    })
+
+    Array.from(tagsAbertas).reverse().forEach(tagAberta => {
+      xmlPreview += `    </${tagAberta}>\n`
+    })
+
+    xmlPreview += tipoDocumento === 'cte'
+      ? '  </infCte>\n</CTe>'
+      : '  </infMDFe>\n</MDFe>'
+
+    return xmlPreview
+  }
+
   return (
     <div className="py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
@@ -188,6 +261,14 @@ export default function XmlTagsControle() {
             </div>
 
             <div className="flex items-end gap-2">
+              <button
+                onClick={() => setShowXmlPreview(true)}
+                disabled={!empresaSelecionada}
+                className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+              >
+                <EyeIcon className="h-5 w-5 mr-2" />
+                Ver XML
+              </button>
               <button
                 onClick={() => setShowTemplates(true)}
                 disabled={!empresaSelecionada}
@@ -442,6 +523,87 @@ export default function XmlTagsControle() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Preview XML */}
+        {showXmlPreview && (
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] flex flex-col">
+              <div className="flex justify-between items-center p-6 border-b">
+                <div>
+                  <h2 className="text-lg font-medium">
+                    Estrutura XML - {tipoDocumento === 'cte' ? 'CT-e' : 'MDF-e'}
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Preview da estrutura XML com as tags customizadas configuradas
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowXmlPreview(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="bg-gray-50 rounded-lg p-4 font-mono text-sm overflow-x-auto">
+                  <pre className="text-gray-800 whitespace-pre">
+                    {gerarPreviewXML()}
+                  </pre>
+                </div>
+
+                {tags && tags.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-sm font-medium text-gray-900 mb-3">Legenda:</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-start">
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                          {'{chave_acesso}'}
+                        </span>
+                        <span className="text-gray-600">Valor gerado automaticamente</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 mr-2">
+                          {'{valor_dinamico}'}
+                        </span>
+                        <span className="text-gray-600">Valor preenchido no documento</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800 mr-2">
+                          OBRIGATÓRIA
+                        </span>
+                        <span className="text-gray-600">Tag de preenchimento obrigatório</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 mr-2">
+                          Valor padrão
+                        </span>
+                        <span className="text-gray-600">Valor configurado na tag</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-between items-center p-6 border-t bg-gray-50">
+                <div className="text-sm text-gray-600">
+                  {tags?.length || 0} tag(s) customizada(s) configurada(s)
+                </div>
+                <button
+                  onClick={() => {
+                    const xmlContent = gerarPreviewXML()
+                    navigator.clipboard.writeText(xmlContent)
+                    toast.success('Estrutura XML copiada para a área de transferência!')
+                  }}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  <DocumentTextIcon className="h-5 w-5 mr-2" />
+                  Copiar XML
+                </button>
+              </div>
             </div>
           </div>
         )}
