@@ -17,6 +17,9 @@ import FleetAssociations from './pages/FleetAssociations'
 import DatabaseConfig from './pages/DatabaseConfig'
 import Layout from './components/Layout'
 
+// Import the new component
+import XmlTagsControle from './pages/fiscal/XmlTagsControle'
+
 // Financeiro
 import DashboardFinanceiro from './pages/financeiro/Dashboard'
 import CentrosCusto from './pages/financeiro/CentrosCusto'
@@ -104,6 +107,7 @@ export function AppRoutes() {
   const { session, loading } = useAuth()
   const location = useLocation()
   const isMobile = isMobileDevice()
+  const { hasPermission } = usePermissions()
 
   if (loading) {
     return (
@@ -307,7 +311,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/fiscal/dashboard"
           element={
@@ -334,7 +338,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/fiscal/cte-auto"
           element={<NovoCtEAuto />}
@@ -351,12 +355,12 @@ export function AppRoutes() {
         <Route
           path="/fiscal/frete"
           element={
-            <ProtectedRoute moduleKey="fiscal">
+            <ProtectedRoute moduleKey="frete">
               <Frete />
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/fiscal/apolices-seguro"
           element={
@@ -365,6 +369,10 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
+        {hasPermission('xml_tags_controle', 'access') && (
+          <Route path="/fiscal/xml-tags" element={<XmlTagsControle />} />
+        )}
       </Route>
 
       {/* Mobile Routes */}

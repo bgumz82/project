@@ -80,10 +80,10 @@ export default function Sidebar() {
         submenuItems.push({ name: 'Associações de Frota', href: '/veiculos/associacoes', icon: UserGroupIcon })
       }
 
-      items.push({ 
-        name: 'Veículos', 
-        href: '/veiculos', 
-        icon: TruckIcon, 
+      items.push({
+        name: 'Veículos',
+        href: '/veiculos',
+        icon: TruckIcon,
         moduleKey: 'veiculos',
         submenu: submenuItems.length > 1 ? submenuItems : undefined
       })
@@ -131,9 +131,9 @@ export default function Sidebar() {
 
     // Financeiro
     if (hasPermission('financeiro')) {
-      items.push({ 
-        name: 'Financeiro', 
-        href: '/financeiro/dashboard', 
+      items.push({
+        name: 'Financeiro',
+        href: '/financeiro/dashboard',
         icon: BanknotesIcon,
         moduleKey: 'financeiro',
         submenu: [
@@ -148,9 +148,9 @@ export default function Sidebar() {
 
     // Fiscal
     if (hasPermission('fiscal')) {
-      items.push({ 
-        name: 'Fiscal', 
-        href: '/fiscal/dashboard', 
+      items.push({
+        name: 'Fiscal',
+        href: '/fiscal/dashboard',
         icon: CalculatorIcon,
         moduleKey: 'fiscal',
         submenu: [
@@ -164,6 +164,12 @@ export default function Sidebar() {
             href: '/fiscal/apolices-seguro',
             icon: ShieldCheckIcon,
           },
+          {
+            name: 'Controle de Tags XML',
+            href: '/fiscal/xml-tags',
+            icon: DocumentTextIcon,
+            moduleKey: 'xml_tags_controle'
+          }
         ]
       })
     }
