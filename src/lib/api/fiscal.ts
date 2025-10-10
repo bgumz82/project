@@ -1,4 +1,3 @@
-replit_final_file>
 import { query, queryOne } from "@/lib/db";
 
 // Tipos para Empresas Fiscais
