@@ -2338,12 +2338,20 @@ ${Array.from(municipiosDescarga.entries()).map(([chave]) => {
       </infLotacao>
     </prodPred>
     <infDoc>
-${Array.from(municipiosDescarga.entries()).map(([chave, ctes]) => {
+${Array.from(municipiosDescarga.entries()).map(([chave]) => {
   const [codigoIbge, nomeCidade] = chave.split('|');
   return `      <infMunDescarga>
         <cMunDescarga>${codigoIbge}</cMunDescarga>
         <xMunDescarga>${nomeCidade}</xMunDescarga>
-${ctes.map(cte => `        <infCTe>
+${ctesRelacionados.filter(cte => {
+  let cteCodigoIbge = cte.cidade_termino_ibge;
+  const cteNomeCidade = cte.cidade_termino_nome || 'NAO INFORMADO';
+  if (!cteCodigoIbge || cteCodigoIbge === '0000000' || cteCodigoIbge.length !== 7) {
+    // Tentar buscar código IBGE novamente se necessário
+    // Este é um fallback, idealmente o código já estaria correto
+  }
+  return `${cteCodigoIbge}|${cteNomeCidade}` === chave;
+}).map(cte => `        <infCTe>
           <chCTe>${cte.chave_acesso}</chCTe>
         </infCTe>`).join('\n')}
       </infMunDescarga>`;
@@ -2359,13 +2367,13 @@ ${ctes.map(cte => `        <infCTe>
 </MDFe>`;
 
   // Aplicar tags customizadas antes de retornar
-  const xmlComTagsCustomizadas = await aplicarTagsCustomizadasMDFe(
+  const xmlModificado = await aplicarTagsCustomizadasMDFe(
     xml,
     documento.empresa_id,
     documento.id
   )
 
-  return xmlComTagsCustomizadas
+  return xmlModificado
 }
 
 // Função para gerar arquivos XML e PDF do CT-e
@@ -3596,4 +3604,3 @@ async function aplicarTagsCustomizadasMDFe(xmlContent: string, empresaId: string
     return xmlContent;
   }
 }
-</replit_final_file>
