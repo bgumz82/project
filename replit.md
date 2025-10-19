@@ -10,6 +10,9 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 19, 2025
+- **CRITICAL FIX: Workflow Configuration** - Resolved repeated server crashes by consolidating duplicate workflows (Backend and Server) into a single unified "App" workflow that runs both the backend (Node.js/Express on port 3000) and frontend (Vite on port 5000) simultaneously. This eliminates port conflicts and process duplication that were causing the application to crash.
+
 ### October 10, 2025
 - **CRITICAL FIX: Database Connection Pool Memory Leak** - Fixed severe memory leak in `server.cjs` that was causing repeated application crashes. The issue was caused by creating new PostgreSQL connection pools on every request without caching, leading to memory exhaustion (exit code 137) and 500 errors during authentication. Implemented a `tenantPools` Map cache to reuse database connections, eliminating the memory leak and stabilizing the application.
 
