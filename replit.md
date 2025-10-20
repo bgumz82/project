@@ -10,6 +10,9 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 20, 2025
+- **CRITICAL FIX: Multi-tenancy in CT-e Module** - Fixed critical bug where CT-e routes were not respecting user-specific database configurations. All 4 CT-e endpoints (GET /api/cte-documentos, GET /api/cte-documentos/pendentes, PUT /api/cte-documentos/:id/status, GET /api/cte-documentos/:id) were using the main database pool instead of getTenantPool(). Now all CT-e operations correctly use tenant-specific database pools, ensuring complete data isolation between clients (e.g., SystemTruck and GDA Transportes).
+
 ### October 19, 2025
 - **CRITICAL FIX: Workflow Configuration** - Resolved repeated server crashes by consolidating duplicate workflows (Backend and Server) into a single unified "App" workflow that runs both the backend (Node.js/Express on port 3000) and frontend (Vite on port 5000) simultaneously. This eliminates port conflicts and process duplication that were causing the application to crash.
 
