@@ -3842,10 +3842,18 @@ app.get('/api/mdfe-documentos', authenticateToken, async (req, res) => {
   }
 });
 
-// Rota para buscar documentos CT-e
+// Rota para buscar documentos CT-e - USAR BANCO DO USUÁRIO
 app.get('/api/cte-documentos', authenticateToken, async (req, res) => {
+  console.log('🔍 Buscando documentos CT-e...');
+  console.log('👤 Requisição do usuário:', req.user.email);
+  
+  let client;
+  
   try {
-    const result = await pool.query(`
+    const userPool = await getTenantPool(req.user.email);
+    client = await userPool.connect();
+    
+    const result = await client.query(`
       SELECT
         c.*,
         e.razao_social as empresa_razao_social,
@@ -3854,41 +3862,63 @@ app.get('/api/cte-documentos', authenticateToken, async (req, res) => {
       JOIN empresas_fiscais e ON c.empresa_id = e.id
       ORDER BY c.data_emissao DESC, CAST(c.numero_cte AS INTEGER) DESC
     `);
+    
+    console.log(`✅ Documentos CT-e encontrados: ${result.rows.length}`);
     res.json(result.rows);
   } catch (error) {
-    console.error('Get CT-e documents error:', error);
+    console.error('❌ Erro ao buscar documentos CT-e:', error);
     res.status(500).json({ error: 'Erro ao buscar documentos CT-e' });
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 });
 
-// Rota para buscar documentos CT-e pendentes
+// Rota para buscar documentos CT-e pendentes - USAR BANCO DO USUÁRIO
 app.get('/api/cte-documentos/pendentes', authenticateToken, async (req, res) => {
+  console.log('🔍 Buscando documentos CT-e pendentes...');
+  console.log('👤 Requisição do usuário:', req.user.email);
+  
+  let client;
+  
   try {
-    console.log('🔍 Buscando documentos CT-e pendentes...');
+    const userPool = await getTenantPool(req.user.email);
+    client = await userPool.connect();
 
-    const result = await pool.query(`
+    const result = await client.query(`
       SELECT * FROM cte_documentos
       WHERE status = 'pendente' AND xml_gerado = 'true'
       ORDER BY created_at ASC
     `);
 
-    console.log(`✅ Encontrados ${result.rows.length} documentos pendentes`);
+    console.log(`✅ Encontrados ${result.rows.length} documentos CT-e pendentes`);
     res.json(result.rows);
   } catch (error) {
     console.error('❌ Erro ao buscar documentos CT-e pendentes:', error);
     res.status(500).json({ error: 'Erro ao buscar documento CT-e' });
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 });
 
-// Rota para atualizar status de um CT-e
+// Rota para atualizar status de um CT-e - USAR BANCO DO USUÁRIO
 app.put('/api/cte-documentos/:id/status', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { status, processado } = req.body;
+  
+  console.log(`🔄 Atualizando status do CT-e ${id} para: ${status}`);
+  console.log('👤 Requisição do usuário:', req.user.email);
+  
+  let client;
+  
   try {
-    const { id } = req.params;
-    const { status, processado } = req.body;
+    const userPool = await getTenantPool(req.user.email);
+    client = await userPool.connect();
 
-    console.log(`🔄 Atualizando status do CT-e ${id} para: ${status}`);
-
-    const result = await pool.query(`
+    const result = await client.query(`
       UPDATE cte_documentos
       SET status = $1, updated_at = NOW()
       WHERE id = $2
@@ -3904,22 +3934,41 @@ app.put('/api/cte-documentos/:id/status', authenticateToken, async (req, res) =>
   } catch (error) {
     console.error('❌ Erro ao atualizar status do CT-e:', error);
     res.status(500).json({ error: 'Erro ao atualizar status do documento CT-e' });
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 });
 
+// Rota para buscar um CT-e específico por ID - USAR BANCO DO USUÁRIO
 app.get('/api/cte-documentos/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  
+  console.log(`🔍 Buscando CT-e ID: ${id}`);
+  console.log('👤 Requisição do usuário:', req.user.email);
+  
+  let client;
+  
   try {
-    const { id } = req.params;
-    const result = await pool.query(`SELECT * FROM cte_documentos WHERE id = $1`, [id]);
+    const userPool = await getTenantPool(req.user.email);
+    client = await userPool.connect();
+    
+    const result = await client.query(`SELECT * FROM cte_documentos WHERE id = $1`, [id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Documento CT-e não encontrado' });
     }
 
+    console.log(`✅ CT-e ${id} encontrado`);
     res.json(result.rows[0]);
   } catch (error) {
-    console.error('Get CT-e document by ID error:', error);
+    console.error('❌ Erro ao buscar CT-e por ID:', error);
     res.status(500).json({ error: 'Erro ao buscar documento CT-e' });
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 });
 
