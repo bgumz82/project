@@ -9,6 +9,20 @@ PAGE_HEIGHT = 595.28
 OUTPUT_PATH = Path("aula_fisiologia_magia_trabalho_de_parto.pdf")
 
 TITLE = "Aula: A Fisiologia e a Magia do Trabalho de Parto"
+SUBTITLE = "Presença, educação e cuidado para viver o parto com mais segurança."
+
+# Paleta baseada em www.brunagumz.com.br/css/styles.css
+BG = (1.0, 0.969, 0.973)  # #fff7f8
+BG_SOFT = (0.973, 0.914, 0.937)  # #f8e9ef
+PANEL = (1.0, 1.0, 1.0)  # #ffffff
+TEXT = (0.239, 0.141, 0.188)  # #3d2430
+MUTED = (0.557, 0.424, 0.471)  # #8e6c78
+PRIMARY = (0.725, 0.310, 0.451)  # #b94f73
+PRIMARY_DARK = (0.624, 0.247, 0.380)  # #9f3f61
+PRIMARY_SOFT = (1.0, 0.945, 0.973)  # #fff1f5
+ACCENT = (0.725, 0.612, 0.910)  # #b99ce8
+ACCENT_SOFT = (0.953, 0.922, 1.0)  # #f3ebff
+LINE = (0.925, 0.835, 0.867)
 
 SLIDES = [
     {
@@ -203,13 +217,76 @@ def rect(x: float, y: float, width: float, height: float, color: tuple[float, fl
     return f"{r:.3f} {g:.3f} {b:.3f} rg {x:.2f} {y:.2f} {width:.2f} {height:.2f} re f\n".encode()
 
 
+def rounded_rect(
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    radius: float,
+    fill: tuple[float, float, float],
+    stroke: tuple[float, float, float] | None = None,
+    stroke_width: float = 1.0,
+) -> bytes:
+    k = 0.5522847498
+    r = min(radius, width / 2, height / 2)
+    commands = [
+        f"{x + r:.2f} {y:.2f} m",
+        f"{x + width - r:.2f} {y:.2f} l",
+        f"{x + width - r + k * r:.2f} {y:.2f} {x + width:.2f} {y + r - k * r:.2f} {x + width:.2f} {y + r:.2f} c",
+        f"{x + width:.2f} {y + height - r:.2f} l",
+        f"{x + width:.2f} {y + height - r + k * r:.2f} {x + width - r + k * r:.2f} {y + height:.2f} {x + width - r:.2f} {y + height:.2f} c",
+        f"{x + r:.2f} {y + height:.2f} l",
+        f"{x + r - k * r:.2f} {y + height:.2f} {x:.2f} {y + height - r + k * r:.2f} {x:.2f} {y + height - r:.2f} c",
+        f"{x:.2f} {y + r:.2f} l",
+        f"{x:.2f} {y + r - k * r:.2f} {x + r - k * r:.2f} {y:.2f} {x + r:.2f} {y:.2f} c",
+        "h",
+    ]
+    fr, fg, fb = fill
+    prefix = f"{fr:.3f} {fg:.3f} {fb:.3f} rg "
+    if stroke:
+        sr, sg, sb = stroke
+        prefix += f"{sr:.3f} {sg:.3f} {sb:.3f} RG {stroke_width:.2f} w "
+        op = "B"
+    else:
+        op = "f"
+    return (prefix + " ".join(commands) + f" {op}\n").encode()
+
+
+def circle(cx: float, cy: float, radius: float, color: tuple[float, float, float]) -> bytes:
+    k = 0.5522847498
+    r, g, b = color
+    x0, x1 = cx - radius, cx + radius
+    y0, y1 = cy - radius, cy + radius
+    c = radius * k
+    return (
+        f"{r:.3f} {g:.3f} {b:.3f} rg "
+        f"{cx:.2f} {y1:.2f} m "
+        f"{cx + c:.2f} {y1:.2f} {x1:.2f} {cy + c:.2f} {x1:.2f} {cy:.2f} c "
+        f"{x1:.2f} {cy - c:.2f} {cx + c:.2f} {y0:.2f} {cx:.2f} {y0:.2f} c "
+        f"{cx - c:.2f} {y0:.2f} {x0:.2f} {cy - c:.2f} {x0:.2f} {cy:.2f} c "
+        f"{x0:.2f} {cy + c:.2f} {cx - c:.2f} {y1:.2f} {cx:.2f} {y1:.2f} c h f\n"
+    ).encode()
+
+
+def stroke_line(
+    x1: float,
+    y1: float,
+    x2: float,
+    y2: float,
+    color: tuple[float, float, float],
+    width: float = 1.0,
+) -> bytes:
+    r, g, b = color
+    return f"{r:.3f} {g:.3f} {b:.3f} RG {width:.2f} w {x1:.2f} {y1:.2f} m {x2:.2f} {y2:.2f} l S\n".encode()
+
+
 def text_line(
     x: float,
     y: float,
     text: str,
     size: float,
     font: str = "F1",
-    color: tuple[float, float, float] = (0.12, 0.17, 0.22),
+    color: tuple[float, float, float] = TEXT,
 ) -> bytes:
     r, g, b = color
     return (
@@ -230,7 +307,7 @@ def wrapped_lines(item_type: str, text: str, width: float, font_size: float) -> 
 
     if item_type == "b":
         chunks = wrap(text, width=max(20, available - 3), break_long_words=False)
-        return [("F1", "- " + chunks[0], font_size)] + [
+        return [("F1", "• " + chunks[0], font_size)] + [
             ("F1", "  " + chunk, font_size) for chunk in chunks[1:]
         ]
 
@@ -259,7 +336,7 @@ def materialize_lines(
 
 
 def choose_layout(items: list[tuple[str, str]]) -> tuple[int, float, list[tuple[str, str, float, float]]]:
-    available_height = PAGE_HEIGHT - 160
+    available_height = PAGE_HEIGHT - 245
     one_column_width = PAGE_WIDTH - 120
     for size in (18.0, 17.0, 16.0, 15.0, 14.0, 13.0):
         lines = materialize_lines(items, one_column_width, size)
@@ -278,16 +355,25 @@ def choose_layout(items: list[tuple[str, str]]) -> tuple[int, float, list[tuple[
 
 def slide_stream(slide: dict[str, object], page_number: int, total_pages: int) -> bytes:
     stream = bytearray()
-    stream += rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, (0.965, 0.955, 0.925))
-    stream += rect(0, PAGE_HEIGHT - 82, PAGE_WIDTH, 82, (0.055, 0.235, 0.275))
-    stream += rect(0, PAGE_HEIGHT - 87, PAGE_WIDTH, 5, (0.855, 0.600, 0.250))
-    stream += text_line(48, PAGE_HEIGHT - 40, TITLE, 15, "F1", (1.0, 1.0, 1.0))
-    stream += text_line(48, PAGE_HEIGHT - 67, str(slide["heading"]), 23, "F2", (1.0, 1.0, 1.0))
+    stream += rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, BG)
+    stream += circle(84, PAGE_HEIGHT - 68, 145, BG_SOFT)
+    stream += circle(PAGE_WIDTH - 22, PAGE_HEIGHT - 42, 128, ACCENT_SOFT)
+    stream += circle(PAGE_WIDTH - 94, 92, 92, PRIMARY_SOFT)
+    stream += rounded_rect(34, 34, PAGE_WIDTH - 68, PAGE_HEIGHT - 68, 24, PANEL, LINE, 1.0)
+    stream += rounded_rect(58, PAGE_HEIGHT - 130, 84, 52, 18, PRIMARY, None)
+    stream += text_line(79, PAGE_HEIGHT - 111, f"{page_number:02d}", 25, "F2", (1.0, 1.0, 1.0))
+    stream += rounded_rect(158, PAGE_HEIGHT - 111, 190, 27, 13.5, PRIMARY_SOFT, LINE, 0.8)
+    stream += text_line(176, PAGE_HEIGHT - 102, "Educação perinatal", 11, "F2", PRIMARY_DARK)
+    stream += circle(PAGE_WIDTH - 75, PAGE_HEIGHT - 86, 8, ACCENT)
+    stream += text_line(158, PAGE_HEIGHT - 50, TITLE, 15, "F1", MUTED)
+    stream += text_line(158, PAGE_HEIGHT - 78, str(slide["heading"]), 24, "F2", PRIMARY)
+    stream += text_line(158, PAGE_HEIGHT - 100, SUBTITLE, 10.5, "F1", MUTED)
+    stream += stroke_line(60, PAGE_HEIGHT - 151, PAGE_WIDTH - 60, PAGE_HEIGHT - 151, LINE, 1.0)
 
     columns, _, lines = choose_layout(slide["items"])
     margin_x = 60
-    start_y = PAGE_HEIGHT - 125
-    bottom_y = 62
+    start_y = PAGE_HEIGHT - 185
+    bottom_y = 77
     gap = 25
     column_width = PAGE_WIDTH - 120 if columns == 1 else (PAGE_WIDTH - 120 - gap) / 2
     x_positions = [margin_x, margin_x + column_width + gap]
@@ -299,12 +385,13 @@ def slide_stream(slide: dict[str, object], page_number: int, total_pages: int) -
             col = 1
             y = start_y
         if font != "space":
-            color = (0.12, 0.17, 0.22) if font == "F1" else (0.09, 0.29, 0.33)
+            color = TEXT if font == "F1" else PRIMARY_DARK
             stream += text_line(x_positions[col], y, line, size, font, color)
         y -= line_height
 
-    stream += rect(0, 0, PAGE_WIDTH, 36, (0.055, 0.235, 0.275))
-    stream += text_line(48, 14, f"Página {page_number} de {total_pages}", 11, "F1", (1.0, 1.0, 1.0))
+    stream += stroke_line(60, 60, PAGE_WIDTH - 60, 60, LINE, 1.0)
+    stream += text_line(60, 43, f"Página {page_number} de {total_pages}", 10.5, "F1", MUTED)
+    stream += text_line(PAGE_WIDTH - 226, 43, "Doula Bruna Gumz", 10.5, "F2", PRIMARY)
     return bytes(stream)
 
 
