@@ -335,8 +335,9 @@ def materialize_lines(
     return lines
 
 
-def choose_layout(items: list[tuple[str, str]]) -> tuple[int, float, list[tuple[str, str, float, float]]]:
-    available_height = PAGE_HEIGHT - 245
+def choose_layout(
+    items: list[tuple[str, str]], available_height: float
+) -> tuple[int, float, list[tuple[str, str, float, float]]]:
     one_column_width = PAGE_WIDTH - 120
     for size in (18.0, 17.0, 16.0, 15.0, 14.0, 13.0):
         lines = materialize_lines(items, one_column_width, size)
@@ -354,26 +355,39 @@ def choose_layout(items: list[tuple[str, str]]) -> tuple[int, float, list[tuple[
 
 
 def slide_stream(slide: dict[str, object], page_number: int, total_pages: int) -> bytes:
+    is_first_page = page_number == 1
     stream = bytearray()
     stream += rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, BG)
     stream += circle(84, PAGE_HEIGHT - 68, 145, BG_SOFT)
     stream += circle(PAGE_WIDTH - 22, PAGE_HEIGHT - 42, 128, ACCENT_SOFT)
     stream += circle(PAGE_WIDTH - 94, 92, 92, PRIMARY_SOFT)
     stream += rounded_rect(34, 34, PAGE_WIDTH - 68, PAGE_HEIGHT - 68, 24, PANEL, LINE, 1.0)
-    stream += rounded_rect(58, PAGE_HEIGHT - 130, 84, 52, 18, PRIMARY, None)
-    stream += text_line(79, PAGE_HEIGHT - 111, f"{page_number:02d}", 25, "F2", (1.0, 1.0, 1.0))
-    stream += rounded_rect(158, PAGE_HEIGHT - 111, 190, 27, 13.5, PRIMARY_SOFT, LINE, 0.8)
-    stream += text_line(176, PAGE_HEIGHT - 102, "Educação perinatal", 11, "F2", PRIMARY_DARK)
-    stream += circle(PAGE_WIDTH - 75, PAGE_HEIGHT - 86, 8, ACCENT)
-    stream += text_line(158, PAGE_HEIGHT - 50, TITLE, 15, "F1", MUTED)
-    stream += text_line(158, PAGE_HEIGHT - 78, str(slide["heading"]), 24, "F2", PRIMARY)
-    stream += text_line(158, PAGE_HEIGHT - 100, SUBTITLE, 10.5, "F1", MUTED)
-    stream += stroke_line(60, PAGE_HEIGHT - 151, PAGE_WIDTH - 60, PAGE_HEIGHT - 151, LINE, 1.0)
 
-    columns, _, lines = choose_layout(slide["items"])
-    margin_x = 60
-    start_y = PAGE_HEIGHT - 185
+    if is_first_page:
+        stream += rounded_rect(58, PAGE_HEIGHT - 160, 84, 52, 18, PRIMARY, None)
+        stream += text_line(79, PAGE_HEIGHT - 141, "01", 25, "F2", (1.0, 1.0, 1.0))
+        stream += rounded_rect(158, PAGE_HEIGHT - 71, 78, 27, 13.5, PRIMARY_SOFT, LINE, 0.8)
+        stream += text_line(176, PAGE_HEIGHT - 62, "Aula", 11, "F2", PRIMARY_DARK)
+        stream += text_line(158, PAGE_HEIGHT - 97, "Aula: A Fisiologia e a Magia", 29, "F2", PRIMARY)
+        stream += text_line(158, PAGE_HEIGHT - 134, "do Trabalho de Parto", 31, "F2", PRIMARY)
+        stream += text_line(158, PAGE_HEIGHT - 162, SUBTITLE, 14, "F1", MUTED)
+        stream += circle(PAGE_WIDTH - 75, PAGE_HEIGHT - 103, 8, ACCENT)
+        stream += stroke_line(60, PAGE_HEIGHT - 190, PAGE_WIDTH - 60, PAGE_HEIGHT - 190, LINE, 1.0)
+        stream += text_line(60, PAGE_HEIGHT - 222, str(slide["heading"]), 22, "F2", PRIMARY_DARK)
+        start_y = PAGE_HEIGHT - 258
+    else:
+        stream += rounded_rect(58, PAGE_HEIGHT - 128, 84, 52, 18, PRIMARY, None)
+        stream += text_line(79, PAGE_HEIGHT - 109, f"{page_number:02d}", 25, "F2", (1.0, 1.0, 1.0))
+        stream += rounded_rect(158, PAGE_HEIGHT - 88, 190, 27, 13.5, PRIMARY_SOFT, LINE, 0.8)
+        stream += text_line(176, PAGE_HEIGHT - 79, "Educação perinatal", 11, "F2", PRIMARY_DARK)
+        stream += text_line(158, PAGE_HEIGHT - 118, str(slide["heading"]), 24, "F2", PRIMARY)
+        stream += circle(PAGE_WIDTH - 75, PAGE_HEIGHT - 86, 8, ACCENT)
+        stream += stroke_line(60, PAGE_HEIGHT - 151, PAGE_WIDTH - 60, PAGE_HEIGHT - 151, LINE, 1.0)
+        start_y = PAGE_HEIGHT - 185
+
     bottom_y = 77
+    columns, _, lines = choose_layout(slide["items"], start_y - bottom_y)
+    margin_x = 60
     gap = 25
     column_width = PAGE_WIDTH - 120 if columns == 1 else (PAGE_WIDTH - 120 - gap) / 2
     x_positions = [margin_x, margin_x + column_width + gap]
